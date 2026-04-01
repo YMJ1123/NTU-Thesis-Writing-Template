@@ -1,15 +1,295 @@
 % !TeX root = ../main.tex
 
-\chapter{中文測試}
+\chapter{Methodology}
+\label{ch:methodology}
 
-\begin{tempsection}
+This chapter describes the proposed token-level genomic foundation model classification framework. We present the overall system architecture, detail each component, and describe the training strategy, data pipeline, and evaluation methodology.
 
-\section{史記}
+\section{System Overview}
+\label{sec:method-overview}
 
-\zhlipsum[name=xiangyu]
+\figref{fig:system-overview} illustrates the end-to-end pipeline. Given a raw DNA read of 150~bp, the system performs the following steps:
+\begin{enumerate}
+    \item \textbf{Tokenization}: The read is segmented into non-overlapping 6-mer tokens using the Nucleotide Transformer v2 tokenizer.
+    \item \textbf{Token-level encoding}: The token sequence is processed by the pre-trained Nucleotide Transformer v2 backbone (with LoRA adapters), producing contextual embeddings for each token.
+    \item \textbf{Attention pooling}: A multi-head attention pooling head aggregates the token embeddings into a fixed-dimensional classification vector.
+    \item \textbf{Classification}: A feed-forward network maps the pooled representation to class logits.
+\end{enumerate}
 
-\section{山海經}
+\begin{figure}[htbp]
+    \centering
+    % TODO: Insert system architecture diagram
+    % \includegraphics[width=0.95\textwidth]{figures/system_architecture.pdf}
+    \caption{Overview of the proposed token-level GFM classification pipeline. A 150~bp DNA read is tokenized into 6-mers, encoded by the LoRA-adapted Nucleotide Transformer v2 backbone, aggregated via attention pooling, and classified into one of $K$ taxonomic classes.}
+    \label{fig:system-overview}
+\end{figure}
 
-\zhlipsum[name=nanshanjing]
+\section{Backbone: Nucleotide Transformer v2}
+\label{sec:method-backbone}
 
-\end{tempsection}
+We employ the \texttt{nucleotide-transformer-v2-500m-multi-species} model as the backbone encoder. This model is based on the ESM-2 architecture~\cite{Lin2023}, a protein language model architecture adapted for nucleotide sequences.
+
+\subsection{Tokenization}
+
+The NT-v2 tokenizer segments input sequences into non-overlapping 6-mers. For a 150~bp read, this produces approximately 25 tokens (plus special tokens such as \texttt{[CLS]} and \texttt{[EOS]}). The maximum sequence length is set to 128 tokens, which accommodates reads up to $\sim$768~bp with padding.
+
+\subsection{Encoder Architecture}
+
+The backbone consists of 29 Transformer encoder layers, each with:
+\begin{itemize}
+    \item Multi-head self-attention with 16 heads and hidden dimension 1,024.
+    \item A feed-forward network (FFN) with intermediate dimension 4,096.
+    \item Pre-layer normalization (LayerNorm before attention and FFN).
+    \item Rotary position embeddings (RoPE)~\cite{Su2024} for encoding positional information.
+\end{itemize}
+
+The backbone outputs a tensor $H \in \mathbb{R}^{B \times T \times 1024}$, where $B$ is the batch size and $T$ is the sequence length. We use the \emph{full token sequence} (excluding special tokens) as input to the classification head, rather than extracting only the \texttt{[CLS]} token or applying mean pooling.
+
+\subsection{LoRA Adaptation}
+\label{sec:method-lora}
+
+We apply LoRA~\cite{Hu2022} to the query ($W_Q$), key ($W_K$), and value ($W_V$) projection matrices in each of the 29 self-attention layers. The LoRA configuration is:
+
+\begin{table}[htbp]
+    \centering
+    \caption{LoRA hyperparameters.}
+    \label{tab:lora-config}
+    \begin{tabular}{lr}
+        \toprule
+        \textbf{Parameter} & \textbf{Value} \\
+        \midrule
+        Rank $r$ & 16 \\
+        Scaling factor $\alpha$ & 32 \\
+        Dropout & 0.05 \\
+        Target modules & $W_Q$, $W_K$, $W_V$ \\
+        \midrule
+        Trainable LoRA params & 2,867,200 \\
+        Classification head params & 2,672,248 \\
+        Total trainable params & 5,539,448 (1.11\%) \\
+        Total model params & 498,623,561 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Gradient checkpointing is enabled for the backbone to reduce peak GPU memory usage at the cost of recomputing activations during the backward pass.
+
+\subsection{Ablation: Shallow Transformer Backbone}
+\label{sec:method-shallow}
+
+To isolate the contribution of the pre-trained 29-layer NT-v2 backbone, we design an ablation variant that replaces it with a shallow Transformer encoder trained entirely from scratch. This ablation mirrors the architecture of MetaTransformer~\cite{Wichmann2023} while keeping the tokenization fixed to 6-mers (the NT-v2 tokenizer), enabling a controlled comparison.
+
+The shallow Transformer backbone consists of:
+\begin{itemize}
+    \item \textbf{Learned token embeddings}: A randomly initialized embedding matrix $E \in \mathbb{R}^{V \times d_{\text{model}}}$, where $V = 4{,}107$ is the NT-v2 6-mer vocabulary size and $d_{\text{model}} = 128$.
+    \item \textbf{Learned positional embeddings}: A position embedding matrix $P \in \mathbb{R}^{L_{\max} \times d_{\text{model}}}$, added to the token embeddings.
+    \item \textbf{Single-layer Transformer encoder}: One pre-norm Transformer encoder layer with 2 attention heads, feed-forward dimension $d_{\text{ff}} = 512$, GELU activation, and dropout $p = 0.1$.
+\end{itemize}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Comparison of backbone configurations.}
+    \label{tab:backbone-comparison}
+    \begin{tabular}{lcc}
+        \toprule
+        \textbf{Aspect} & \textbf{NT-v2 + LoRA} & \textbf{Shallow (ablation)} \\
+        \midrule
+        Tokenizer & 6-mer (shared) & 6-mer (shared) \\
+        Encoder layers & 29 & 1 \\
+        Hidden dimension & 1,024 & 128 \\
+        Attention heads & 16 & 2 \\
+        Feed-forward dim & 4,096 & 512 \\
+        Pre-training & MLM on 850 genomes & None (from scratch) \\
+        Backbone params & 498M (5.5M trainable) & $\sim$200K (all trainable) \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The same attention pooling classification head is used for both variants, with the input dimension adjusted to match the backbone output ($d = 1{,}024$ for NT-v2, $d = 128$ for the shallow variant). This design ensures that any performance difference is attributable solely to the backbone encoder, not the classification head or tokenization.
+
+The shallow variant trains all parameters from scratch, analogous to MetaTransformer's training paradigm but constrained to the NT-v2 tokenizer. This answers a key question: \emph{does the pre-trained 29-layer backbone provide an advantage over a simple shallow encoder when the tokenization is held constant?}
+
+\section{Classification Head: Attention Pooling}
+\label{sec:method-head}
+
+The classification head aggregates the variable-length token sequence into a fixed-dimensional representation and maps it to class logits. We use a multi-head attention pooling mechanism inspired by Perceiver~\cite{Jaegle2021} and Set Transformer~\cite{Lee2019}.
+
+\subsection{Architecture}
+
+The attention pooling head consists of:
+
+\begin{enumerate}
+    \item \textbf{Learnable query tokens}: $M = 4$ learnable query vectors $Q \in \mathbb{R}^{M \times d}$, where $d = 1024$.
+    
+    \item \textbf{Cross-attention}: Standard scaled dot-product attention where the queries attend to the backbone's token embeddings:
+    \begin{align}
+        K &= H W_K, \quad V = H W_V \\
+        \text{Attention}(Q, K, V) &= \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right) V
+    \end{align}
+    where $H \in \mathbb{R}^{T \times d}$ is the backbone output and $W_K, W_V \in \mathbb{R}^{d \times d_k}$ are learnable projections.
+    
+    \item \textbf{Aggregation}: The $M$ attended vectors are concatenated, yielding a representation of dimension $M \times d_k$.
+    
+    \item \textbf{Feed-forward classifier}:
+    \begin{equation}
+        \text{LayerNorm} \to \text{Linear}(M \cdot d_k, 512) \to \text{GELU} \to \text{Dropout}(p) \to \text{Linear}(512, K)
+    \end{equation}
+    where $K$ is the number of classes.
+\end{enumerate}
+
+The attention pooling mechanism enables the model to selectively focus on the most taxonomically informative tokens in the sequence, analogous to how a biologist might focus on specific conserved marker regions within a read to determine its taxonomic origin.
+
+\subsection{Alternative Heads}
+\label{sec:method-alt-heads}
+
+We also implemented two alternative classification heads for comparison:
+
+\textbf{Mean Pool Head}: Averages all token embeddings along the sequence dimension, followed by the same feed-forward classifier. This serves as the baseline aggregation strategy.
+
+\textbf{Transformer Pool Head}: Applies a single Transformer encoder layer on top of the backbone output before mean pooling, adding another level of self-attention. This explores whether an additional attention layer can compensate for simple mean pooling.
+
+\section{Training Strategy}
+\label{sec:method-training}
+
+\subsection{Two-Phase Training}
+
+We employ a two-phase training strategy to stabilize learning:
+
+\textbf{Phase 1 --- Head-only warmup} (5 epochs): The backbone is completely frozen, and only the classification head parameters are trained. This phase initializes the head weights to produce meaningful gradients before the backbone is unfrozen, preventing early gradient noise from corrupting pre-trained representations.
+
+\textbf{Phase 2 --- Joint fine-tuning} (up to 25--30 epochs): LoRA adapters in the backbone are unfrozen, and both the backbone (via LoRA) and the classification head are trained jointly. Differential learning rates are used: the backbone learning rate ($3 \times 10^{-5}$) is set lower than the head learning rate ($5 \times 10^{-4}$) to preserve pre-trained knowledge.
+
+\subsection{Optimization}
+
+The training procedure uses the following optimization configuration:
+
+\begin{table}[htbp]
+    \centering
+    \caption{Training optimization hyperparameters.}
+    \label{tab:training-config}
+    \begin{tabular}{lr}
+        \toprule
+        \textbf{Parameter} & \textbf{Value} \\
+        \midrule
+        Optimizer & AdamW \\
+        Backbone learning rate & $3 \times 10^{-5}$ \\
+        Head learning rate & $5 \times 10^{-4}$ \\
+        Weight decay & 0.02 \\
+        LR scheduler & Cosine with linear warmup \\
+        Warmup ratio & 10\% of total steps \\
+        Gradient accumulation steps & 1--2 \\
+        Mixed precision & bfloat16 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\textbf{Mixed precision training}: We use bfloat16 automatic mixed precision (AMP) on NVIDIA H100 GPUs. The bfloat16 format provides the dynamic range of float32 with reduced precision, avoiding the gradient underflow issues that arise with float16 and class-weighted losses.
+
+\textbf{Early stopping}: Training is halted when validation accuracy does not improve for 7 consecutive epochs, and the model with the highest validation accuracy is saved as the final checkpoint.
+
+\subsection{Transfer Learning Across Experiments}
+
+To facilitate progressive scaling from smaller to larger datasets, we implement a transfer learning mechanism (\texttt{--init\_from}) distinct from the training resumption mechanism (\texttt{--resume}).
+
+\textbf{Resume} (\texttt{--resume}): Loads the full training state (model weights, optimizer state, epoch counter, learning rate scheduler) from a checkpoint, enabling continuation of the \emph{same} experiment after a job interruption (e.g., SLURM time limit).
+
+\textbf{Transfer learning} (\texttt{--init\_from}): Loads only the model weights from a checkpoint for a \emph{new} experiment, resetting the epoch counter and optimizer state. Supports partial loading, automatically skipping parameters with shape mismatches (e.g., when the classification head dimension changes between genus and species models). Phase~1 warmup is skipped when using transfer learning, as the backbone is already adapted.
+
+\section{Data Pipeline}
+\label{sec:method-data}
+
+\subsection{Training Data Generation}
+
+Training data consists of simulated metagenomic reads generated from reference genomes using the ART simulator~\cite{Huang2012}, following the same protocol as MetaTransformer~\cite{Wichmann2023}. Reference genomes are drawn from the Human Gastrointestinal Reference genome database (HGR-UMGS)~\cite{Almeida2019}, covering 120 genera and 1,535 species of human gut-associated microorganisms.
+
+Each simulated read is 150~bp in length (matching typical Illumina HiSeq output) and is labeled with its source organism's genus and species.
+
+\subsection{Balanced Subsampling}
+\label{sec:method-subsampling}
+
+The full training dataset contains 258M reads with a highly skewed distribution across species. To mitigate class imbalance and enable controlled data scaling experiments, we implement a balanced subsampling strategy:
+
+\begin{enumerate}
+    \item \textbf{Scan}: The full FASTA file is scanned to extract all read headers and their species labels.
+    \item \textbf{Allocate}: A target number of reads per species is computed as $n_{\text{target}} = N_{\text{total}} / K_{\text{species}}$, where $N_{\text{total}}$ is the desired subsample size and $K_{\text{species}}$ is the number of species.
+    \item \textbf{Cap and redistribute}: For species with fewer reads than $n_{\text{target}}$, all available reads are included. The deficit is redistributed proportionally among species with surplus reads.
+    \item \textbf{Sample}: Reads are randomly selected within each species to meet the per-species allocation.
+\end{enumerate}
+
+This procedure produces near-perfectly balanced subsamples. For a 50M subsample from 1,535 species, each species contributes $32{,}573 \pm 445$ reads.
+
+\subsection{Reverse-Complement Augmentation}
+
+During training, each read is replaced with its reverse complement with probability $p = 0.5$. This augmentation is applied on-the-fly during data loading, doubling the effective diversity of the training set without requiring additional storage.
+
+\subsection{Data Splitting}
+
+The dataset is split into training (90\%) and validation (10\%) sets using stratified sampling to maintain class proportions. For species-level experiments, stratification ensures that every species is represented in both splits.
+
+\section{Evaluation Methodology}
+\label{sec:method-eval}
+
+\subsection{Metrics}
+
+We evaluate classification performance using the following metrics:
+
+\textbf{Micro accuracy} (overall accuracy): The fraction of correctly classified reads. This metric is dominated by abundant classes and reflects real-world performance on typical samples.
+
+\textbf{Macro F1}: The unweighted average of per-class F1 scores. This metric weights all classes equally, providing a measure of performance across the full taxonomic diversity including rare taxa.
+
+\textbf{Balanced accuracy}: The average of per-class recall, equivalent to macro recall.
+
+\textbf{Top-$k$ accuracy}: The fraction of reads for which the correct class appears in the top $k$ predictions. We report top-3, top-5, and top-10 accuracy.
+
+\textbf{F1$=$0 class count}: The number of classes with zero F1 score (i.e., classes for which the model makes no correct predictions). This directly measures the ``dead class'' problem.
+
+\textbf{Train-validation gap}: The difference between training accuracy and validation accuracy, serving as a proxy for overfitting.
+
+\subsection{Reverse-Complement Test-Time Augmentation}
+\label{sec:method-rc-tta}
+
+At inference, we employ RC TTA: each read is classified twice (forward and reverse complement), and the logits are averaged before applying softmax:
+\begin{equation}
+    \hat{y} = \arg\max_k \left[ f_\theta(r) + f_\theta(\bar{r}) \right]
+    \label{eq:rc-tta}
+\end{equation}
+where $f_\theta(r)$ and $f_\theta(\bar{r})$ are the logit vectors for the forward and reverse-complement reads, respectively. This ensembling exploits the biological strand symmetry of DNA and consistently improves accuracy.
+
+\subsection{Species-Level Evaluation Modes}
+\label{sec:method-species-eval}
+
+For species-level classification (1,535 classes), we introduce two additional evaluation modes to decouple the contributions of genus-level and intra-genus discrimination:
+
+\textbf{Oracle-genus evaluation}: Given the \emph{true} genus label, the species logits are masked to only allow species belonging to that genus. This answers: ``Given perfect genus identification, how well can the model discriminate species within each genus?''
+
+\textbf{Top-$k$ genus routing}: The genus classifier produces the top-$k$ genus predictions. The candidate species set is the union of all species belonging to these $k$ genera. Species logits are then masked to this candidate set. This simulates a realistic two-stage hierarchical classification pipeline.
+
+\section{Computational Considerations}
+\label{sec:method-compute}
+
+\subsection{Hardware}
+
+All experiments are conducted on the TWCC (Taiwan Computing Cloud) SLURM cluster equipped with NVIDIA H100 80~GB HBM3 GPUs. The SLURM partition enforces a 48-hour maximum wall time per job, necessitating checkpoint-resume support for long training runs.
+
+\subsection{Memory Optimization}
+
+Several techniques are employed to manage GPU memory:
+\begin{itemize}
+    \item \textbf{Gradient checkpointing}: Recomputes intermediate activations during the backward pass rather than storing them, trading $\sim$30\% additional compute for $\sim$60\% memory reduction.
+    \item \textbf{Mixed precision (bfloat16)}: Reduces memory requirements for activations and gradients by approximately 50\% compared to float32.
+    \item \textbf{LoRA}: Keeps the majority of backbone parameters frozen, reducing the optimizer state memory from $\sim$4$\text{GB}$ (full fine-tuning with AdamW) to $\sim$44$\text{MB}$.
+\end{itemize}
+
+\subsection{Resource Monitoring}
+
+To assess computational resource adequacy and identify bottlenecks, we implement a dedicated resource monitoring module that tracks:
+\begin{itemize}
+    \item GPU VRAM usage (PyTorch allocated, nvidia-smi total, and peak values).
+    \item GPU compute utilization (sampled every 30 seconds via nvidia-smi).
+    \item System RAM usage (process RSS and peak).
+    \item Per-epoch wall-clock time and throughput (reads per second).
+\end{itemize}
+These metrics are logged to \texttt{training\_history.csv} and a comprehensive \texttt{resource\_report.json} at the end of training.
+
+\section{Summary}
+
+This chapter has described the complete methodology for token-level GFM classification of metagenomic reads. The framework combines a pre-trained Nucleotide Transformer v2 backbone with LoRA adaptation, an attention-pooling classification head, two-phase training with transfer learning support, balanced subsampling, and RC augmentation. The evaluation methodology encompasses multiple metrics at both genus and species levels, with specialized evaluation modes for dissecting hierarchical classification performance.

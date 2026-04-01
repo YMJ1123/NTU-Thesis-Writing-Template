@@ -1,29 +1,23 @@
 % !TEX TS-program = xelatex
-% !BIB program = bibtex
+% !BIB program = biber
 % !TEX encoding = UTF-8 Unicode
 
 % --------------------------------------------------
-% 國立臺灣大學電機工程學系網狀控制實驗室模板 - NTU Thesis
-% National Taiwan University (NTU) 
-% Department of Electrical Engineering
-% Template for Thesis
-% https://github.com/NTU-NCS-lab/ThesisWritingTemplate
-
-% 注意事項
-% 使用此模板需自負檢查責任 http://www.lib.ntu.edu.tw/node/103
+% Token-level Genomic Foundation Model Fine-tuning
+% for Metagenomic Taxonomic Classification
+% National Taiwan University - Master's Thesis
 % --------------------------------------------------
 
 \documentclass[
-    ncsstyle  = true,                  % ncsstyle = true | false
-    watermark = false,                 % watermark = true | false
-    doi       = false,                 % doi = true | false
-    doctype   = draft,                 % doctype = draft | final
-    print     = false,                 % print = false | true, switch colors to black
-    removetemp = false,                % remove_temp = false | true, remove temperary sections
+    ncsstyle  = false,
+    watermark = false,
+    doi       = false,
+    doctype   = draft,
+    print     = false,
+    removetemp = false,
 ]{ncs-thesis}
 
-
-% To speed up project building, comment out contents you don't need
+% To speed up building, comment out chapters you don't need
 \includeonly{
     front/acknowledgement,
     front/abstract,
@@ -32,63 +26,54 @@
     contents/chapter02,
     contents/chapter03,
     contents/chapter04,
+    contents/chapter05,
     back/appendix01,
-    back/appendix02
 }
+
+% Uncomment to include all chapters:
+% \includeonly{}
 
 \addbibresource{./back/references.bib}
 \input{ntusetup}
 
 \begin{document}
 
-% 封面與口試審定
 % Cover and Verification Letter
-\makecover                          % 論文封面（Cover）
-% \makeverification                   % 口試委員審定書（Verification Letter）
+\makecover
+% \makeverification
+% \includepdf[pages=-]{verification.pdf}
 
-% Uncomment this line to import your own verification in pdf
-% You may need to save as a copy in pdf/A format (using adobe acrobat)                  
-\includepdf[pages=-]{verification.pdf} % To insert the verification page
-
-% 致謝與論文摘要
 % Acknowledgement and Abstract
-\include{front/acknowledgement}       % 致謝（Acknowledgement）
-\pagenumbering{roman}                 % 重新設定頁碼格式
-\setcounter{page}{1}                  % 重新設定頁碼起始值
-\include{front/abstract}              % 摘要（Abstract）
+\include{front/acknowledgement}
+\pagenumbering{roman}
+\setcounter{page}{1}
+\include{front/abstract}
 
-% 生成目錄與符號列表
-% Contents of Tables and Denotation
-\maketableofcontents                % 目錄（Table of Contents）
+% Table of Contents
+\maketableofcontents
 \begin{singlespacing}
-\makelistoffigures                  % 圖目錄（List of Figures）
-\makelistoftables                   % 表目錄（List of Tables）
+\makelistoffigures
+\makelistoftables
 \end{singlespacing}
-\include{front/denotation}            % 符號列表（Denotation）
+\include{front/denotation}
 
-
-% 論文內容
-% Contents of Thesis
+% Thesis Contents
 \mainmatter
-\include{contents/template}
-\include{contents/chapter01}
-\include{contents/chapter02}
-\include{contents/chapter03}
-\include{contents/chapter04}
+\include{contents/chapter01}  % Introduction
+\include{contents/chapter02}  % Background and Related Work
+\include{contents/chapter03}  % Methodology
+\include{contents/chapter04}  % Experiments and Results
+\include{contents/chapter05}  % Conclusion and Future Work
 
-% 參考文獻
 % References
 \refmatter
-\begin{tempsection}
-    \printbibliography
-\end{tempsection}
+\printbibliography
 
-% 附錄
 % Appendices
 \appendix
 \begin{appendices}
 \include{back/appendix01}
-\include{back/appendix02}
+% \include{back/appendix02}
 \end{appendices}
 
 \end{document}

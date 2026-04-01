@@ -2,16 +2,17 @@
 
 \begin{abstract}
 
-    \begin{tempsection}
-        中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要中文摘要
-    \end{tempsection}
+    % TODO: 中文摘要 — 請在最終版本時填入正式中文翻譯
+    總體基因體學的分類學分類——即將每條定序短讀序列指派至正確的微生物分類單元——是微生物群落分析的核心計算挑戰。本論文提出一種基於基因體基礎模型的 Token 層級分類方法，利用預訓練的 Nucleotide Transformer v2（498M 參數）結合低秩適應（LoRA）微調與注意力池化分類頭，保留完整的 Token 層級序列資訊進行分類。透過系統性的資料規模實驗（500K 至 50M 條平衡讀序列），我們發現訓練資料量是決定分類準確度的主要因素：在屬（genus）層級 120 類分類任務中，資料量增加 10 倍可提升準確度 7.76 個百分點（55.29\% 提升至 63.05\%），而架構與訓練技巧的調整最多僅帶來 $\pm$0.5 個百分點的變化。反向互補測試時增強（RC TTA）在所有設定下穩定提供 1--1.5 個百分點的準確度改善。本研究為基因體基礎模型在總體基因體學分類上的應用提供了實證基礎與可擴展的實驗框架。
 
 \end{abstract}
 
 \begin{abstract*}
 
-    \begin{tempsection}
-        Abstract
-    \end{tempsection}
+    Metagenomic taxonomic classification---assigning each sequencing read to its source organism in the microbial taxonomy---is a fundamental computational challenge in microbiome analysis. This thesis proposes a token-level classification approach based on genomic foundation models, leveraging the pre-trained Nucleotide Transformer v2 (498M parameters) with Low-Rank Adaptation (LoRA) fine-tuning and an attention-pooling classification head that preserves the full token-level sequence information.
+    
+    Through systematic data scaling experiments spanning 500K to 50M balanced training reads, we demonstrate that training data volume is the dominant factor determining classification accuracy: a 10$\times$ increase in training data yields a $+7.76$ percentage point improvement in genus-level accuracy (55.29\% to 63.05\% on 120 genera), while architectural and training technique ablations produce at most $\pm$0.5 percentage points of variation. Reverse-complement test-time augmentation consistently improves accuracy by $+1$ to $+1.5$ percentage points across all experimental settings. Balanced subsampling across species reduces the number of unclassifiable taxa (F1$=$0 classes) from 9 to 2 and improves macro F1 by $+12.27$ percentage points.
+    
+    Comparison with MetaTransformer, a state-of-the-art Transformer-based metagenomic classifier achieving 98.3\% genus recall on a large-scale balanced dataset (simulated from 2,505 HGR-UMGS genomes), reveals that the performance gap is primarily attributable to training data volume rather than model architecture. This work provides empirical evidence for the data scaling requirements of genomic foundation models in metagenomic classification and establishes a scalable experimental framework for further investigation.
 
 \end{abstract*}

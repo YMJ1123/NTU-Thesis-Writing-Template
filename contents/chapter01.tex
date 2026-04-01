@@ -1,39 +1,82 @@
 % !TeX root = ../main.tex
 
-\chapter{中國文學}
+\chapter{Introduction}
+\label{ch:introduction}
 
-\begin{tempsection}
-\section{出師表}
+\section{Background and Motivation}
+\label{sec:intro-background}
 
-\ncsred{臣亮言}：先帝創業未半，而中道崩殂。今天下三分，益州疲弊，此誠危急存亡之秋也。然侍衛之臣，不懈於內；忠志之士，忘身於外者，蓋追先帝之殊遇，欲報之於陛下也。誠宜開張聖聽，以光先帝遺德，恢弘志士之氣；不宜妄自菲薄，引喻失義，以塞忠諫之路也。宮中府中，俱為一體，陟罰臧否，不宜異同。若有作姦犯科，及為忠善者，宜付有司，論其刑賞，以昭陛下平明之治，不宜篇私，使內外異法也。\par
+Metagenomics, the culture-independent study of microbial communities through direct sequencing of environmental DNA, has transformed our understanding of microbial ecology, human health, and environmental science~\cite{Quince2017}. 
+Modern metagenomic sequencing platforms, particularly Illumina short-read technologies, generate hundreds of millions of reads per sample, each typically 100--300 base pairs (bp) in length. 
+A fundamental computational challenge in metagenomic analysis is \emph{taxonomic classification}: assigning each sequencing read to the correct taxon in the microbial taxonomy, such as genus or species~\cite{Ye2019}.
 
-侍中、侍郎郭攸之、費褘、董允等，此皆良實，志慮忠純，是以先帝簡拔以遺陛下。愚以為宮中之事，事無大小，悉以咨之，然後施行，必能裨補闕漏，有所廣益。將軍向寵，性行淑均，曉暢軍事，試用於昔日，先帝稱之曰「能」，是以眾議舉寵為督。愚以為營中之事，悉以咨之，必能使行陣和睦，優劣得所。親賢臣，遠小人，此先漢所以興隆也；親小人，遠賢臣，此後漢所以傾頹也。先帝在時，每與臣論此事，未嘗不歎息痛恨於桓、靈也。侍中、尚書、長史；參軍，此悉貞良死節之臣也，願陛下親之信之，則漢室之隆，可計日而待也。
+Accurate taxonomic classification underpins virtually all downstream metagenomic analyses, including community composition profiling, pathogen detection, antibiotic resistance gene tracking, and comparative microbiome studies~\cite{Breitwieser2019}. 
+However, the classification task is inherently difficult due to several factors:
+\begin{itemize}
+    \item \textbf{Short read length}: Individual reads of 150~bp carry limited phylogenetic signal, especially when distinguishing closely related taxa.
+    \item \textbf{High taxonomic diversity}: A typical metagenomic sample may contain reads from hundreds to thousands of species spanning dozens of genera.
+    \item \textbf{Class imbalance}: Community compositions follow highly skewed abundance distributions, with a few dominant taxa and many rare ones.
+    \item \textbf{Sequence similarity}: Closely related taxa share substantial genomic homology, making fine-grained discrimination (e.g., species-level) particularly challenging.
+\end{itemize}
 
-臣本布衣，躬耕於南陽，苟全性命於亂世，不求聞達於諸侯。先帝不以臣卑鄙，猥自枉屈，三顧臣於草廬之中，諮臣以當世之事，由是感激，遂許先帝以驅馳。後值傾覆，受任於敗軍之際，奉命於危難之間，爾來二十有一年矣！先帝知臣謹慎，故臨崩寄臣以大事也。受命以來，夙夜憂勤，恐託付不效，以傷先帝之明。故五月渡瀘，深入不毛。今南方已定，兵甲已足，當獎率三軍，北定中原，庶竭駑鈍，攘除奸凶，興復漢室，還於舊都；此臣所以報先帝而忠陛下之職分也。至於斟酌損益，進盡忠言，則攸之、褘、允之任也。
+Traditional approaches to metagenomic classification fall broadly into two categories. 
+\emph{Alignment-based methods} such as BLAST~\cite{Altschul1990} and DIAMOND~\cite{Buchfink2015} align reads against reference databases, achieving high precision but at considerable computational cost. 
+\emph{$k$-mer-based methods} such as Kraken2~\cite{Wood2019} and Centrifuge~\cite{Kim2016} index reference genomes using $k$-mer hash tables, enabling ultra-fast classification at the expense of sensitivity. 
+More recently, deep learning approaches have emerged, including MetaTransformer~\cite{Wichmann2023}, which applies a Transformer architecture to learned $k$-mer embeddings for metagenomic read classification.
 
-願陛下託臣以討賊興復之效；不效，則治臣之罪，以告先帝之靈。若無興德之言，則戮允等，以彰其慢。陛下亦宜自課，以諮諏善道，察納雅言，深追先帝遺詔，臣不勝受恩感激。
+Concurrently, the field of genomics has witnessed the development of \emph{genomic foundation models} (GFMs)---large-scale pre-trained models that learn general-purpose representations of DNA sequences from billions of nucleotides~\cite{DallaTorre2023}. 
+Models such as the Nucleotide Transformer~\cite{DallaTorre2023}, DNABERT~\cite{Ji2021}, DNABERT-2~\cite{Zhou2024dnabert2}, and Evo~\cite{Nguyen2024} have demonstrated strong performance across diverse genomic tasks, including promoter prediction, splice site identification, and variant effect prediction. 
+These models offer a compelling alternative to task-specific feature engineering: by pre-training on vast genomic corpora, they capture rich sequence semantics that can be transferred to downstream tasks through fine-tuning.
 
-今當遠離，臨表涕泣，不知所云。
+Despite their promise, the application of GFMs to metagenomic taxonomic classification remains underexplored. 
+A na\"ive approach---extracting mean-pooled embeddings from a frozen pre-trained model and training a linear classifier---discards the positional and local information encoded in individual token representations. 
+This thesis investigates whether a \emph{token-level} approach, which preserves the full sequence of token embeddings and employs parameter-efficient fine-tuning, can substantially improve metagenomic taxonomic classification.
 
-\section{短歌行\label{sec:1}}
+\section{Problem Statement}
+\label{sec:intro-problem}
 
-對酒當歌，人生幾何！譬如朝露，去日苦多。
-慨當以慷，憂思難忘。何以解憂？唯有杜康。
-青青子衿，悠悠我心。但為君故，沉吟至今。
-呦呦鹿鳴，食野之苹。我有嘉賓，鼓瑟吹笙。
-明明如月，何時可掇？憂從中來，不可斷絕。
-越陌度阡，枉用相存。契闊談宴，心念舊恩。
-月明星稀，烏鵲南飛。繞樹三匝，何枝可依？
-山不厭高，海不厭深。周公吐哺，天下歸心。
+Given a set of metagenomic short reads $\{r_1, r_2, \ldots, r_N\}$ generated by sequencing a microbial community, the taxonomic classification problem is to assign each read $r_i$ to its correct taxon $y_i \in \{1, 2, \ldots, K\}$, where $K$ is the number of classes at a given taxonomic level (e.g., genus or species).
 
-\section{始得西山宴遊記}
+This thesis formulates the problem as a supervised multi-class classification task. We assume access to a reference genome database from which simulated reads with known taxonomic labels can be generated for training. The challenge is to learn a classifier $f_\theta: \mathcal{R} \rightarrow \{1, \ldots, K\}$ that generalizes well from simulated training data to accurately classify novel reads.
 
-自余爲僇人，居是州，恆惴慄。其隙也，則施施而行，漫漫而遊。日與其徒上高山，入深林，窮回溪；幽泉怪石，無遠不到。到則披草而坐，傾壺而醉，醉則更相枕以臥，臥而夢。意有所極，夢亦同趣。覺而起，起而歸。以爲凡是州之山有異態者，皆我有也，而未始知西山之怪特。
+The specific objectives of this thesis are:
+\begin{enumerate}
+    \item \textbf{Token-level representation}: Investigate whether preserving the full sequence of token embeddings from a genomic foundation model, rather than using mean-pooled summaries, improves taxonomic classification accuracy.
+    \item \textbf{Parameter-efficient fine-tuning}: Evaluate the effectiveness of LoRA (Low-Rank Adaptation)~\cite{Hu2022} for adapting a 498M-parameter pre-trained model to the taxonomic classification task with minimal trainable parameters.
+    \item \textbf{Data scaling}: Quantify the relationship between training data volume and classification performance, and determine the data requirements for achieving competitive accuracy.
+    \item \textbf{Comprehensive evaluation}: Assess performance across multiple metrics (micro accuracy, macro F1, top-$k$ accuracy) and at both genus and species taxonomic levels.
+\end{enumerate}
 
-今年九月二十八日，因坐法華西亭，望西山，始指異之。遂命僕人過湘江，緣染溪，斫榛莽，焚茅茷，窮山之高而止。攀援而登，箕踞而遨，則凡數州之土壤，皆在衽席之下
+\section{Contributions}
+\label{sec:intro-contributions}
 
-其高下之勢，岈然窪然，若垤若穴，尺寸千里，攢蹙累積，莫得遁隱；縈青繚白，外與天際，四望如一。然後知是山之特出，不與培塿爲類。悠悠乎與灝氣俱，而莫得其涯；洋洋乎與造物者遊，而不知其所窮。
+The main contributions of this thesis are as follows:
 
-引觴滿酌，頹然就醉，不知日之入，蒼然暮色，自遠而至，至無所見，而猶不欲歸。心凝形釋，與萬化冥合。然後知吾向之未始遊，遊於是乎始，故爲之文以志。是歲，元和四年也。
+\begin{enumerate}
+    \item \textbf{A token-level GFM classification framework}: We propose a classification pipeline that feeds the complete token-level output of a pre-trained Nucleotide Transformer v2~\cite{DallaTorre2023} into a learnable attention-pooling classification head, fine-tuned with LoRA. This approach preserves rich positional and contextual information that is lost in mean-pooling approaches.
+    
+    \item \textbf{Systematic data scaling analysis}: Through extensive experiments spanning 500K to 50M training reads, we demonstrate that training data volume is the dominant factor determining classification accuracy. Increasing training data from 500K to 5M balanced reads yields a $+7.8$ percentage point improvement in genus-level accuracy (55.3\% $\to$ 63.1\%), while architectural modifications alone yield at most $\pm0.5$ percentage points.
+    
+    \item \textbf{Reverse-complement test-time augmentation}: We demonstrate that averaging logits from forward and reverse-complement passes at inference time consistently improves accuracy by $+1$ to $+2.3$ percentage points at no additional training cost.
+    
+    \item \textbf{Multi-level taxonomic evaluation}: We provide a comprehensive evaluation framework supporting genus-level (120 classes) and species-level (1,535 classes) classification, including oracle-genus evaluation, top-$k$ genus routing, and per-class performance analysis.
+    
+    \item \textbf{Controlled backbone ablation}: We design a controlled experiment comparing the pre-trained 29-layer NT-v2 backbone against a single-layer Transformer trained from scratch (MetaTransformer-style), using the same tokenizer and classification head. This isolates the contribution of pre-trained representations from model capacity and tokenization effects.
+    
+    \item \textbf{Computational resource assessment}: We provide a detailed analysis of GPU memory, compute utilization, and training time on NVIDIA H100 hardware, offering practical guidance for scaling GFM-based classifiers to production metagenomic datasets.
+\end{enumerate}
 
-\end{tempsection}
+\section{Thesis Organization}
+\label{sec:intro-organization}
+
+The remainder of this thesis is organized as follows:
+
+\begin{itemize}
+    \item \textbf{Chapter~\ref{ch:background}} reviews the background and related work, covering metagenomic classification methods, genomic foundation models, parameter-efficient fine-tuning, and attention mechanisms.
+    
+    \item \textbf{Chapter~\ref{ch:methodology}} presents the proposed methodology in detail, including the model architecture, training strategy, data pipeline, and evaluation framework.
+    
+    \item \textbf{Chapter~\ref{ch:experiments}} describes the experimental setup and presents comprehensive results, including ablation studies, data scaling analysis, species-level evaluation, and computational resource assessment.
+    
+    \item \textbf{Chapter~\ref{ch:conclusion}} summarizes the findings, discusses limitations, and outlines directions for future work.
+\end{itemize}

@@ -1,0 +1,103 @@
+% !TeX root = ../main.tex
+
+\chapter{Conclusion and Future Work}
+\label{ch:conclusion}
+
+\section{Summary of Contributions}
+
+This thesis has investigated the application of genomic foundation models to metagenomic taxonomic classification through a token-level representation approach. Our main findings are:
+
+\textbf{Token-level representations improve classification.} By preserving the full sequence of token embeddings from the Nucleotide Transformer v2 backbone---rather than discarding positional information through mean pooling---and aggregating them via a learnable attention-pooling head, we achieve genus-level accuracy improvements over frozen-embedding baselines. The token-level approach with LoRA fine-tuning achieves 63.05\% RC TTA accuracy on 120 genera (with 5M balanced training reads), compared to 51.70\% for the frozen mean-pool baseline.
+
+\textbf{Data volume is the dominant performance factor.} Through systematic data scaling experiments spanning 500K to 50M training reads, we demonstrate that increasing training data volume by $10\times$ yields $+7.76$ percentage points in accuracy and $+12.27$ percentage points in macro F1, while extensive architectural and training technique ablations yield at most $\pm0.5$ percentage points. This finding aligns with the observations of Wichmann et al.~\cite{Wichmann2023}, who achieve 98.3\% genus recall (98.9\% precision) on their validation set using a large-scale balanced training dataset (simulated from 2,505 HGR-UMGS genomes) with a much smaller custom Transformer.
+
+\textbf{Class balance is critical for rare taxa.} Balanced subsampling across species reduces the number of F1$=$0 classes from 9 to 2 and improves macro F1 by $+12.27$ percentage points, demonstrating that class imbalance---not model capacity---is the primary cause of poor performance on rare taxa.
+
+\textbf{RC TTA is a robust, free improvement.} Reverse-complement test-time augmentation consistently improves accuracy by $+1$ to $+1.5$ percentage points across all experimental conditions, requiring no additional training cost.
+
+\textbf{Current hardware is sufficient.} The NVIDIA H100 80~GB GPU is adequately provisioned for this workload, with VRAM utilization below 50\% even at batch size 256. The operational bottleneck is the SLURM time limit rather than computational resources.
+
+\section{Limitations}
+
+This work has several limitations that should be acknowledged:
+
+\begin{enumerate}
+    \item \textbf{Simulated data only}: All experiments use reads simulated by ART from reference genomes. Real metagenomic reads contain additional noise (host contamination, chimeric reads, strain-level variation) that may degrade classifier performance.
+    
+    \item \textbf{Limited taxonomic scope}: The reference database covers 120 genera and 1,535 species of human gut microorganisms. Performance on environmental samples with broader taxonomic diversity is unknown.
+    
+    \item \textbf{Single read length}: All experiments use 150~bp reads. Performance at other read lengths (e.g., 250~bp for Illumina MiSeq, or long reads from Oxford Nanopore / PacBio) has not been evaluated.
+    
+    \item \textbf{Incomplete data scaling}: The v9 (50M) and full 258M experiments were not completed at the time of writing, leaving the scaling trajectory partially extrapolated.
+    
+    \item \textbf{No streaming data loader}: Current implementation loads all training reads into memory, limiting scalability beyond $\sim$50M reads without substantial RAM ($>$50~GB).
+    
+    \item \textbf{Comparison scope}: Direct comparison with MetaTransformer is confounded by differences in training data volume, making it difficult to isolate the contribution of architectural choices.
+\end{enumerate}
+
+\section{Future Work}
+
+Several promising directions emerge from this work:
+
+\subsection{Backbone Ablation and Architectural Insights}
+
+The shallow Transformer ablation (Section~\ref{sec:exp-shallow}) directly addresses whether the 29-layer pre-trained backbone justifies its computational cost over a simpler architecture. The results of this experiment will inform the architectural direction of the system:
+\begin{itemize}
+    \item If the pre-trained backbone significantly outperforms the shallow variant, future work should explore \emph{deeper} or \emph{domain-specifically pre-trained} backbones, such as models trained on the GTDB database~\cite{Parks2022} ($>$400,000 microbial genomes).
+    \item If the shallow variant approaches the pre-trained backbone's performance, the practical recommendation shifts toward lightweight, task-specific models with better tokenization (e.g., 12-mers), trading pre-training for efficiency.
+\end{itemize}
+
+\subsection{Full-Scale Data Training}
+
+The most immediate next step is completing training on the full 258M-read dataset. Our data scaling analysis predicts that this could yield genus-level accuracy in the 82--90\% range, substantially narrowing the gap with MetaTransformer. Achieving this requires either:
+\begin{itemize}
+    \item Implementing a streaming data loader that reads from disk, eliminating the in-memory requirement.
+    \item Requesting extended SLURM time limits (72+ hours) or developing a multi-job training orchestration system.
+\end{itemize}
+
+\subsection{Species-Level Scaling and Hierarchical Classification}
+
+Species classification at the 500K scale achieved only $\sim$8\% accuracy (1,535 classes), with oracle-genus evaluation capping at $\sim$21\%. Training with 50M balanced reads (sp\_v4, Section~\ref{sec:exp-species-scaled}) is expected to dramatically improve species-level performance. Upon completion, the two-stage hierarchical classification pipeline can be evaluated:
+\begin{enumerate}
+    \item Genus prediction (using the v9 model) to generate a candidate species set.
+    \item Species classification within the candidate set (using the sp\_v4 model).
+\end{enumerate}
+The effectiveness of this approach scales directly with genus-level accuracy: at 64\% genus accuracy (v9), top-5 routing covers the correct genus in $>$85\% of reads, providing a substantially reduced candidate set for species discrimination.
+
+\subsection{Tokenization Study}
+
+The NT-v2 foundation model constrains tokenization to 6-mers. MetaTransformer's use of 12-mers suggests that longer tokens may be advantageous for taxonomic classification, as they directly capture longer characteristic motifs. A systematic comparison of tokenization strategies---including 6-mer, 12-mer, Byte Pair Encoding (BPE), and character-level encoding---under controlled backbone architectures would clarify whether tokenization or encoder depth is the more impactful design choice.
+
+\subsection{Architectural Improvements}
+
+\textbf{Multi-layer feature fusion}: Current experiments use only the last hidden layer of NT-v2. Combining representations from multiple layers (e.g., via weighted averaging or learned gating) could capture both low-level sequence features and high-level semantic information~\cite{DallaTorre2023}.
+
+\textbf{Adapter fusion}: Training separate LoRA adapters for genus and species tasks and combining them through adapter fusion~\cite{Pfeiffer2021} could enable joint hierarchical classification without duplicating the backbone.
+
+\subsection{Real-World Validation}
+
+Validating the classifier on real metagenomic sequencing data from public repositories (e.g., Human Microbiome Project~\cite{HMP2012}) is essential for assessing practical applicability. This includes evaluating robustness to:
+\begin{itemize}
+    \item Sequencing errors and quality variations across platforms.
+    \item Host DNA contamination.
+    \item Novel or uncharacterized taxa absent from the training database (out-of-distribution detection).
+\end{itemize}
+
+\subsection{Efficiency Optimization}
+
+For practical deployment in clinical or environmental monitoring settings, inference speed is critical. Potential optimizations include:
+\begin{itemize}
+    \item \textbf{Model distillation}: Distilling the 498M-parameter LoRA-adapted model into a smaller task-specific model (e.g., 50M parameters).
+    \item \textbf{Quantization}: Applying INT8 or INT4 quantization to reduce memory and accelerate inference.
+    \item \textbf{Batched inference}: Optimizing the inference pipeline for high-throughput batch processing of millions of reads.
+\end{itemize}
+
+\subsection{Pre-training Strategy}
+
+The current work fine-tunes a model pre-trained on 850 genomes from 174 species. A foundation model pre-trained specifically on a larger, more diverse collection of microbial genomes (e.g., the full GTDB database with $>$400,000 genomes~\cite{Parks2022}) may provide more suitable representations for metagenomic classification, reducing the amount of task-specific fine-tuning data required.
+
+\section{Concluding Remarks}
+
+This thesis demonstrates both the promise and the current limitations of applying genomic foundation models to metagenomic taxonomic classification. While token-level representations with LoRA fine-tuning provide a principled and effective framework, the results clearly indicate that \emph{sufficient training data is the prerequisite for competitive performance}. The gap between our current results and MetaTransformer's reported accuracy is attributable primarily to training data volume rather than architectural sophistication.
+
+The backbone ablation study (comparing the 29-layer pre-trained NT-v2 with a single-layer Transformer trained from scratch) will provide direct evidence for whether the computational investment in large pre-trained backbones is justified for metagenomic classification, or whether lightweight task-specific models---paired with appropriate tokenization and sufficient training data---represent a more practical path forward. Together with the species-level scaling experiments and hierarchical classification pipeline, these ongoing investigations aim to establish a complete, competitive framework for GFM-based metagenomic taxonomic classification.

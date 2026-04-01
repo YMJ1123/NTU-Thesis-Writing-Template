@@ -1,30 +1,204 @@
 % !TeX root = ../main.tex
 
-\chapter{中國文學}
+\chapter{Background and Related Work}
+\label{ch:background}
 
-\begin{tempsection}
+This chapter provides the necessary background for understanding the methods proposed in this thesis. We review existing approaches to metagenomic taxonomic classification, introduce genomic foundation models, describe parameter-efficient fine-tuning techniques, and discuss attention-based sequence aggregation mechanisms.
 
-\section{出師表}
+\section{Metagenomic Taxonomic Classification}
+\label{sec:bg-metagenomics}
 
-臣亮言：先帝創業未半，而中道崩殂。今天下三分，益州疲弊，此誠危急存亡之秋也。然侍衛之臣，不懈於內；忠志之士，忘身於外者，蓋追先帝之殊遇，欲報之於陛下也。誠宜開張聖聽，以光先帝遺德，恢弘志士之氣；不宜妄自菲薄，引喻失義，以塞忠諫之路也。宮中府中，俱為一體，陟罰臧否，不宜異同。若有作姦犯科，及為忠善者，宜付有司，論其刑賞，以昭陛下平明之治，不宜篇私，使內外異法也。\par
+Metagenomic taxonomic classification aims to assign each sequencing read from an environmental sample to its source organism's position in the phylogenetic tree. We review three major paradigms for this task.
 
-侍中、侍郎郭攸之、費褘、董允等，此皆良實，志慮忠純，是以先帝簡拔以遺陛下。愚以為宮中之事，事無大小，悉以咨之，然後施行，必能裨補闕漏，有所廣益。將軍向寵，性行淑均，曉暢軍事，試用於昔日，先帝稱之曰「能」，是以眾議舉寵為督。愚以為營中之事，悉以咨之，必能使行陣和睦，優劣得所。親賢臣，遠小人，此先漢所以興隆也；親小人，遠賢臣，此後漢所以傾頹也。先帝在時，每與臣論此事，未嘗不歎息痛恨於桓、靈也。侍中、尚書、長史；參軍，此悉貞良死節之臣也，願陛下親之信之，則漢室之隆，可計日而待也。
+\subsection{Alignment-Based Methods}
 
-臣本布衣，躬耕於南陽，苟全性命於亂世，不求聞達於諸侯。先帝不以臣卑鄙，猥自枉屈，三顧臣於草廬之中，諮臣以當世之事，由是感激，遂許先帝以驅馳。後值傾覆，受任於敗軍之際，奉命於危難之間，爾來二十有一年矣！先帝知臣謹慎，故臨崩寄臣以大事也。受命以來，夙夜憂勤，恐託付不效，以傷先帝之明。故五月渡瀘，深入不毛。今南方已定，兵甲已足，當獎率三軍，北定中原，庶竭駑鈍，攘除奸凶，興復漢室，還於舊都；此臣所以報先帝而忠陛下之職分也。至於斟酌損益，進盡忠言，則攸之、褘、允之任也。
+Alignment-based methods classify reads by aligning them to reference genome databases. 
+BLAST~\cite{Altschul1990} performs local sequence alignment using heuristic seed-and-extend strategies, achieving high sensitivity but at significant computational cost (hours to days for typical metagenomic datasets). 
+DIAMOND~\cite{Buchfink2015} accelerates protein-level alignments through double indexing and optimized scoring, achieving up to 20,000$\times$ speedup over BLAST while maintaining comparable sensitivity. 
+MegaBLAST~\cite{Zhang2000} optimizes nucleotide-level alignment for closely related sequences.
 
-願陛下託臣以討賊興復之效；不效，則治臣之罪，以告先帝之靈。若無興德之言，則戮允等，以彰其慢。陛下亦宜自課，以諮諏善道，察納雅言，深追先帝遺詔，臣不勝受恩感激。
+The primary limitation of alignment-based methods is their computational cost, which scales poorly with the size of modern metagenomic datasets containing hundreds of millions of reads.
 
-今當遠離，臨表涕泣，不知所云。
+\subsection{$k$-mer-Based Methods}
 
-\section{短歌行}
+$k$-mer-based methods represent sequences as sets or distributions of fixed-length subsequences ($k$-mers) and use hash-table lookups for rapid classification.
 
-對酒當歌，人生幾何！譬如朝露，去日苦多。
-慨當以慷，憂思難忘。何以解憂？唯有杜康。
-青青子衿，悠悠我心。但為君故，沉吟至今。
-呦呦鹿鳴，食野之苹。我有嘉賓，鼓瑟吹笙。
-明明如月，何時可掇？憂從中來，不可斷絕。
-越陌度阡，枉用相存。契闊談宴，心念舊恩。
-月明星稀，烏鵲南飛。繞樹三匝，何枝可依？
-山不厭高，海不厭深。周公吐哺，天下歸心。
+\textbf{Kraken2}~\cite{Wood2019} constructs a database mapping each $k$-mer ($k=35$) to its lowest common ancestor (LCA) in the taxonomic tree. Classification proceeds by querying each read's $k$-mers against this database and assigning the read to the taxon that covers the most $k$-mers. Kraken2 achieves classification speeds exceeding $10^6$ reads per minute, making it one of the most widely adopted tools in metagenomic analysis.
 
-\end{tempsection}
+\textbf{Centrifuge}~\cite{Kim2016} uses a compressed FM-index to perform rapid exact matching of reads against reference genomes, achieving lower memory requirements than Kraken2 while maintaining competitive accuracy.
+
+While $k$-mer methods excel in speed, they rely on exact $k$-mer matches and thus struggle with sequences that diverge from the reference database. They also lack the ability to capture higher-order sequence patterns beyond individual $k$-mers.
+
+\subsection{Deep Learning Methods}
+
+Deep learning methods learn discriminative representations directly from sequence data, potentially capturing complex patterns that elude $k$-mer matching.
+
+\textbf{DeepMicrobes}~\cite{Liang2020} applies a bidirectional LSTM with attention to one-hot encoded nucleotide sequences, achieving competitive performance on species-level classification but requiring substantial training data and compute.
+
+\textbf{MetaTransformer}~\cite{Wichmann2023} is the most directly relevant prior work to this thesis. It employs a custom Transformer architecture that operates on learned 12-mer embeddings. Key design choices include:
+\begin{itemize}
+    \item \textbf{12-mer tokenization}: Input reads are segmented into non-overlapping 12-mers, each mapped to a learnable embedding vector. The choice of $k=12$ balances vocabulary size ($4^{12} \approx 16.7$M possible 12-mers, though only $\sim$1.4M appear in training data) against sequence granularity.
+    \item \textbf{Transformer encoder}: A Transformer encoder (the best-performing configuration uses $d_{\text{model}}=64$ with a single encoder block for $k=13$; the authors also evaluate up to 4 blocks and $d_{\text{model}}=128$) processes the sequence of $k$-mer embeddings.
+    \item \textbf{Mean pooling}: Token representations are mean-pooled into a fixed-length vector for classification.
+    \item \textbf{Large-scale training}: The model is trained on balanced reads simulated from 2,505 HGR-UMGS genomes using the ART Illumina simulator with a coverage factor of 3 (the exact total number of reads is not reported in the paper; we estimate $\sim$614M based on 300K training steps $\times$ batch size 2,048). The best genus-level model achieves 98.9\% precision and 98.3\% recall on the validation set.
+\end{itemize}
+
+A key insight from MetaTransformer is the critical role of training data volume: the authors demonstrate that performance scales substantially with data size, and that balanced sampling across taxa is essential for achieving high macro-level performance.
+
+\section{Genomic Foundation Models}
+\label{sec:bg-gfm}
+
+Genomic foundation models (GFMs) are large-scale neural networks pre-trained on vast corpora of DNA sequences using self-supervised learning objectives. Inspired by the success of language models such as BERT~\cite{Devlin2019} and GPT~\cite{Brown2020}, GFMs treat DNA sequences as a ``language'' of nucleotides and learn contextual representations that capture biological structure and function.
+
+\subsection{Nucleotide Transformer}
+
+The Nucleotide Transformer (NT)~\cite{DallaTorre2023} family of models, developed by InstaDeep, are among the largest and most widely evaluated GFMs. This thesis uses the \texttt{nucleotide-transformer-v2-500m-multi-species} variant, which features:
+
+\begin{itemize}
+    \item \textbf{Architecture}: An ESM-2-based~\cite{Lin2023} Transformer encoder with 29 layers, 1,024 hidden dimensions, and 16 attention heads.
+    \item \textbf{Tokenization}: A 6-mer tokenizer that encodes DNA sequences into non-overlapping 6-nucleotide tokens. This produces a vocabulary of $4^6 = 4,096$ possible tokens plus special tokens.
+    \item \textbf{Pre-training}: Masked language modeling (MLM) on 850 genomes from 174 species, spanning $\sim$3.2 billion nucleotides.
+    \item \textbf{Total parameters}: 498M parameters.
+\end{itemize}
+
+The model produces contextual embeddings for each token in the input sequence, yielding a representation tensor of shape $[\text{batch}, \text{seq\_len}, 1024]$ that captures both local sequence composition and long-range dependencies.
+
+\subsection{Other Genomic Foundation Models}
+
+\textbf{DNABERT}~\cite{Ji2021} was one of the first BERT-style models pre-trained on human genome sequences using overlapping $k$-mer tokenization ($k=3,4,5,6$). While effective for tasks such as promoter prediction, its relatively small scale (110M parameters) and human-genome-only pre-training limit its applicability to diverse metagenomic sequences.
+
+\textbf{DNABERT-2}~\cite{Zhou2024dnabert2} replaces $k$-mer tokenization with Byte Pair Encoding (BPE), eliminating the need to choose a fixed $k$ and enabling more flexible sequence representation. It also adopts a multi-species pre-training strategy.
+
+\textbf{Evo}~\cite{Nguyen2024} is a 7B-parameter model based on the StripedHyena architecture~\cite{Poli2024}, capable of modeling DNA sequences up to 131K nucleotides. While powerful for long-range genomic modeling, its large size makes it challenging to deploy for metagenomic classification tasks involving hundreds of millions of short reads.
+
+\subsection{GFMs for Metagenomic Classification}
+\label{sec:bg-gfm-metagenomics}
+
+Despite their success on single-genome tasks, GFMs have seen limited application to metagenomic classification. A na\"ive approach extracts mean-pooled embeddings from a frozen pre-trained model and trains a downstream classifier (e.g., MLP or SVM) on these fixed representations. While simple, this approach discards the token-level structure of the representation, losing positional information that may be discriminative for fine-grained taxonomic distinctions.
+
+This thesis addresses this gap by proposing a token-level classification approach that preserves the full embedding sequence and fine-tunes the backbone with LoRA.
+
+\section{Parameter-Efficient Fine-Tuning}
+\label{sec:bg-peft}
+
+Fine-tuning the full parameter set of a 498M-parameter model requires substantial compute and memory, and risks catastrophic forgetting of the pre-trained representations. Parameter-efficient fine-tuning (PEFT) methods address this by adapting only a small subset of parameters while keeping the majority frozen.
+
+\subsection{Low-Rank Adaptation (LoRA)}
+
+LoRA~\cite{Hu2022} is based on the hypothesis that weight updates during fine-tuning lie in a low-rank subspace. For a pre-trained weight matrix $W_0 \in \mathbb{R}^{d \times k}$, LoRA parameterizes the update as:
+\begin{equation}
+    W = W_0 + \Delta W = W_0 + BA
+    \label{eq:lora}
+\end{equation}
+where $B \in \mathbb{R}^{d \times r}$ and $A \in \mathbb{R}^{r \times k}$ with rank $r \ll \min(d, k)$. During training, only $A$ and $B$ are updated while $W_0$ remains frozen. The forward pass becomes:
+\begin{equation}
+    h = W_0 x + \frac{\alpha}{r} B A x
+\end{equation}
+where $\alpha$ is a scaling hyperparameter that controls the magnitude of the adaptation.
+
+Key advantages of LoRA include:
+\begin{itemize}
+    \item \textbf{Parameter efficiency}: With $r=16$ applied to query, key, and value projections across 29 Transformer layers, only 5.54M parameters (1.11\% of total) are trainable.
+    \item \textbf{No additional inference latency}: The adapted weights $W_0 + BA$ can be merged, adding no overhead at inference time.
+    \item \textbf{Modular}: Different LoRA adapters can be trained for different tasks and swapped at deployment time.
+\end{itemize}
+
+\subsection{Other PEFT Methods}
+
+\textbf{Adapter layers}~\cite{Houlsby2019} insert small trainable bottleneck modules between Transformer layers. While effective, they introduce additional inference latency due to the extra forward-pass computation.
+
+\textbf{Prefix tuning}~\cite{Li2021} prepends learnable ``virtual tokens'' to the input sequence, influencing the attention computation without modifying model weights. It is memory-efficient but can struggle with tasks requiring fine-grained output control.
+
+We choose LoRA for this thesis due to its combination of strong performance, parameter efficiency, and the absence of additional inference latency.
+
+\section{Attention Mechanisms for Sequence Aggregation}
+\label{sec:bg-attention}
+
+Given a sequence of token embeddings $\{h_1, h_2, \ldots, h_T\} \in \mathbb{R}^{T \times d}$, a classification task requires aggregating these into a fixed-dimensional representation. The choice of aggregation mechanism directly impacts what information is preserved.
+
+\subsection{Mean Pooling}
+
+The simplest approach averages all token embeddings:
+\begin{equation}
+    z = \frac{1}{T} \sum_{t=1}^{T} h_t
+\end{equation}
+Mean pooling is computationally trivial but weights all tokens equally, potentially diluting the contribution of discriminative tokens with non-informative ones.
+
+\subsection{Attention Pooling}
+
+Attention pooling uses learnable query vectors to compute a weighted combination of token embeddings. Given $M$ learnable query vectors $\{q_1, \ldots, q_M\} \in \mathbb{R}^{M \times d_q}$ and linear projections $W_K, W_V \in \mathbb{R}^{d \times d_q}$:
+\begin{align}
+    K &= H W_K, \quad V = H W_V \\
+    \alpha_{m,t} &= \frac{\exp(q_m \cdot k_t / \sqrt{d_q})}{\sum_{t'} \exp(q_m \cdot k_{t'} / \sqrt{d_q})} \\
+    z_m &= \sum_{t=1}^{T} \alpha_{m,t} v_t \\
+    z &= \text{Concat}(z_1, \ldots, z_M) \in \mathbb{R}^{M \cdot d_q}
+\end{align}
+This mechanism enables the model to learn which positions in the DNA sequence are most informative for classification, automatically focusing on discriminative $k$-mers while down-weighting uninformative regions.
+
+\subsection{Multi-Head Attention Pooling}
+
+Extending attention pooling with multiple heads allows the model to attend to different aspects of the sequence simultaneously. Each head learns a different query, capturing diverse patterns (e.g., one head may focus on conserved marker genes while another attends to variable regions). The concatenated outputs from all heads provide a rich, multi-faceted representation for downstream classification.
+
+\section{Data Augmentation for DNA Sequences}
+\label{sec:bg-augmentation}
+
+\subsection{Reverse-Complement Symmetry in DNA}
+\label{sec:bg-rc-symmetry}
+
+DNA is a double-stranded molecule: the two antiparallel strands are linked by Watson--Crick base pairing ($A \leftrightarrow T$, $C \leftrightarrow G$). Given a sequence $s = s_1 s_2 \cdots s_L$ on the forward (5$'$$\to$3$'$) strand, its \emph{reverse complement} $\bar{s} = \overline{s_L} \cdots \overline{s_2} \overline{s_1}$ on the complementary strand encodes identical biological information: both correspond to the same genomic locus and therefore the same organism.
+
+In shotgun metagenomic sequencing, a read is equally likely to originate from either strand. Consequently, a biologically correct classifier must satisfy the \emph{strand symmetry} property:
+\begin{equation}
+    f(s) = f(\bar{s}) \quad \forall\, s
+    \label{eq:strand-symmetry}
+\end{equation}
+However, standard neural network architectures do not inherently enforce this constraint. Zhou et al.~\cite{Zhou2022rc} systematically demonstrate that deep learning models for genomics frequently violate strand symmetry, producing inconsistent predictions for a sequence and its reverse complement. Ma~\cite{Ma2025rc} further show that even DNA language models fine-tuned with RC data augmentation still exhibit substantial prediction inconsistency.
+
+\subsection{Strategies for Exploiting RC Symmetry}
+
+Three complementary strategies have been proposed to address the strand symmetry problem:
+
+\begin{enumerate}
+    \item \textbf{Random RC training augmentation}: During training, each read is replaced with its reverse complement with probability $p=0.5$, exposing the model to both strand orientations. While this encourages---but does not guarantee---strand-invariant representations, it effectively doubles the training data diversity at zero storage cost.
+
+    \item \textbf{RC test-time augmentation (RC TTA)}: At inference, both the forward read $s$ and its reverse complement $\bar{s}$ are processed independently, and their output logits are averaged before taking the argmax prediction:
+    \begin{equation}
+        \hat{y} = \arg\max_k \bigl[ f_\theta(s) + f_\theta(\bar{s}) \bigr]
+        \label{eq:rc-tta-bg}
+    \end{equation}
+    This ``post-hoc conjoined'' approach~\cite{Zhou2022rc} enforces strand symmetry at inference time without modifying the trained model. It can be understood as a two-view ensemble where both views observe the same biological entity from different strand orientations. By the standard ensemble argument, averaging two correlated but noisy estimates of the same ground-truth label reduces prediction variance and cancels orientation-dependent errors. Zhou et al.~\cite{Zhou2022rc} find that this approach consistently performs well across diverse genomic tasks.
+
+    \item \textbf{RC consistency training}: A regularization loss (e.g., KL divergence) explicitly penalizes divergence between $f_\theta(s)$ and $f_\theta(\bar{s})$ during training, producing a single model that is intrinsically more strand-invariant without requiring double inference at test time~\cite{Ma2025rc}. An alternative is to design \emph{RC-equivariant architectures} that hard-code strand symmetry into the network structure~\cite{Brown2021rc}, though this requires custom layers incompatible with pre-trained foundation model backbones.
+\end{enumerate}
+
+In this thesis, we adopt strategies (1) and (2): RC augmentation during training and RC TTA during evaluation. We also experiment with RC consistency training (Section~\ref{sec:exp-techniques}) but find that its interaction with other regularization techniques (e.g., logit adjustment) can be detrimental, and RC TTA alone provides a reliable $+1$--$1.5$ percentage point improvement across all experimental settings (Section~\ref{sec:exp-rc-tta}).
+
+\section{Handling Class Imbalance}
+\label{sec:bg-imbalance}
+
+Metagenomic samples exhibit severe class imbalance: a few dominant taxa may constitute the majority of reads while rare taxa contribute only a handful. This imbalance can bias classifiers toward frequent classes, resulting in high micro accuracy but poor macro F1 due to frequent misclassification of rare taxa.
+
+\subsection{Loss-Level Approaches}
+
+\textbf{Class-weighted cross-entropy} scales the loss for each class inversely proportional to its frequency:
+\begin{equation}
+    \mathcal{L} = -\sum_{k=1}^{K} w_k \, y_k \log \hat{y}_k, \quad w_k \propto 1/n_k
+\end{equation}
+However, this approach can be unstable with mixed-precision training and large class counts~\cite{Cui2019}.
+
+\textbf{Logit adjustment}~\cite{Menon2021} modifies the output logits by a class-prior-dependent offset:
+\begin{equation}
+    \tilde{f}_k(x) = f_k(x) + \tau \log \pi_k
+    \label{eq:logit-adjustment}
+\end{equation}
+where $\pi_k$ is the prior probability of class $k$ and $\tau$ is a temperature parameter controlling the strength of adjustment. This approach is theoretically motivated as producing Fisher-consistent estimators under class imbalance.
+
+\subsection{Sampling-Level Approaches}
+
+\textbf{Balanced sampling} constructs each training batch by sampling classes uniformly and then sampling instances within each class. This ensures that rare classes are seen as frequently as common ones during training.
+
+\textbf{Class-aware sampling} (e.g., \texttt{WeightedRandomSampler}) assigns sampling weights inversely proportional to class frequency, achieving a similar effect to balanced batches within standard data loading pipelines.
+
+\section{Summary}
+
+This chapter has reviewed the key concepts underpinning our proposed approach: metagenomic classification methods from alignment-based to deep learning, genomic foundation models that provide rich pre-trained representations, parameter-efficient fine-tuning via LoRA, attention-based sequence aggregation, and strategies for data augmentation and class imbalance. In the next chapter, we describe how these components are integrated into a cohesive classification framework.
