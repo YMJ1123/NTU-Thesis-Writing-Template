@@ -224,7 +224,7 @@ def fig_backbone_ablation():
     ax.set_xticks(x)
     ax.set_xticklabels(metrics)
     ax.set_ylabel("Score (%)")
-    ax.set_ylim(0, 100)
+    ax.set_ylim(0, 105)
     ax.set_title("Backbone Ablation: Pre-trained NT-v2 vs.\\ Shallow Transformer (50M balanced reads)")
     ax.legend(loc="upper right", framealpha=0.9)
 
