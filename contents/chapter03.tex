@@ -17,17 +17,84 @@ This chapter describes the proposed token-level genomic foundation model classif
 \end{enumerate}
 
 \begin{figure}[htbp]
-    \centering
-    % TODO: Insert system architecture diagram
-    % \includegraphics[width=0.95\textwidth]{figures/system_architecture.pdf}
-    \caption{Overview of the proposed token-level GFM classification pipeline. A 150~bp DNA read is tokenized into 6-mers, encoded by the LoRA-adapted Nucleotide Transformer v2 backbone, aggregated via attention pooling, and classified into one of $K$ taxonomic classes.}
-    \label{fig:system-overview}
+\centering
+\usetikzlibrary{arrows.meta, fit, positioning, shapes.geometric, backgrounds}
+\begin{tikzpicture}[
+    node distance = 0.55cm and 0.7cm,
+    box/.style     = {draw, rounded corners=3pt, minimum width=2.0cm,
+                      minimum height=0.7cm, align=center, font=\small,
+                      fill=#1!15, draw=#1!60},
+    arrow/.style   = {-{Stealth[length=5pt]}, thick, gray!70},
+    label/.style   = {font=\footnotesize\itshape, text=gray!80},
+    grpbox/.style  = {draw=gray!40, dashed, rounded corners=4pt,
+                      inner sep=6pt, fill=gray!5},
+]
+
+%% Input
+\node[box=gray]  (read)   {150 bp\\ DNA read};
+
+%% Tokenizer
+\node[box=teal,  right=of read]  (tok)    {6-mer\\ Tokenizer};
+
+%% Token sequence
+\node[box=teal,  right=of tok]   (tokens) {Token\\ Sequence\\ \footnotesize($\leq$32 tokens)};
+
+%% NT-v2 encoder (with LoRA badge)
+\node[box=blue,  right=1.0cm of tokens] (enc)   {NT-v2 Encoder\\ \footnotesize 29 layers, $d$=1024};
+\node[draw=orange!80, fill=orange!20, rounded corners=2pt,
+      font=\scriptsize, inner sep=2pt,
+      above right=-0.1cm and -0.6cm of enc] (lora) {LoRA};
+
+%% Attention pooling head
+\node[box=violet, right=1.0cm of enc]  (pool)   {Attention\\ Pooling Head\\ \footnotesize 4 heads};
+
+%% Classifier
+\node[box=red,   right=of pool]  (clf)    {Linear\\ Classifier};
+
+%% Output
+\node[box=gray,  right=of clf]   (out)    {Genus / Species\\ ($K$ classes)};
+
+%% Arrows
+\draw[arrow] (read)   -- (tok);
+\draw[arrow] (tok)    -- (tokens);
+\draw[arrow] (tokens) -- (enc);
+\draw[arrow] (enc)    -- (pool);
+\draw[arrow] (pool)   -- (clf);
+\draw[arrow] (clf)    -- (out);
+
+%% Group: frozen backbone + LoRA
+\begin{scope}[on background layer]
+  \node[grpbox, fit=(enc)(lora)] (backbone_box) {};
+\end{scope}
+\node[label, below=0.05cm of backbone_box]
+    {\textit{Backbone: 498M total, 2.87M LoRA trainable}};
+
+%% Group: trainable head
+\begin{scope}[on background layer]
+  \node[grpbox, fit=(pool)(clf)] (head_box) {};
+\end{scope}
+\node[label, below=0.05cm of head_box]
+    {\textit{Head: 2.67M trainable}};
+
+\end{tikzpicture}
+\caption{Overview of the proposed token-level GFM classification pipeline. A 150~bp DNA read is tokenized into non-overlapping 6-mers, encoded by the LoRA-adapted NT-v2 backbone (29 layers, $d{=}1024$), aggregated via multi-head attention pooling, and classified into one of $K$ taxonomic classes (120 genera or 1,535 species). Orange badge indicates LoRA adapter modules; dashed boxes delineate the backbone and classification head parameter groups.}
+\label{fig:system-overview}
 \end{figure}
 
 \section{Backbone: Nucleotide Transformer v2}
 \label{sec:method-backbone}
 
-We employ the \texttt{nucleotide-transformer-v2-500m-multi-species} model as the backbone encoder. This model is based on the ESM-2 architecture~\cite{Lin2023}, a protein language model architecture adapted for nucleotide sequences.
+We employ the \texttt{nucleotide-transformer-v2-500m-multi-species} model as the backbone encoder. This model is based on the ESM-2 architecture~\cite{Lin2023}, a protein language model architecture adapted for nucleotide sequences. The selection of NT-v2 over other genomic foundation models is motivated by four considerations:
+
+\begin{enumerate}
+    \item \textbf{Empirical performance on metagenomic reads}: A direct comparison of frozen-backbone baselines (Section~\ref{sec:exp-frozen}) shows that NT-v2 achieves 51.70\% genus-level accuracy, outperforming the 7B-parameter Evo-2 model (46.95\%) despite having 14$\times$ fewer parameters. This result provides direct empirical evidence that NT-v2's representations are better suited to metagenomic read classification.
+
+    \item \textbf{Multi-species pre-training}: NT-v2's \texttt{multi-species} variant is pre-trained on 850 genomes spanning 174 species~\cite{DallaTorre2023}, making its pre-training distribution the closest among available GFMs to the multi-organism nature of metagenomic data. By contrast, DNABERT~\cite{Ji2021} is pre-trained exclusively on the human genome, which is taxonomically far from gut microbial sequences.
+
+    \item \textbf{$k$-mer tokenization as a common ground with MetaTransformer}: MetaTransformer~\cite{Wichmann2023} demonstrates that $k$-mer-based sequence discretization is effective for metagenomic classification. NT-v2 shares this philosophy through its non-overlapping 6-mer tokenizer, establishing a direct methodological link. This allows the pre-trained 6-mer embeddings to serve as a principled initialization relative to MetaTransformer's learned-from-scratch 12-mer embeddings. DNABERT-2~\cite{Zhou2024dnabert2}, while multi-species, replaces $k$-mer tokenization with BPE, breaking this alignment.
+
+    \item \textbf{Practical scalability}: At 498M parameters, NT-v2 can be fine-tuned with LoRA on a single H100 GPU with well under 10~GB of VRAM, making it feasible to run hundreds of training epochs over tens of millions of reads. Evo's 7B parameters~\cite{Nguyen2024}, while powerful for long-range genomic modeling, impose substantially higher memory requirements that are difficult to justify for 150~bp short-read classification.
+\end{enumerate}
 
 \subsection{Tokenization}
 

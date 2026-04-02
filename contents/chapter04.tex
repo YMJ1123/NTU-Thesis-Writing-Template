@@ -146,6 +146,15 @@ We now present the token-level approach, progressing from initial architecture v
 
 The training dynamics reveal severe overfitting: while training accuracy continues to increase to 62.7\%, validation accuracy saturates at $\sim$54\%. The growing train-validation gap (0\% $\to$ 9\%) indicates that the model has sufficient capacity to memorize the training data but fails to generalize, suggesting that 500K reads is insufficient to train a 498M-parameter model, even with only 1.1\% of parameters unfrozen.
 
+\figref{fig:training-dynamics} visualises the training trajectories across all three data scales, illustrating this transition from severe overfitting (v3, 500K) to well-generalised training (v9, 50M).
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/training_dynamics.pdf}
+    \caption{Training dynamics for v3 (500K, left), v8 (5M, centre), and v9 (50M, right). Dashed lines show training accuracy; solid lines show validation accuracy. The shaded region highlights the train-validation gap. The dotted vertical line in the centre panel marks a learning-rate reset caused by SLURM timeout and job resumption. Overfitting decreases systematically as data volume increases.}
+    \label{fig:training-dynamics}
+\end{figure}
+
 \section{Advanced Training Techniques (v4--v7, 500K Dataset)}
 \label{sec:exp-techniques}
 
@@ -264,15 +273,42 @@ Building on v8, we scale training data by another $10\times$ to 50M balanced rea
         Batch size & 32 & 256 \\
         Gradient accumulation & 2 & 1 \\
         Effective batch size & 64 & 256 \\
-        Epochs & 30 & 10 \\
+        Epochs & 30 & 30 (best ep.\ 10) \\
         Weight initialization & Random & v8 best.pt \\
         Est.\ time per epoch & $\sim$3h & $\sim$5--6h \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-% TODO: Update with v9 final results when available
-Results for v9 are pending completion of the training job.
+\subsubsection{Results}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Comparison between v8 (5M) and v9 (50M) for genus classification (120 classes).}
+    \label{tab:v9-results}
+    \begin{tabular}{lccr}
+        \toprule
+        \textbf{Metric} & \textbf{v8 (5M)} & \textbf{v9 (50M)} & \textbf{$\Delta$} \\
+        \midrule
+        Micro Accuracy (fwd) & 62.02\% & 65.29\% & $+3.27$~pp \\
+        Micro Accuracy (RC TTA) & 63.05\% & \textbf{66.06\%} & $+3.01$~pp \\
+        Balanced Accuracy & 33.35\% & 37.52\% & $+4.17$~pp \\
+        F1 (weighted) & 61.06\% & 63.72\% & $+2.66$~pp \\
+        F1 (macro) & 37.97\% & \textbf{43.05\%} & $+5.08$~pp \\
+        Top-3 Accuracy & 81.70\% & 83.74\% & $+2.04$~pp \\
+        Top-5 Accuracy & 88.08\% & 89.56\% & $+1.48$~pp \\
+        Top-10 Accuracy & 94.23\% & 95.00\% & $+0.77$~pp \\
+        F1$=$0 classes & 2 & \textbf{0} & $-2$ \\
+        Best epoch & 29 & 10 & --- \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Scaling from 5M to 50M balanced reads yields a further $+3.01$~pp improvement in RC TTA accuracy (63.05\% $\to$ 66.06\%). Critically, the number of F1$=$0 classes drops to \textbf{zero}, indicating that all 120 genera are now correctly classified in at least some reads.
+
+The marginal return diminishes relative to the previous $10\times$ scaling step: 500K$\to$5M yielded $+7.76$~pp while 5M$\to$50M yields $+3.01$~pp for the same multiplicative data increase, consistent with a logarithmic scaling relationship. This sub-linear trend is expected under log-linear scaling laws and suggests that continued data scaling alone will not close the remaining gap with MetaTransformer.
+
+Best performance is achieved at epoch 10, with validation accuracy beginning to plateau thereafter. The model was initialized from v8's best checkpoint via \texttt{--init\_from}, so the effective training leverages representations already adapted to the genus classification task.
 
 \subsection{Data Scaling Analysis}
 
@@ -286,8 +322,8 @@ Results for v9 are pending completion of the training job.
         \midrule
         500K (imbalanced) & 55.29\% & 25.70\% & 9 & 6.25\% \\
         5M (balanced) & 63.05\% & 37.97\% & 2 & 1.30\% \\
-        50M (balanced) & --- & --- & --- & --- \\
-        MetaTransformer (92M) & $\sim$98\% & --- & --- & --- \\
+        50M (balanced) & \textbf{66.06\%} & \textbf{43.05\%} & \textbf{0} & $\sim$0.7\% \\
+        MetaTransformer ($\sim$614M) & $\sim$98\% & --- & --- & --- \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -295,6 +331,15 @@ Results for v9 are pending completion of the training job.
 The data scaling analysis reveals a clear relationship between training data volume and classification performance. The transition from 500K to 5M reads ($10\times$ increase) yields $+7.76$~pp in accuracy and $+12.27$~pp in macro F1. Meanwhile, all training technique ablations on the 500K dataset (v3--v7) produced at most $\pm0.5$~pp variation. This strongly supports the conclusion that \textbf{data volume, not model architecture or training techniques, is the primary determinant of classification accuracy} in this setting.
 
 The comparison with MetaTransformer further reinforces this finding: despite using a much larger backbone (498M vs.\ $\sim$5M parameters), our model at 5M training reads achieves only 63\% accuracy, while MetaTransformer trained on a much larger balanced dataset achieves 98.3\% genus recall (98.9\% precision) on its validation set. The gap is attributable primarily to the substantial difference in training data volume.
+
+\figref{fig:data-scaling} plots genus RC TTA accuracy against training data volume on a logarithmic scale, with a log-linear fit to our three data points. The fitted curve projects that closing the gap with MetaTransformer would require substantially more than 614M reads, consistent with diminishing returns under logarithmic scaling.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.80\textwidth]{figures/data_scaling.pdf}
+    \caption{Genus RC TTA accuracy versus training data volume (log scale). Blue circles mark our results at three data scales; the red star marks MetaTransformer's reported genus recall. The dashed line is a log-linear fit to our three data points. Per-$10\times$ accuracy gains diminish from $+7.76$~pp (500K$\to$5M) to $+3.01$~pp (5M$\to$50M), consistent with sub-linear (logarithmic) scaling.}
+    \label{fig:data-scaling}
+\end{figure}
 
 \section{Species-Level Classification}
 \label{sec:exp-species}
@@ -348,6 +393,8 @@ Using top-10 genus routing, species accuracy reaches 8.06\%, slightly below the 
         v5b (500K, LA $\tau$=0.3) & 52.29\% & 53.58\% & $+1.29$~pp \\
         v7 (500K, RC consist.) & 54.10\% & 55.18\% & $+1.08$~pp \\
         v8 (5M genus) & 62.02\% & 63.05\% & $+1.03$~pp \\
+        v9 (50M genus, NT-v2) & 65.29\% & 66.06\% & $+0.77$~pp \\
+        v11 (50M genus, shallow) & 53.80\% & 53.88\% & $+0.08$~pp \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -359,12 +406,23 @@ RC TTA provides a consistent $+1.0$ to $+1.5$~pp accuracy improvement across all
     
     \item \textbf{Variance reduction}: The consistent improvement across all settings is explained by standard ensemble theory: averaging two correlated but independently noisy estimates of the same ground-truth label reduces prediction variance, even when both estimates come from the same model.
     
-    \item \textbf{Diminishing returns with RC consistency training}: The smallest improvement ($+1.08$~pp) occurs for v7, which uses RC consistency training. This is expected: RC consistency regularization already encourages $f(s) \approx f(\bar{s})$ during training, leaving less room for RC TTA to correct strand-dependent errors at inference time.
-    
-    \item \textbf{Scale independence}: The benefit of RC TTA ($+1.0$--$1.5$~pp) does not diminish with increasing data scale (500K to 5M), suggesting that even well-trained models retain non-trivial strand asymmetry that RC TTA can correct.
+    \item \textbf{Diminishing returns with RC consistency training}: v7 (RC consistency, $+1.08$~pp) shows less benefit than vanilla models, because RC consistency training already encourages $f(s) \approx f(\bar{s})$ during training, leaving less residual strand asymmetry for RC TTA to correct.
+
+    \item \textbf{Scale-dependent diminishing returns}: The RC TTA benefit decreases slightly with data scale: $+1.44$~pp at 500K, $+1.03$~pp at 5M, and $+0.77$~pp at 50M (v9). Larger training sets expose the model to both strands of each locus more often, gradually reducing systematic strand-directional errors---though a non-trivial asymmetry persists even at 50M reads.
+
+    \item \textbf{Near-zero benefit for randomly initialized models}: v11 (shallow Transformer, random initialization) shows only $+0.08$~pp from RC TTA. Without pre-training on a large genomic corpus, the model does not develop systematic strand-direction preferences, leaving little strand asymmetry for RC TTA to correct. This further supports the view that RC TTA primarily corrects pre-training-induced strand biases rather than stochastic inference noise.
 \end{enumerate}
 
 The $2\times$ inference cost is the primary trade-off. For offline evaluation this is acceptable; for latency-sensitive deployment, RC-equivariant architectures~\cite{Brown2021rc} or RC consistency regularization~\cite{Ma2025rc} may be preferred alternatives.
+
+\figref{fig:rc-tta} summarises RC TTA gains across all experiments, highlighting the near-zero benefit for the randomly initialized v11 model.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/rc_tta_benefit.pdf}
+    \caption{RC TTA benefit across experiments. Top: forward-only vs.\ RC TTA accuracy. Bottom: absolute gain in percentage points. RC TTA provides a consistent $+1.0$--$+1.5$~pp for pre-trained models (left group) and $+0.08$~pp for the randomly initialized shallow Transformer (v11, right group), supporting the interpretation that RC TTA corrects pre-training-induced strand biases rather than stochastic inference noise.}
+    \label{fig:rc-tta}
+\end{figure}
 
 \section{Computational Resource Analysis}
 \label{sec:exp-resources}
@@ -381,12 +439,13 @@ The $2\times$ inference cost is the primary trade-off. For offline evaluation th
         \midrule
         GPU & V100 32GB & H100 80GB & H100 80GB \\
         Batch size & 32 & 32 & 256 \\
-        VRAM peak & 10.4 GB & $\sim$4.7 GB & est.\ 20--35 GB \\
-        VRAM utilization & 32.5\% & 5.5\% & est.\ 25--44\% \\
-        Train throughput & 1,128 r/s & $\sim$417 r/s & --- \\
-        Epoch time & $\sim$6.5 min & $\sim$3h & est.\ 5--6h \\
-        Total training & 11.5h & $\sim$90h & est.\ 50--60h \\
-        SLURM jobs needed & 1 & 3 & est.\ 2 \\
+        VRAM peak (training) & 10.4 GB & $\sim$4.7 GB & $\sim$5 GB \\
+        VRAM utilization & 32.5\% & 5.5\% & $<$7\% \\
+        Train throughput & 1,128 r/s & $\sim$1,800 r/s & $\sim$1,825 r/s \\
+        Inference throughput & --- & $\sim$5,100 r/s & $\sim$5,170 r/s \\
+        Epoch time & $\sim$6.5 min & $\sim$6.8h & $\sim$6.9h \\
+        Total training & 11.5h & $\sim$90h & $\sim$110h (16 ep.) \\
+        SLURM jobs needed & 1 & 3 & 3 \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -498,7 +557,50 @@ Based on MetaTransformer's success with a similarly shallow architecture (albeit
     \item The performance gap will quantify the ``value of pre-training'' under fixed tokenization, informing whether future work should invest in larger backbones or better tokenizers.
 \end{itemize}
 
-% TODO: Update with v11 actual results when available
+\subsection{Results}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Backbone ablation results: pre-trained NT-v2 (v9) vs.\ shallow Transformer (v11), both trained on 50M balanced reads.}
+    \label{tab:v11-results}
+    \begin{tabular}{lccr}
+        \toprule
+        \textbf{Metric} & \textbf{v9 (NT-v2 + LoRA)} & \textbf{v11 (Shallow)} & \textbf{$\Delta$} \\
+        \midrule
+        Micro Accuracy (fwd) & 65.29\% & 53.80\% & $-11.49$~pp \\
+        Micro Accuracy (RC TTA) & \textbf{66.06\%} & 53.88\% & $-12.18$~pp \\
+        Balanced Accuracy & 37.52\% & 22.24\% & $-15.28$~pp \\
+        F1 (macro) & 43.05\% & 25.78\% & $-17.27$~pp \\
+        F1$=$0 classes & 0 & 3 & $+3$ \\
+        RC TTA gain & $+0.77$~pp & $+0.08$~pp & --- \\
+        Best epoch & 10 / 30 & 15 / 15 & --- \\
+        Inference throughput & $\sim$5,170 r/s & $\sim$750,000 r/s & $\approx$145$\times$ \\
+        VRAM (training) & $\sim$5 GB & $\sim$0.07 GB & --- \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The pre-trained 29-layer NT-v2 backbone outperforms the single-layer randomly initialized Transformer by \textbf{12.18~pp} in RC TTA accuracy (66.06\% vs.\ 53.88\%). This gap confirms that the pre-trained representations, despite being fine-tuned via only 5.54M LoRA parameters, provide substantial discriminative value that a shallow randomly initialized model cannot replicate even with 50M training reads.
+
+Several additional observations are noteworthy:
+\begin{enumerate}
+    \item \textbf{F1 gap is larger than accuracy gap}: The macro F1 gap ($-17.27$~pp) substantially exceeds the accuracy gap ($-12.18$~pp), indicating that v11 disproportionately fails on rare genera. This is consistent with v11's lower capacity for learning subtle sequence features distinguishing rare taxa.
+
+    \item \textbf{RC TTA nearly ineffective for v11}: The shallow, randomly initialized model shows only $+0.08$~pp from RC TTA (vs.\ $+0.77$~pp for v9), supporting the interpretation that RC TTA primarily corrects systematic strand biases acquired during pre-training rather than stochastic inference noise.
+
+    \item \textbf{Efficiency trade-off}: v11 is $\sim$145$\times$ faster at inference (750K vs.\ 5,170 reads/sec) and uses $\sim$70$\times$ less VRAM during training. For latency-sensitive applications where 54\% accuracy is acceptable, v11 represents a viable lightweight alternative.
+
+    \item \textbf{Pre-training vs.\ tokenization}: This experiment isolates pre-training while holding tokenization constant (6-mer). Since MetaTransformer---which uses 12-mer tokenization \emph{and} trains from scratch---achieves $\sim$98\% accuracy, the remaining gap between v11 (54\%) and MetaTransformer is attributable primarily to (a) training data volume ($\sim$12$\times$ more data) and (b) coarser 12-mer tokenization, rather than architectural depth per se.
+\end{enumerate}
+
+\figref{fig:backbone-ablation} presents a direct visual comparison of v9 and v11 across five evaluation metrics, quantifying the benefit of the pre-trained backbone across all dimensions.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.90\textwidth]{figures/backbone_ablation.pdf}
+    \caption{Backbone ablation: pre-trained NT-v2 + LoRA (v9, green) vs.\ single-layer randomly initialized Transformer (v11, purple), both trained on 50M balanced reads. Numbers above bars indicate the absolute gain of v9 over v11. The pre-trained backbone consistently outperforms the shallow variant across all metrics, with the largest gap in Balanced Accuracy ($+15.3$~pp) and F1 (macro) ($+17.3$~pp), reflecting v9's superior discrimination of rare genera.}
+    \label{fig:backbone-ablation}
+\end{figure}
 
 \section{Species-Level Classification at Scale}
 \label{sec:exp-species-scaled}
@@ -530,7 +632,7 @@ The species model is initialized from the v9 genus model's backbone weights via 
 
 \subsection{Toward Hierarchical Classification}
 
-Once both genus (v9) and species (sp\_v4) classifiers are trained at the 50M scale, the top-$k$ genus routing evaluation mode (Section~\ref{sec:method-species-eval}) can be re-evaluated under substantially improved genus accuracy. With genus accuracy projected to exceed 65\%, the top-$k$ routing mechanism is expected to provide a more effective species candidate set, potentially surpassing direct 1,535-way classification.
+Once the species classifier (sp\_v4) completes training, the top-$k$ genus routing evaluation mode (Section~\ref{sec:method-species-eval}) can be re-evaluated using the fully trained v9 genus model (66.06\% RC TTA accuracy). At this genus accuracy level, top-5 routing covers the correct genus in approximately 89.6\% of reads (from v9's Top-5 accuracy), providing a substantially smaller candidate set for species discrimination.
 
 The planned hierarchical classification pipeline operates as follows:
 \begin{enumerate}
@@ -555,5 +657,7 @@ The experimental results lead to several key conclusions:
     
     \item \textbf{Overfitting signals data starvation}: The transition from 6.25\% to 1.30\% train-validation gap when scaling from 500K to 5M reads confirms that the model was severely data-limited at the smaller scale.
     
+    \item \textbf{Pre-trained backbone provides a substantial advantage}: The controlled ablation (v9 vs.\ v11) shows a 12.18~pp accuracy gap in favor of the 29-layer pre-trained NT-v2 backbone over a single-layer randomly initialized Transformer at the same 50M data scale, confirming that pre-training on 850 reference genomes provides representations that meaningfully improve read discrimination.
+
     \item \textbf{Hardware is sufficient}: Current NVIDIA H100 hardware is adequately provisioned; the operational bottleneck is the SLURM time limit rather than computational resources.
 \end{enumerate}

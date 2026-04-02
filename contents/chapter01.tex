@@ -57,7 +57,7 @@ The main contributions of this thesis are as follows:
     
     \item \textbf{Systematic data scaling analysis}: Through extensive experiments spanning 500K to 50M training reads, we demonstrate that training data volume is the dominant factor determining classification accuracy. Increasing training data from 500K to 5M balanced reads yields a $+7.8$ percentage point improvement in genus-level accuracy (55.3\% $\to$ 63.1\%), while architectural modifications alone yield at most $\pm0.5$ percentage points.
     
-    \item \textbf{Reverse-complement test-time augmentation}: We demonstrate that averaging logits from forward and reverse-complement passes at inference time consistently improves accuracy by $+1$ to $+2.3$ percentage points at no additional training cost.
+    \item \textbf{Reverse-complement test-time augmentation}: We demonstrate that averaging logits from forward and reverse-complement passes at inference time consistently improves accuracy by $+0.1$ to $+1.5$ percentage points at no additional training cost, with larger gains for pre-trained models and smaller gains for randomly initialized architectures.
     
     \item \textbf{Multi-level taxonomic evaluation}: We provide a comprehensive evaluation framework supporting genus-level (120 classes) and species-level (1,535 classes) classification, including oracle-genus evaluation, top-$k$ genus routing, and per-class performance analysis.
     

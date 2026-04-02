@@ -7,7 +7,7 @@
 
 This thesis has investigated the application of genomic foundation models to metagenomic taxonomic classification through a token-level representation approach. Our main findings are:
 
-\textbf{Token-level representations improve classification.} By preserving the full sequence of token embeddings from the Nucleotide Transformer v2 backbone---rather than discarding positional information through mean pooling---and aggregating them via a learnable attention-pooling head, we achieve genus-level accuracy improvements over frozen-embedding baselines. The token-level approach with LoRA fine-tuning achieves 63.05\% RC TTA accuracy on 120 genera (with 5M balanced training reads), compared to 51.70\% for the frozen mean-pool baseline.
+\textbf{Token-level representations improve classification.} By preserving the full sequence of token embeddings from the Nucleotide Transformer v2 backbone---rather than discarding positional information through mean pooling---and aggregating them via a learnable attention-pooling head, we achieve genus-level accuracy improvements over frozen-embedding baselines. The token-level approach with LoRA fine-tuning achieves 63.05\% RC TTA accuracy on 120 genera with 5M balanced training reads, scaling to 66.06\% with 50M reads, compared to 51.70\% for the frozen mean-pool baseline.
 
 \textbf{Data volume is the dominant performance factor.} Through systematic data scaling experiments spanning 500K to 50M training reads, we demonstrate that increasing training data volume by $10\times$ yields $+7.76$ percentage points in accuracy and $+12.27$ percentage points in macro F1, while extensive architectural and training technique ablations yield at most $\pm0.5$ percentage points. This finding aligns with the observations of Wichmann et al.~\cite{Wichmann2023}, who achieve 98.3\% genus recall (98.9\% precision) on their validation set using a large-scale balanced training dataset (simulated from 2,505 HGR-UMGS genomes) with a much smaller custom Transformer.
 
@@ -28,7 +28,7 @@ This work has several limitations that should be acknowledged:
     
     \item \textbf{Single read length}: All experiments use 150~bp reads. Performance at other read lengths (e.g., 250~bp for Illumina MiSeq, or long reads from Oxford Nanopore / PacBio) has not been evaluated.
     
-    \item \textbf{Incomplete data scaling}: The v9 (50M) and full 258M experiments were not completed at the time of writing, leaving the scaling trajectory partially extrapolated.
+    \item \textbf{Incomplete data scaling}: Training on the full 258M dataset was not completed at the time of writing, leaving the upper bound of the scaling trajectory unconfirmed. The v9 (50M) experiment is complete, achieving 66.06\% RC TTA accuracy.
     
     \item \textbf{No streaming data loader}: Current implementation loads all training reads into memory, limiting scalability beyond $\sim$50M reads without substantial RAM ($>$50~GB).
     
@@ -62,7 +62,7 @@ Species classification at the 500K scale achieved only $\sim$8\% accuracy (1,535
     \item Genus prediction (using the v9 model) to generate a candidate species set.
     \item Species classification within the candidate set (using the sp\_v4 model).
 \end{enumerate}
-The effectiveness of this approach scales directly with genus-level accuracy: at 64\% genus accuracy (v9), top-5 routing covers the correct genus in $>$85\% of reads, providing a substantially reduced candidate set for species discrimination.
+The effectiveness of this approach scales directly with genus-level accuracy: at 66.06\% RC TTA accuracy (v9), top-5 routing covers the correct genus in $\sim$89.6\% of reads (v9 Top-5 accuracy), providing a substantially reduced candidate set for species discrimination.
 
 \subsection{Tokenization Study}
 
