@@ -202,21 +202,22 @@ def fig_backbone_ablation():
     bars_v11 = ax.bar(x + width/2, v11_vals, width, label="v11 (Shallow, 1-layer, random init)",
                       color=COLORS["v11"], alpha=0.88, edgecolor="white")
 
-    # Value labels
+    # Value labels (inside bar top to avoid crowding)
     for bar in bars_v9:
         h = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2, h + 0.5, f"{h:.1f}",
-                ha="center", va="bottom", fontsize=8.5, color=COLORS["v9"])
+        ax.text(bar.get_x() + bar.get_width()/2, h - 2.5, f"{h:.1f}",
+                ha="center", va="top", fontsize=8.5, color="white", fontweight="bold")
     for bar in bars_v11:
         h = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2, h + 0.5, f"{h:.1f}",
-                ha="center", va="bottom", fontsize=8.5, color=COLORS["v11"])
+        ax.text(bar.get_x() + bar.get_width()/2, h - 2.5, f"{h:.1f}",
+                ha="center", va="top", fontsize=8.5, color="white", fontweight="bold")
 
-    # Gap annotations
+    # Gap annotations: placed above the taller bar with a bracket-style indicator
     for i, (v9, v11) in enumerate(zip(v9_vals, v11_vals)):
         gap = v9 - v11
-        ax.annotate(f"+{gap:.1f}",
-                    xy=(x[i] - width/2, v9 + 2),
+        top = max(v9, v11)
+        ax.annotate(f"Δ+{gap:.1f}",
+                    xy=(x[i], top + 4.5),
                     fontsize=8, ha="center", color="dimgray",
                     style="italic")
 
