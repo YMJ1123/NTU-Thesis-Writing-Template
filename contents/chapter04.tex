@@ -151,7 +151,7 @@ The training dynamics reveal severe overfitting: while training accuracy continu
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{figures/training_dynamics.pdf}
-    \caption{Training dynamics for v3 (500K, left), v8 (5M, centre), and v9 (50M, right). Dashed lines show training accuracy; solid lines show validation accuracy. The shaded region highlights the train-validation gap. The dotted vertical line in the centre panel marks a learning-rate reset caused by SLURM timeout and job resumption. Overfitting decreases systematically as data volume increases.}
+    \caption{Training dynamics for v3 (500K, left), v8 (5M, centre), and v9 (50M, right). Dashed lines show training accuracy; solid lines show validation accuracy. The shaded region highlights the train-validation gap. Dotted vertical lines mark learning-rate resets caused by SLURM timeout and job resumption; v9 experienced two such resets (epochs 7 and 11) before the resume logic was corrected. Overfitting decreases systematically as data volume increases.}
     \label{fig:training-dynamics}
 \end{figure}
 
