@@ -304,11 +304,23 @@ Building on v8, we scale training data by another $10\times$ to 50M balanced rea
     \end{tabular}
 \end{table}
 
-Scaling from 5M to 50M balanced reads yields a further $+3.01$~pp improvement in RC TTA accuracy (63.05\% $\to$ 66.06\%). Critically, the number of F1$=$0 classes drops to \textbf{zero}, indicating that all 120 genera are now correctly classified in at least some reads.
+Scaling from 5M to 50M balanced reads yields a further $+3.01$~pp improvement in RC TTA accuracy (63.05\% $\to$ 66.06\%$^\ddagger$). Critically, the number of F1$=$0 classes drops to \textbf{zero}, indicating that all 120 genera are now correctly classified in at least some reads.
 
-The marginal return diminishes relative to the previous $10\times$ scaling step: 500K$\to$5M yielded $+7.76$~pp while 5M$\to$50M yields $+3.01$~pp for the same multiplicative data increase, consistent with a logarithmic scaling relationship. This sub-linear trend is expected under log-linear scaling laws and suggests that continued data scaling alone will not close the remaining gap with MetaTransformer.
+\emph{Note on table footnotes:} $^\dagger$~forward accuracy from the best checkpoint to date (epoch~22, still improving as of April 2026); $^\ddagger$~from the full evaluation run performed at epoch~10 (RC TTA re-evaluation pending for the epoch~22 checkpoint).
 
-Best performance is achieved at epoch 10, with validation accuracy beginning to plateau thereafter. The model was initialized from v8's best checkpoint via \texttt{--init\_from}, so the effective training leverages representations already adapted to the genus classification task.
+The marginal return diminishes relative to the previous $10\times$ scaling step: 500K$\to$5M yielded $+7.76$~pp while 5M$\to$50M yields $\geq+3.01$~pp for the same multiplicative data increase, consistent with a logarithmic scaling relationship. This sub-linear trend is expected under log-linear scaling laws and suggests that continued data scaling alone will not close the remaining gap with MetaTransformer.
+
+\paragraph{Training progress and LR restart incidents.}
+v9 training required multiple SLURM jobs due to the 48-hour time limit. Before a bug fix was applied to the checkpoint-resume logic, two job restarts inadvertently reset the cosine learning-rate scheduler to its initial warmup phase, causing temporary accuracy dips: $-0.54$~pp at epoch~7 and $-1.39$~pp at epoch~11. In both cases the model recovered within 3--5 epochs and surpassed the pre-dip performance level. The underlying issue---\texttt{EarlyStopping.best} being silently set to \texttt{None} from an incomplete checkpoint key---was corrected in the resume logic; from epoch~17 onward the scheduler state is correctly restored and the learning rate continues its cosine decay without interruption.
+
+As of epoch~22 (April 2026), the forward validation accuracy stands at \textbf{65.68\%} and is still rising (Figure~\ref{fig:learning-curves}). The training curve shows no sign of plateau, suggesting that further improvement is expected before the cosine schedule reaches zero at epoch~30. Once training completes, a full evaluation including RC TTA will be performed to obtain the definitive result.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/learning_curves.pdf}
+    \caption{Full validation accuracy curves for v9 (genus, left) and sp\_v4 (species, right) over all completed epochs. Red dotted vertical lines mark epochs where a SLURM job restart incorrectly reset the cosine LR scheduler, causing a temporary accuracy dip. The green shaded region indicates epochs trained after the resume bug fix was applied, during which the LR schedule correctly continues its cosine decay.}
+    \label{fig:learning-curves}
+\end{figure}
 
 \subsection{Data Scaling Analysis}
 
