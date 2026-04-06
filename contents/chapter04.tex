@@ -290,16 +290,16 @@ Building on v8, we scale training data by another $10\times$ to 50M balanced rea
         \toprule
         \textbf{Metric} & \textbf{v8 (5M)} & \textbf{v9 (50M)} & \textbf{$\Delta$} \\
         \midrule
-        Micro Accuracy (fwd) & 62.02\% & 65.29\% & $+3.27$~pp \\
-        Micro Accuracy (RC TTA) & 63.05\% & \textbf{66.06\%} & $+3.01$~pp \\
-        Balanced Accuracy & 33.35\% & 37.52\% & $+4.17$~pp \\
-        F1 (weighted) & 61.06\% & 63.72\% & $+2.66$~pp \\
-        F1 (macro) & 37.97\% & \textbf{43.05\%} & $+5.08$~pp \\
-        Top-3 Accuracy & 81.70\% & 83.74\% & $+2.04$~pp \\
-        Top-5 Accuracy & 88.08\% & 89.56\% & $+1.48$~pp \\
-        Top-10 Accuracy & 94.23\% & 95.00\% & $+0.77$~pp \\
-        F1$=$0 classes & 2 & \textbf{0} & $-2$ \\
-        Best epoch & 29 & 10 & --- \\
+        Micro Accuracy (fwd) & 62.02\% & \textbf{65.68\%}$^\dagger$ & $+3.66$~pp \\
+        Micro Accuracy (RC TTA) & 63.05\% & \textbf{66.06\%}$^\ddagger$ & $+3.01$~pp \\
+        Balanced Accuracy & 33.35\% & 37.52\%$^\ddagger$ & $+4.17$~pp \\
+        F1 (weighted) & 61.06\% & 63.72\%$^\ddagger$ & $+2.66$~pp \\
+        F1 (macro) & 37.97\% & \textbf{43.05\%}$^\ddagger$ & $+5.08$~pp \\
+        Top-3 Accuracy & 81.70\% & 83.74\%$^\ddagger$ & $+2.04$~pp \\
+        Top-5 Accuracy & 88.08\% & 89.56\%$^\ddagger$ & $+1.48$~pp \\
+        Top-10 Accuracy & 94.23\% & 95.00\%$^\ddagger$ & $+0.77$~pp \\
+        F1$=$0 classes & 2 & \textbf{0}$^\ddagger$ & $-2$ \\
+        Best epoch & 29 & 22 (ongoing) & --- \\
         \bottomrule
     \end{tabular}
 \end{table}
