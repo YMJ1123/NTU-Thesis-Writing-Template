@@ -51,24 +51,25 @@ def fig_training_dynamics():
     v8_clean = v8[v8["epoch"] <= 14]
     v8_resume = v8[v8["epoch"] >= 14]   # overlap at 14 for continuity
 
-    # v9: epochs 1-10 are first run, 11+ are LR-reset resume
-    v9_clean = v9[v9["epoch"] <= 10]
+    # v9: all 22 epochs; LR restarts at ep7 and ep11 (before resume-fix)
+    V9_LR_RESETS = [7, 11]   # epochs where a new SLURM job reset the LR
 
     fig, axes = plt.subplots(1, 3, figsize=(13, 4), sharey=False)
     fig.subplots_adjust(wspace=0.35)
 
     datasets = [
-        (axes[0], v3,       None,      "v3 — 500K reads (imbalanced)", COLORS["v3"]),
-        (axes[1], v8_clean, v8_resume, "v8 — 5M reads (balanced)",      COLORS["v8"]),
-        (axes[2], v9_clean, None,      "v9 — 50M reads (balanced)",      COLORS["v9"]),
+        (axes[0], v3,  None,       "v3 — 500K reads (imbalanced)", COLORS["v3"]),
+        (axes[1], v8,  v8_resume,  "v8 — 5M reads (balanced)",      COLORS["v8"]),
+        (axes[2], v9,  None,       "v9 — 50M reads (balanced)",      COLORS["v9"]),
     ]
 
     for ax, df_main, df_resume, title, color in datasets:
+        df_plot = df_main[df_main["epoch"] <= 14] if df_resume is not None else df_main
         # Training accuracy
-        ax.plot(df_main["epoch"], df_main["train_acc"] * 100,
+        ax.plot(df_plot["epoch"], df_plot["train_acc"] * 100,
                 color=color, lw=1.5, ls="--", alpha=0.7, label="Train")
         # Validation accuracy
-        ax.plot(df_main["epoch"], df_main["val_acc"] * 100,
+        ax.plot(df_plot["epoch"], df_plot["val_acc"] * 100,
                 color=color, lw=2.0, label="Validation")
 
         if df_resume is not None:
@@ -76,15 +77,13 @@ def fig_training_dynamics():
                     color=color, lw=1.5, ls="--", alpha=0.4)
             ax.plot(df_resume["epoch"], df_resume["val_acc"] * 100,
                     color=color, lw=2.0, alpha=0.4)
-            # Mark LR reset
             ax.axvline(x=15, color="gray", lw=1.0, ls=":", alpha=0.8)
-            ax.text(15.3, ax.get_ylim()[0] + 1, "LR reset", fontsize=8,
-                    color="gray", va="bottom")
+            ax.text(15.3, 56, "LR reset", fontsize=7.5, color="gray", va="bottom")
 
         # Shade train-val gap region
-        ax.fill_between(df_main["epoch"],
-                         df_main["train_acc"] * 100,
-                         df_main["val_acc"] * 100,
+        ax.fill_between(df_plot["epoch"],
+                         df_plot["train_acc"] * 100,
+                         df_plot["val_acc"] * 100,
                          alpha=0.08, color=color)
 
         ax.set_title(title, pad=8)
@@ -93,19 +92,34 @@ def fig_training_dynamics():
         ax.legend(loc="lower right", framealpha=0.9)
         ax.set_xlim(left=1)
 
+    # v9 panel: mark LR restart dips and current best
+    ax_v9 = axes[2]
+    for ep in V9_LR_RESETS:
+        row = v9[v9["epoch"] == ep].iloc[0]
+        ax_v9.axvline(x=ep, color="gray", lw=1.0, ls=":", alpha=0.8)
+        ax_v9.text(ep + 0.2, row["val_acc"] * 100 - 1.5, "LR reset",
+                   fontsize=7, color="gray", va="top")
+    # shade ongoing section (after fix, ep17+) differently
+    v9_fixed = v9[v9["epoch"] >= 17]
+    ax_v9.plot(v9_fixed["epoch"], v9_fixed["val_acc"] * 100,
+               color=COLORS["v9"], lw=2.0)
+    ax_v9.fill_between(v9_fixed["epoch"],
+                        v9_fixed["train_acc"] * 100,
+                        v9_fixed["val_acc"] * 100,
+                        alpha=0.08, color=COLORS["v9"])
+    # best annotation
+    best_v9 = v9.loc[v9["val_acc"].idxmax()]
+    ax_v9.annotate(f'Best: {best_v9["val_acc"]*100:.2f}%\n(ep{int(best_v9["epoch"])}, ↑)',
+                   xy=(best_v9["epoch"], best_v9["val_acc"]*100),
+                   xytext=(best_v9["epoch"] - 7, best_v9["val_acc"]*100 - 2.5),
+                   arrowprops=dict(arrowstyle="->", color="gray", lw=1),
+                   fontsize=8.5, color="gray")
+
     # Highlight best val on v3
     best_v3 = v3.loc[v3["val_acc"].idxmax()]
     axes[0].annotate(f'Best: {best_v3["val_acc"]*100:.1f}%',
                      xy=(best_v3["epoch"], best_v3["val_acc"]*100),
                      xytext=(best_v3["epoch"] - 8, best_v3["val_acc"]*100 - 2.5),
-                     arrowprops=dict(arrowstyle="->", color="gray", lw=1),
-                     fontsize=9, color="gray")
-
-    # Highlight best val on v9
-    best_v9 = v9_clean.loc[v9_clean["val_acc"].idxmax()]
-    axes[2].annotate(f'Best: {best_v9["val_acc"]*100:.1f}%',
-                     xy=(best_v9["epoch"], best_v9["val_acc"]*100),
-                     xytext=(best_v9["epoch"] - 5, best_v9["val_acc"]*100 - 2.5),
                      arrowprops=dict(arrowstyle="->", color="gray", lw=1),
                      fontsize=9, color="gray")
 
