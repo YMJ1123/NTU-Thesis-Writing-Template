@@ -303,9 +303,82 @@ def fig_rc_tta():
     print("Saved rc_tta_benefit.pdf")
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Figure 5: Full learning curves — v9 genus & sp_v4 species (LR restart analysis)
+# ─────────────────────────────────────────────────────────────────────────────
+def fig_learning_curves():
+    v9   = pd.read_csv(RESULTS / "nt_token_genus_lora_v9_50M/training_history.csv")
+    sp4  = pd.read_csv(RESULTS / "nt_token_species_v4_50M/training_history.csv")
+
+    # LR restart epochs (new SLURM job reset the cosine scheduler)
+    # v9: ep7 (−0.54 pp dip), ep11 (−1.39 pp dip); fixed from ep17 onward
+    # sp_v4: ep7 (−0.79 pp dip); fixed from ep13 onward
+    V9_RESTARTS = [7, 11]
+    SP4_RESTARTS = [7]
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
+    fig.subplots_adjust(wspace=0.30)
+
+    panels = [
+        (axes[0], v9,  V9_RESTARTS,  17, COLORS["v9"],
+         "v9 — Genus (120 classes, 50M reads)",   "Validation Accuracy (%)"),
+        (axes[1], sp4, SP4_RESTARTS, 13, "#3498DB",
+         "sp\_v4 — Species (1,535 classes, 50M reads)", ""),
+    ]
+
+    for ax, df, restarts, fix_ep, color, title, ylabel in panels:
+        epochs = df["epoch"].values
+        val    = df["val_acc"].values * 100
+        train  = df["train_acc"].values * 100
+
+        ax.plot(epochs, train, color=color, lw=1.5, ls="--", alpha=0.6, label="Train acc")
+        ax.plot(epochs, val,   color=color, lw=2.2, label="Val acc")
+        ax.fill_between(epochs, train, val, alpha=0.07, color=color)
+
+        # Mark LR restart epochs
+        for ep in restarts:
+            idx = df[df["epoch"] == ep].index[0]
+            ax.axvline(x=ep, color="tomato", lw=1.0, ls=":", alpha=0.9)
+            dip_val = df.loc[idx, "val_acc"] * 100
+            ax.annotate(f"LR reset\n({dip_val:.1f}%)",
+                        xy=(ep, dip_val),
+                        xytext=(ep + 1.0, dip_val - 2.0),
+                        fontsize=7.5, color="tomato",
+                        arrowprops=dict(arrowstyle="->", color="tomato", lw=0.8))
+
+        # Shade "fixed resume" region
+        ax.axvspan(fix_ep, epochs[-1] + 0.5, alpha=0.06, color="green",
+                   label=f"Resume fix applied (ep≥{fix_ep})")
+
+        # Best annotation
+        best_idx = df["val_acc"].idxmax()
+        bep  = df.loc[best_idx, "epoch"]
+        bacc = df.loc[best_idx, "val_acc"] * 100
+        ax.annotate(f"Best: {bacc:.2f}%\n(ep{int(bep)}↑)",
+                    xy=(bep, bacc),
+                    xytext=(bep - 5 if bep > 6 else bep + 1, bacc + 0.8),
+                    fontsize=8.5, color="gray",
+                    arrowprops=dict(arrowstyle="->", color="gray", lw=0.9))
+
+        ax.set_title(title, pad=8)
+        ax.set_xlabel("Epoch")
+        ax.set_ylabel(ylabel)
+        ax.set_xlim(0.5, epochs[-1] + 1)
+        ax.legend(loc="lower right", framealpha=0.9, fontsize=9)
+
+    fig.suptitle("Full Training Curves with LR Restart Incidents (50M balanced reads)",
+                 fontsize=13, y=1.02)
+
+    plt.savefig(OUT / "learning_curves.pdf", bbox_inches="tight")
+    plt.savefig(OUT / "learning_curves.png", bbox_inches="tight")
+    plt.close()
+    print("Saved learning_curves.pdf")
+
+
 if __name__ == "__main__":
     fig_training_dynamics()
     fig_data_scaling()
     fig_backbone_ablation()
     fig_rc_tta()
+    fig_learning_curves()
     print("All figures generated.")
