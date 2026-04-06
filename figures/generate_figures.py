@@ -335,14 +335,15 @@ def fig_learning_curves():
         ax.plot(epochs, val,   color=color, lw=2.2, label="Val acc")
         ax.fill_between(epochs, train, val, alpha=0.07, color=color)
 
-        # Mark LR restart epochs
-        for ep in restarts:
+        # Mark LR restart epochs — alternate left/right to avoid overlap
+        for k, ep in enumerate(restarts):
             idx = df[df["epoch"] == ep].index[0]
             ax.axvline(x=ep, color="tomato", lw=1.0, ls=":", alpha=0.9)
             dip_val = df.loc[idx, "val_acc"] * 100
+            x_off = ep + 1.0 if k % 2 == 0 else ep - 3.5
             ax.annotate(f"LR reset\n({dip_val:.1f}%)",
                         xy=(ep, dip_val),
-                        xytext=(ep + 1.0, dip_val - 2.0),
+                        xytext=(x_off, dip_val - 2.5),
                         fontsize=7.5, color="tomato",
                         arrowprops=dict(arrowstyle="->", color="tomato", lw=0.8))
 
@@ -350,13 +351,14 @@ def fig_learning_curves():
         ax.axvspan(fix_ep, epochs[-1] + 0.5, alpha=0.06, color="green",
                    label=f"Resume fix applied (ep≥{fix_ep})")
 
-        # Best annotation
+        # Best annotation — always place text below the point to stay inside axes
         best_idx = df["val_acc"].idxmax()
         bep  = df.loc[best_idx, "epoch"]
         bacc = df.loc[best_idx, "val_acc"] * 100
+        yrange = val.max() - val.min()
         ax.annotate(f"Best: {bacc:.2f}%\n(ep{int(bep)}↑)",
                     xy=(bep, bacc),
-                    xytext=(bep - 5 if bep > 6 else bep + 1, bacc + 0.8),
+                    xytext=(bep - 5 if bep > 6 else bep + 1, bacc - yrange * 0.25),
                     fontsize=8.5, color="gray",
                     arrowprops=dict(arrowstyle="->", color="gray", lw=0.9))
 
