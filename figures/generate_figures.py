@@ -140,7 +140,7 @@ def fig_data_scaling():
     reads  = np.array([500_000, 5_000_000, 50_000_000])
     acc    = np.array([55.29, 63.05, 66.06])
 
-    # MetaTransformer (estimated ~614M balanced reads, 98.3% recall)
+    # MetaTransformer: 98.3% recall, full HGR-UMGS (coverage 4); x-position is approximate (training throughput estimate)
     meta_reads = 614_000_000
     meta_acc   = 98.3
 
@@ -169,7 +169,7 @@ def fig_data_scaling():
     # MetaTransformer
     ax.scatter([meta_reads], [meta_acc], color=COLORS["meta"],
                s=100, marker="*", zorder=5, label="MetaTransformer")
-    ax.annotate(f"MetaTransformer\n~614M reads\n({meta_acc}% recall)",
+    ax.annotate(f"MetaTransformer\nHGR-UMGS full\n({meta_acc}% recall)",
                 xy=(meta_reads, meta_acc),
                 xytext=(meta_reads * 0.18, meta_acc - 9),
                 fontsize=8.5, ha="center", color=COLORS["meta"],

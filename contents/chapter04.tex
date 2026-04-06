@@ -189,7 +189,7 @@ We explore several techniques to improve performance on the 500K dataset. \tbref
 \section{Data Scaling Experiments}
 \label{sec:exp-scaling}
 
-Motivated by the accuracy plateau on 500K data and the comparison with MetaTransformer~\cite{Wichmann2023} (which trained on a large-scale balanced dataset estimated at $\sim$614M reads), we systematically scale training data.
+Motivated by the accuracy plateau on 500K data and the comparison with MetaTransformer~\cite{Wichmann2023} (which trained on a large-scale balanced dataset trained on the full HGR-UMGS dataset of 2,505 species with coverage factor~4), we systematically scale training data.
 
 \subsection{Experiment v8: 5M Balanced Reads}
 
@@ -335,21 +335,21 @@ As of epoch~22 (April 2026), the forward validation accuracy stands at \textbf{6
         500K (imbalanced) & 55.29\% & 25.70\% & 9 & 6.25\% \\
         5M (balanced) & 63.05\% & 37.97\% & 2 & 1.30\% \\
         50M (balanced) & \textbf{66.06\%} & \textbf{43.05\%} & \textbf{0} & $\sim$0.7\% \\
-        MetaTransformer ($\sim$614M) & $\sim$98\% & --- & --- & --- \\
+        MetaTransformer (HGR-UMGS full) & $\sim$98\% & --- & --- & --- \\
         \bottomrule
     \end{tabular}
 \end{table}
 
 The data scaling analysis reveals a clear relationship between training data volume and classification performance. The transition from 500K to 5M reads ($10\times$ increase) yields $+7.76$~pp in accuracy and $+12.27$~pp in macro F1. Meanwhile, all training technique ablations on the 500K dataset (v3--v7) produced at most $\pm0.5$~pp variation. This strongly supports the conclusion that \textbf{data volume, not model architecture or training techniques, is the primary determinant of classification accuracy} in this setting.
 
-The comparison with MetaTransformer further reinforces this finding: despite using a much larger backbone (498M vs.\ $\sim$5M parameters), our model at 5M training reads achieves only 63\% accuracy, while MetaTransformer trained on a much larger balanced dataset achieves 98.3\% genus recall (98.9\% precision) on its validation set. The gap is attributable primarily to the substantial difference in training data volume.
+The comparison with MetaTransformer further reinforces this finding: despite using a much larger backbone (498M vs.\ $\sim$5M parameters), our model at 5M training reads achieves only 63\% accuracy, while MetaTransformer, trained on the full HGR-UMGS dataset with coverage factor~4, achieves 98.3\% genus recall (98.9\% precision) on its validation set. The gap is attributable primarily to the substantial difference in training data volume.
 
-\figref{fig:data-scaling} plots genus RC TTA accuracy against training data volume on a logarithmic scale, with a log-linear fit to our three data points. The fitted curve projects that closing the gap with MetaTransformer would require substantially more than 614M reads, consistent with diminishing returns under logarithmic scaling.
+\figref{fig:data-scaling} plots genus RC TTA accuracy against training data volume on a logarithmic scale, with a log-linear fit to our three data points. The fitted curve projects that closing the gap with MetaTransformer would require training data well beyond our 50M-read scale, consistent with diminishing returns under logarithmic scaling.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.80\textwidth]{figures/data_scaling.pdf}
-    \caption{Genus RC TTA accuracy versus training data volume (log scale). Blue circles mark our results at three data scales; the red star marks MetaTransformer's reported genus recall. The dashed line is a log-linear fit to our three data points. Per-$10\times$ accuracy gains diminish from $+7.76$~pp (500K$\to$5M) to $+3.01$~pp (5M$\to$50M), consistent with sub-linear (logarithmic) scaling.}
+    \caption{Genus RC TTA accuracy versus training data volume (log scale). Blue circles mark our results at three data scales; the red star marks MetaTransformer's reported genus recall. The dashed line is a log-linear fit to our three data points. Per-$10\times$ accuracy gains diminish from $+7.76$~pp (500K$\to$5M) to $+3.01$~pp (5M$\to$50M). The MetaTransformer star marks reported genus recall (98.3\%); its x-position is based on training throughput (300K steps $\times$ batch~2,048) and is not directly comparable to our dataset-size axis.}
     \label{fig:data-scaling}
 \end{figure}
 
@@ -506,17 +506,17 @@ For the full 258M dataset training:
         Tokenization & 6-mer (pre-trained) & 12-mer (learned) \\
         Pre-training & Yes (850 genomes, MLM) & No (trained from scratch) \\
         Trainable params & 5.54M (LoRA) & $\sim$5M (all) \\
-        Training data & 5M balanced & $\sim$614M balanced (est.) \\
+        Training data & 5M balanced & HGR-UMGS full (2,505 sp., coverage 4) \\
         Genus accuracy & 63.05\% & 98.3\% recall (val) \\
         Data source & HGR-UMGS + ART & HGR-UMGS + ART (same) \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-Despite using a foundation model $100\times$ larger than MetaTransformer, our model (at 5M training reads) substantially underperforms MetaTransformer (trained on an estimated $\sim$614M reads). The key differences are:
+Despite using a foundation model $100\times$ larger than MetaTransformer, our model (at 5M training reads) substantially underperforms MetaTransformer (trained on the full HGR-UMGS dataset). The key differences are:
 
 \begin{enumerate}
-    \item \textbf{Training data volume}: MetaTransformer uses substantially more training data (estimated $\sim$120$\times$ more). Given our data scaling results (each $10\times$ data increase yields $+7$--$8$~pp), this is likely the dominant factor.
+    \item \textbf{Training data volume}: MetaTransformer uses the full HGR-UMGS dataset with coverage~4 vs. our 5M balanced reads. Given our data scaling results (each $10\times$ data increase yields $+7$--$8$~pp), this is likely the dominant factor.
     
     \item \textbf{Training paradigm}: MetaTransformer trains all parameters from scratch ($\sim$5M), while we fine-tune only 5.54M LoRA parameters of a 498M-parameter model. The foundation model's pre-trained representations, while beneficial as a starting point, may not be optimally suited for metagenomic classification without sufficient fine-tuning data.
     
@@ -602,7 +602,7 @@ Several additional observations are noteworthy:
 
     \item \textbf{Efficiency trade-off}: v11 is $\sim$145$\times$ faster at inference (750K vs.\ 5,170 reads/sec) and uses $\sim$70$\times$ less VRAM during training. For latency-sensitive applications where 54\% accuracy is acceptable, v11 represents a viable lightweight alternative.
 
-    \item \textbf{Pre-training vs.\ tokenization}: This experiment isolates pre-training while holding tokenization constant (6-mer). Since MetaTransformer---which uses 12-mer tokenization \emph{and} trains from scratch---achieves $\sim$98\% accuracy, the remaining gap between v11 (54\%) and MetaTransformer is attributable primarily to (a) training data volume ($\sim$12$\times$ more data) and (b) coarser 12-mer tokenization, rather than architectural depth per se.
+    \item \textbf{Pre-training vs.\ tokenization}: This experiment isolates pre-training while holding tokenization constant (6-mer). Since MetaTransformer---which uses 12-mer tokenization \emph{and} trains from scratch---achieves $\sim$98\% accuracy, the remaining gap between v11 (54\%) and MetaTransformer is attributable primarily to (a) substantially larger training data volume and (b) coarser 12-mer tokenization, rather than architectural depth per se.
 \end{enumerate}
 
 \figref{fig:backbone-ablation} presents a direct visual comparison of v9 and v11 across five evaluation metrics, quantifying the benefit of the pre-trained backbone across all dimensions.
