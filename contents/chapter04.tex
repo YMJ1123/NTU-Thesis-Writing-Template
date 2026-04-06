@@ -640,7 +640,32 @@ Following the data scaling analysis for genus classification, we extend the 50M 
 
 The species model is initialized from the v9 genus model's backbone weights via transfer learning (\texttt{--init\_from}), which automatically loads matching LoRA parameters while skipping the genus-specific classification head layers (120-class $\to$ 1,535-class dimension mismatch). This allows the species model to benefit from the genus-tuned backbone representations.
 
-% TODO: Update with sp_v4 actual results when available
+\subsection{Interim Results (sp\_v4, Epoch 18)}
+\label{sec:spv4-interim}
+
+sp\_v4 training has completed 18 epochs as of April 2026, reaching a forward validation accuracy of \textbf{16.37\%} (1,535 classes). Table~\ref{tab:spv4-interim} shows the progression across epochs.
+
+\begin{table}[htbp]
+    \centering
+    \caption{sp\_v4 interim training progress (species classification, 1,535 classes, 50M reads).}
+    \label{tab:spv4-interim}
+    \begin{tabular}{cccc}
+        \toprule
+        \textbf{Epoch} & \textbf{Val Acc (fwd)} & \textbf{Val F1 (macro)} & \textbf{Note} \\
+        \midrule
+        1  & 14.23\% & 12.43\% & Warm-up \\
+        6  & 15.91\% & 14.05\% & End of 1\textsuperscript{st} job \\
+        7  & 15.12\% & 13.36\% & LR reset (−0.79~pp) \\
+        12 & 15.51\% & 13.65\% & End of 2\textsuperscript{nd} job \\
+        13 & 15.85\% & 13.97\% & Resume fix applied \\
+        18 & \textbf{16.37\%} & \textbf{14.46\%} & Current best \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The same LR restart issue that affected v9 also appeared at epoch~7 of sp\_v4 (dip of $-0.79$~pp), and was resolved by the same resume-logic fix from epoch~13 onward. Training is ongoing and has not yet converged; the learning curve shows a consistent upward trend with no sign of plateau (Figure~\ref{fig:learning-curves}, right panel).
+
+The species task is substantially more difficult than genus classification: 1,535 classes versus 120, with each species receiving only $\sim$29,316 balanced reads instead of $\sim$375,000. The current 16.37\% accuracy, while seemingly low, represents meaningful discrimination given the large class count (random baseline: 0.065\%). A full evaluation including RC TTA and top-$k$ genus routing will be performed once training converges.
 
 \subsection{Toward Hierarchical Classification}
 
