@@ -1005,7 +1005,7 @@
   \begingroup
     \vspace{5em}
     \chapter*{\fontsize{18}{24}\selectfont\centerline{\ntu@acknowledgement@zh}}
-    \addcontentsline{toc}{chapter}{\ntu@acknowledgement@zh}
+    \addtocontents{toc}{\protect\contentsline{chapter}{\ntu@acknowledgement@zh}{}{chapter*.1}}
     \vspace{-4em}
   \endgroup
   \fontsize{12}{18}\selectfont
