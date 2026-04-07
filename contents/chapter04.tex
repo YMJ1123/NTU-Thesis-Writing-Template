@@ -523,7 +523,7 @@ Despite using a foundation model $100\times$ larger than MetaTransformer, our mo
     \item \textbf{Tokenization}: MetaTransformer uses 12-mer tokenization (capturing longer sequence patterns per token), while NT-v2 uses 6-mers. The coarser 12-mer tokenization may be advantageous for species discrimination, as it directly captures longer characteristic motifs.
 \end{enumerate}
 
-These findings suggest that the benefit of pre-trained genomic representations may be \emph{conditional} on having sufficient fine-tuning data to adapt them to the target task. With limited fine-tuning data, a smaller task-specific model trained from scratch on abundant data can outperform a large pre-trained model.
+These findings suggest that the benefit of pre-trained genomic representations may be \emph{conditional} on having sufficient fine-tuning data to adapt them to the target task. Even at 50M training reads, the gap with MetaTransformer remains substantial (66.06\% vs.\ 98.3\%), indicating that data volume is the primary bottleneck rather than model architecture or pre-training.
 
 However, the comparison between our approach and MetaTransformer is confounded by three simultaneous differences: backbone depth (29 vs.\ 1 layer), pre-training (yes vs.\ no), and tokenization (6-mer vs.\ 12-mer). To disentangle these factors, we conduct a controlled ablation experiment described in Section~\ref{sec:exp-shallow}.
 
