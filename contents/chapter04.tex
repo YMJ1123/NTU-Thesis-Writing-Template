@@ -513,10 +513,10 @@ For the full 258M dataset training:
     \end{tabular}
 \end{table}
 
-Despite using a foundation model $100\times$ larger than MetaTransformer, our model (at 5M training reads) substantially underperforms MetaTransformer (trained on the full HGR-UMGS dataset). The key differences are:
+Despite using a foundation model $100\times$ larger than MetaTransformer, our model (at 50M training reads) substantially underperforms MetaTransformer (trained on the full HGR-UMGS dataset). The key differences are:
 
 \begin{enumerate}
-    \item \textbf{Training data volume}: MetaTransformer uses the full HGR-UMGS dataset with coverage~4 vs. our 5M balanced reads. Given our data scaling results (each $10\times$ data increase yields $+7$--$8$~pp), this is likely the dominant factor.
+    \item \textbf{Training data volume}: MetaTransformer uses the full HGR-UMGS dataset with coverage~4 vs. our 50M balanced reads. Given our data scaling results (each $10\times$ data increase yields $+3$--$8$~pp with diminishing returns), this is likely the dominant factor.
     
     \item \textbf{Training paradigm}: MetaTransformer trains all parameters from scratch ($\sim$5M), while we fine-tune only 5.54M LoRA parameters of a 498M-parameter model. The foundation model's pre-trained representations, while beneficial as a starting point, may not be optimally suited for metagenomic classification without sufficient fine-tuning data.
     
