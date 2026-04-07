@@ -500,14 +500,14 @@ For the full 258M dataset training:
     \label{tab:metatransformer-comparison}
     \begin{tabular}{lcc}
         \toprule
-        \textbf{Aspect} & \textbf{Ours (v8)} & \textbf{MetaTransformer} \\
+        \textbf{Aspect} & \textbf{Ours (v9)} & \textbf{MetaTransformer} \\
         \midrule
         Backbone & NT-v2 (498M) & Custom Transformer ($\sim$5M) \\
         Tokenization & 6-mer (pre-trained) & 12-mer (learned) \\
         Pre-training & Yes (850 genomes, MLM) & No (trained from scratch) \\
         Trainable params & 5.54M (LoRA) & $\sim$5M (all) \\
-        Training data & 5M balanced & HGR-UMGS full (2,505 sp., coverage 4) \\
-        Genus accuracy & 63.05\% & 98.3\% recall (val) \\
+        Training data & 50M balanced & HGR-UMGS full (2,505 sp., coverage 4) \\
+        Genus accuracy & 66.06\% (RC TTA) & 98.3\% recall (val) \\
         Data source & HGR-UMGS + ART & HGR-UMGS + ART (same) \\
         \bottomrule
     \end{tabular}
