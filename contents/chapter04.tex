@@ -605,7 +605,7 @@ Several additional observations are noteworthy:
 
     \item \textbf{Efficiency trade-off}: v11 is $\sim$145$\times$ faster at inference (750K vs.\ 5,170 reads/sec) and uses $\sim$70$\times$ less VRAM during training. For latency-sensitive applications where 54\% accuracy is acceptable, v11 represents a viable lightweight alternative.
 
-    \item \textbf{Pre-training vs.\ tokenization}: This experiment isolates pre-training while holding tokenization constant (6-mer). Since MetaTransformer---which uses 12-mer tokenization \emph{and} trains from scratch---achieves $\sim$98\% accuracy, the remaining gap between v11 (54\%) and MetaTransformer is attributable primarily to (a) substantially larger training data volume and (b) coarser 12-mer tokenization, rather than architectural depth per se.
+    \item \textbf{Pre-training vs.\ tokenization}: This experiment isolates pre-training while holding tokenization constant (6-mer), yielding a +12.18~pp pre-training advantage. Section~\ref{sec:exp-tokenization} further shows that switching to overlapping 12-mer tokenization within the MetaTransformer architecture yields +31.83~pp---nearly $3\times$ larger than the pre-training effect. The remaining gap between v11 (54\%) and MetaTransformer on the full dataset is therefore attributable primarily to tokenization design, with training data volume as a secondary factor.
 \end{enumerate}
 
 \figref{fig:backbone-ablation} presents a direct visual comparison of v9 and v11 across five evaluation metrics, quantifying the benefit of the pre-trained backbone across all dimensions.
