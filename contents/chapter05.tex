@@ -34,7 +34,7 @@ This work has several limitations that should be acknowledged:
     
     \item \textbf{No streaming data loader}: Current implementation loads all training reads into memory, limiting scalability beyond $\sim$50M reads without substantial RAM ($>$50~GB).
     
-    \item \textbf{Comparison scope}: Direct comparison with MetaTransformer is confounded by differences in training data volume, making it difficult to isolate the contribution of architectural choices.
+    \item \textbf{Incomplete MetaTransformer convergence}: The MetaTransformer 12-mer ablation (Section~\ref{sec:exp-tokenization}) had not converged at the time of writing; the reported 78.83\% accuracy is a lower bound on its final performance.
 \end{enumerate}
 
 \section{Future Work}
