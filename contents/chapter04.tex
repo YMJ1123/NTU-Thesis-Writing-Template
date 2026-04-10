@@ -619,6 +619,46 @@ Several additional observations are noteworthy:
     \label{fig:backbone-ablation}
 \end{figure}
 
+\section{Tokenization Ablation: MetaTransformer at 50M Scale}
+\label{sec:exp-tokenization}
+
+The backbone ablation (Section~\ref{sec:exp-shallow}) isolates the contribution of pre-training while holding tokenization fixed at 6-mer. To separately quantify the contribution of \emph{tokenization}---the other major design difference between our approach and MetaTransformer---we train the MetaTransformer architecture~\cite{Wichmann2023} directly on the same 50M balanced dataset under three tokenization settings, using the original MetaTransformer codebase on the Taiwania-2 cluster (V100 GPU). All four configurations are evaluated on the same stratified 90/10 val split.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Tokenization ablation: NT-v2 + LoRA vs.\ MetaTransformer under three tokenization settings. All models trained on the same 50M balanced reads. NT-v2 forward-only accuracy is used for fair comparison (RC TTA is unavailable for MetaTransformer).}
+    \label{tab:tokenization-ablation}
+    \begin{tabular}{lccccc}
+        \toprule
+        \textbf{Model} & \textbf{k-mer} & \textbf{Stride} & \textbf{Tokens/read} & \textbf{Top-1 Acc} & \textbf{Macro F1} \\
+        \midrule
+        MetaTransformer & 12 & 1 & 139 & \textbf{78.83\%}$^\dagger$ & \textbf{0.6531}$^\dagger$ \\
+        NT-v2 + LoRA (v9) & 6 & 6 & 25 & 65.29\% & 0.4212 \\
+        MetaTransformer & 6 & 1 & 145 & 48.87\% & 0.1981 \\
+        MetaTransformer & 6 & 6 & 25 & 47.00\% & 0.1682 \\
+        \bottomrule
+    \end{tabular}
+    \begin{tablenotes}
+        \small
+        \item $\dagger$ Val loss still decreasing at final training step (step 280K); accuracy expected to be higher upon convergence.
+    \end{tablenotes}
+\end{table}
+
+Two independent effects can be read from Table~\ref{tab:tokenization-ablation}:
+
+\paragraph{Effect of pre-training (6-mer tokenization held constant).}
+NT-v2 + LoRA (65.29\%) outperforms MetaTransformer with the same non-overlapping 6-mer tokenization (47.00\%) by \textbf{+18.29~pp}. Holding architecture and tokenization fixed, this isolates the contribution of large-scale genomic pre-training: the NT-v2 backbone, adapted via only 5.54M LoRA parameters, provides substantially more discriminative representations than a 5M-parameter model trained from scratch on identical data.
+
+\paragraph{Effect of tokenization (MetaTransformer architecture held constant).}
+Switching from non-overlapping 6-mer to overlapping 12-mer within the same MetaTransformer architecture yields \textbf{+31.83~pp} (47.00\% $\to$ 78.83\%, not yet converged). Even before convergence, the tokenization effect exceeds the pre-training advantage by nearly $2\times$. Two sub-factors drive this gap:
+\begin{enumerate}
+    \item \textbf{Token discriminability}: A 12-mer spans 12 nucleotides vs.\ 6 for a 6-mer. Longer tokens capture more taxonomically specific sequence motifs---hexamers are shared across many distantly related taxa, while 12-mers increasingly unique to individual lineages.
+    \item \textbf{Token count}: Non-overlapping 12-mer (stride$=$12) yields only 12 tokens per 150~bp read (40.66\%), discarding most positional information. Overlapping 12-mer (stride$=$1) yields 139 tokens (78.83\%), preserving full sequence context. The 38~pp gap between these two settings confirms that token density, not merely k-mer length, is critical.
+\end{enumerate}
+
+\paragraph{Implication for NT-v2.}
+NT-v2 is constrained to 6-mer tokenization by its pre-training design, which targets general-purpose genomic sequence modelling rather than taxonomic discrimination. These results indicate that the primary limitation of our GFM-based approach is the tokenization, not the backbone capacity or the LoRA adaptation strategy. A genomic foundation model pre-trained with overlapping 12-mer tokenization would combine the discriminative power of longer k-mers with the representational quality of large-scale pre-training. No such publicly available model currently exists.
+
 \section{Species-Level Classification at Scale}
 \label{sec:exp-species-scaled}
 
