@@ -68,7 +68,12 @@ The effectiveness of this approach scales directly with genus-level accuracy: at
 
 \subsection{Tokenization Study}
 
-The NT-v2 foundation model constrains tokenization to 6-mers. MetaTransformer's use of 12-mers suggests that longer tokens may be advantageous for taxonomic classification, as they directly capture longer characteristic motifs. A systematic comparison of tokenization strategies---including 6-mer, 12-mer, Byte Pair Encoding (BPE), and character-level encoding---under controlled backbone architectures would clarify whether tokenization or encoder depth is the more impactful design choice.
+The controlled ablation (Section~\ref{sec:exp-tokenization}) confirms that overlapping 12-mer tokenization is the dominant design factor at 50M scale (+31.83~pp), but the MetaTransformer 12-mer result has not yet converged. Remaining open questions include:
+\begin{itemize}
+    \item What is the final converged accuracy of MetaTransformer with overlapping 12-mer? The val loss was still decreasing at the final training step, suggesting further gains.
+    \item Does RC TTA provide an equivalent benefit (+1~pp) for a 12-mer model, and if so, what is the combined 12-mer + RC TTA accuracy ceiling?
+    \item Would BPE tokenization---which learns variable-length tokens from data---provide additional benefit by discovering taxonomically informative motifs of varying length?
+\end{itemize}
 
 \subsection{Architectural Improvements}
 
