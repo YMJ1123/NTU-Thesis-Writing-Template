@@ -41,12 +41,12 @@ This work has several limitations that should be acknowledged:
 
 Several promising directions emerge from this work:
 
-\subsection{Backbone Ablation and Architectural Insights}
+\subsection{Domain-Specific Pre-trained Foundation Models}
 
-The shallow Transformer ablation (Section~\ref{sec:exp-shallow}) directly addresses whether the 29-layer pre-trained backbone justifies its computational cost over a simpler architecture. The results of this experiment will inform the architectural direction of the system:
+The tokenization ablation (Section~\ref{sec:exp-tokenization}) establishes that overlapping 12-mer tokenization is more beneficial than 6-mer pre-training for this task. The ideal direction is therefore a foundation model pre-trained with overlapping 12-mer (or similarly long) tokenization on large microbial genome collections---no such publicly available model currently exists. Promising avenues include:
 \begin{itemize}
-    \item If the pre-trained backbone significantly outperforms the shallow variant, future work should explore \emph{deeper} or \emph{domain-specifically pre-trained} backbones, such as models trained on the GTDB database~\cite{Parks2022} ($>$400,000 microbial genomes).
-    \item If the shallow variant approaches the pre-trained backbone's performance, the practical recommendation shifts toward lightweight, task-specific models with better tokenization (e.g., 12-mers), trading pre-training for efficiency.
+    \item Pre-training a transformer on the GTDB database~\cite{Parks2022} ($>$400,000 microbial genomes) with 12-mer tokenization, which would combine the discriminative power of long k-mers with the representational quality of large-scale pre-training.
+    \item Fine-tuning NT-v2 with a learned 12-mer projection layer to bridge the tokenization gap without full re-pre-training, though this approach may be limited by the model's pre-trained 6-mer positional encodings.
 \end{itemize}
 
 \subsection{Full-Scale Data Training}
