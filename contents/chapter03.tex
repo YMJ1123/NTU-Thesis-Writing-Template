@@ -98,7 +98,49 @@ We employ the \texttt{nucleotide-transformer-v2-500m-multi-species} model as the
 
 \subsection{Tokenization}
 
-The NT-v2 tokenizer segments input sequences into non-overlapping 6-mers. For a 150~bp read, this produces approximately 25 tokens (plus special tokens such as \texttt{[CLS]} and \texttt{[EOS]}). The maximum sequence length is set to 128 tokens, which accommodates reads up to $\sim$768~bp with padding.
+\paragraph{Stride and overlap.}
+A $k$-mer tokenizer slides a window of length $k$ along a DNA sequence, converting each window into a vocabulary token. The \emph{stride} $s$ controls the step size between consecutive windows:
+
+\begin{itemize}
+    \item \textbf{Non-overlapping} ($s = k$): each nucleotide belongs to exactly one token.
+          A 150~bp read yields $\lfloor 150 / k \rfloor$ tokens.
+    \item \textbf{Overlapping} ($s = 1$): every nucleotide position starts a new token.
+          A 150~bp read yields $150 - k + 1$ tokens.
+\end{itemize}
+
+For example, a 12-nucleotide sequence \texttt{AGTCGATTCGCA} tokenized with $k{=}6$ gives:
+
+\begin{center}
+\begin{tabular}{ll}
+    \toprule
+    Stride & Tokens \\
+    \midrule
+    $s{=}6$ (non-overlapping) & \texttt{AGTCGA} \quad \texttt{TTCGCA} \quad (2 tokens) \\
+    $s{=}1$ (overlapping)     & \texttt{AGTCGA}, \texttt{GTCGAT}, \texttt{TCGATC}, \ldots \quad (7 tokens) \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+Table~\ref{tab:tokenization-counts} summarises the resulting token counts for a 150~bp read under the configurations used in this thesis.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Token counts for a 150~bp read under different $k$-mer tokenization settings.}
+    \label{tab:tokenization-counts}
+    \begin{tabular}{cccc}
+        \toprule
+        $k$ & Stride $s$ & Overlap & Tokens/read \\
+        \midrule
+        6  & 6 & Non-overlapping & 25 \\
+        6  & 1 & Overlapping     & 145 \\
+        12 & 12 & Non-overlapping & 12 \\
+        12 & 1  & Overlapping     & 139 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\paragraph{NT-v2 tokenization.}
+The NT-v2 tokenizer uses non-overlapping 6-mers ($k{=}6$, $s{=}6$), the setting used during its pre-training. For a 150~bp read this produces 25 tokens (plus \texttt{[CLS]} and \texttt{[EOS]} special tokens). The maximum sequence length is set to 128 tokens, accommodating reads up to $\sim$768~bp with padding. Section~\ref{sec:exp-tokenization} presents a controlled ablation that quantifies the effect of different tokenization settings on classification accuracy.
 
 \subsection{Encoder Architecture}
 
