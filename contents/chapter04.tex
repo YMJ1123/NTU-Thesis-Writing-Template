@@ -630,16 +630,12 @@ The backbone ablation (Section~\ref{sec:exp-shallow}) isolates the contribution 
         \toprule
         \textbf{Model} & \textbf{k-mer} & \textbf{Stride} & \textbf{Tokens/read} & \textbf{Top-1 Acc} & \textbf{Macro F1} \\
         \midrule
-        MetaTransformer & 12 & 1 & 139 & \textbf{78.83\%}$^\dagger$ & \textbf{0.6531}$^\dagger$ \\
+        MetaTransformer & 12 & 1 & 139 & \textbf{78.83\%} & \textbf{0.6531} \\
         NT-v2 + LoRA (v9) & 6 & 6 & 25 & 65.29\% & 0.4212 \\
         MetaTransformer & 6 & 1 & 145 & 48.87\% & 0.1981 \\
         MetaTransformer & 6 & 6 & 25 & 47.00\% & 0.1682 \\
         \bottomrule
     \end{tabular}
-    \begin{tablenotes}
-        \small
-        \item $\dagger$ Val loss still decreasing at final training step (step 280K); accuracy expected to be higher upon convergence.
-    \end{tablenotes}
 \end{table}
 
 Two independent effects can be read from Table~\ref{tab:tokenization-ablation}:
