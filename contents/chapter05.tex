@@ -68,11 +68,11 @@ The effectiveness of this approach scales directly with genus-level accuracy: at
 
 \subsection{Tokenization Study}
 
-The controlled ablation (Section~\ref{sec:exp-tokenization}) confirms that overlapping 12-mer tokenization is the dominant design factor at 50M scale (+31.83~pp), but the MetaTransformer 12-mer result has not yet converged. Remaining open questions include:
+The controlled ablation (Section~\ref{sec:exp-tokenization}) confirms that overlapping 12-mer tokenization is the dominant design factor at 50M scale (+31.83~pp), and the MetaTransformer 12-mer result (78.83\%) is the confirmed performance ceiling of that architecture. Remaining open questions include:
 \begin{itemize}
-    \item What is the final converged accuracy of MetaTransformer with overlapping 12-mer? The val loss was still decreasing at the final training step, suggesting further gains.
-    \item Does RC TTA provide an equivalent benefit (+1~pp) for a 12-mer model, and if so, what is the combined 12-mer + RC TTA accuracy ceiling?
+    \item Does RC TTA provide an equivalent benefit (+1~pp) for a 12-mer model, and if so, what is the combined 12-mer + RC TTA accuracy?
     \item Would BPE tokenization---which learns variable-length tokens from data---provide additional benefit by discovering taxonomically informative motifs of varying length?
+    \item Does the architectural capacity ceiling (78.83\% for 5M params) improve with a larger model? The overfitting pattern suggests model size, not data, is the limiting factor once 12-mer tokenization is adopted.
 \end{itemize}
 
 \subsection{Architectural Improvements}
