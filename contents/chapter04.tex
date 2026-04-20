@@ -620,41 +620,70 @@ Several additional observations are noteworthy:
 \section{Tokenization Ablation: MetaTransformer at 50M Scale}
 \label{sec:exp-tokenization}
 
-The backbone ablation (Section~\ref{sec:exp-shallow}) isolates the contribution of pre-training while holding tokenization fixed at 6-mer. To separately quantify the contribution of \emph{tokenization}---the other major design difference between our approach and MetaTransformer---we train the MetaTransformer architecture~\cite{Wichmann2023} directly on the same 50M balanced dataset under three tokenization settings, using the original MetaTransformer codebase on the Taiwania-2 cluster (V100 GPU). All four configurations are evaluated on the same stratified 90/10 val split.
+The backbone ablation (Section~\ref{sec:exp-shallow}) isolates the contribution of pre-training while holding tokenization fixed at 6-mer. To separately quantify the contribution of \emph{tokenization}---the other major design difference between our approach and MetaTransformer---we train the MetaTransformer architecture~\cite{Wichmann2023} directly on the same 50M balanced dataset under six tokenization configurations ($k \in \{6, 12, 13\}$, stride $\in \{1, k\}$), using the original MetaTransformer codebase on the Taiwania-2 cluster (V100 32~GB GPU). All configurations are evaluated on the same stratified 90/10 val split (5M reads). The 13-mer model uses \textit{embed\_dim}~$=$~64 to fit within V100 memory, consistent with the original MetaTransformer paper's 13-mer configuration~\cite{Wichmann2023}.
 
 \begin{table}[htbp]
     \centering
-    \caption{Tokenization ablation: NT-v2 + LoRA vs.\ MetaTransformer under three tokenization settings. All models trained on the same 50M balanced reads. NT-v2 forward-only accuracy is used for fair comparison (RC TTA is unavailable for MetaTransformer).}
+    \caption{Tokenization ablation (genus-level, 120 classes): NT-v2 + LoRA vs.\ MetaTransformer under six tokenization configurations. All MetaTransformer models are trained from scratch on 50M balanced reads. RC TTA is unavailable for MetaTransformer.}
     \label{tab:tokenization-ablation}
-    \begin{tabular}{lccccc}
+    \begin{tabular}{llccc}
         \toprule
-        \textbf{Model} & \textbf{k-mer} & \textbf{Stride} & \textbf{Tokens/read} & \textbf{Top-1 Acc} & \textbf{Macro F1} \\
+        \textbf{Model} & \textbf{Tokenization} & \textbf{Tokens/read} & \textbf{Top-1 Acc} & \textbf{Macro F1} \\
         \midrule
-        MetaTransformer & 12 & 1 & 139 & \textbf{78.83\%} & \textbf{0.6531} \\
-        NT-v2 + LoRA (v9) & 6 & 6 & 25 & 65.29\% & 0.4212 \\
-        MetaTransformer & 6 & 1 & 145 & 48.87\% & 0.1981 \\
-        MetaTransformer & 6 & 6 & 25 & 47.00\% & 0.1682 \\
+        MetaTransformer & 13-mer, stride=1  & 138 & \textbf{87.42\%} & \textbf{0.7936} \\
+        MetaTransformer & 12-mer, stride=1  & 139 & 78.83\% & 0.6531 \\
+        NT-v2 + LoRA (v9) & 6-mer, stride=6 & 25  & 66.06\%$^\dagger$ & --- \\
+        NT-v2 + LoRA (v9) & 6-mer, stride=6 & 25  & 65.29\% & 0.4212 \\
+        MetaTransformer & 6-mer, stride=1   & 145 & 48.87\% & 0.1981 \\
+        MetaTransformer & 6-mer, stride=6   & 25  & 47.00\% & 0.1682 \\
+        MetaTransformer & 12-mer, stride=12 & 12  & 40.66\% & 0.0663 \\
+        MetaTransformer & 13-mer, stride=13 & 11  & 27.30\% & 0.0182 \\
+        \bottomrule
+    \end{tabular}
+    \begin{tablenotes}
+        \small
+        \item $\dagger$ RC TTA result (+0.77~pp over forward-only 65.29\%); MetaTransformer results are forward-only.
+    \end{tablenotes}
+\end{table}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Tokenization ablation (species-level, 1,535 classes): MetaTransformer under six tokenization configurations, trained on the same 50M balanced reads.}
+    \label{tab:tokenization-ablation-species}
+    \begin{tabular}{llccc}
+        \toprule
+        \textbf{Model} & \textbf{Tokenization} & \textbf{Tokens/read} & \textbf{Top-1 Acc} & \textbf{Macro F1} \\
+        \midrule
+        MetaTransformer & 13-mer, stride=1  & 138 & \textbf{49.62\%} & \textbf{0.4950} \\
+        MetaTransformer & 12-mer, stride=1  & 139 & 16.79\% & 0.1439 \\
+        MetaTransformer & 6-mer, stride=1   & 145 &  9.13\% & 0.0719 \\
+        MetaTransformer & 6-mer, stride=6   & 25  &  6.44\% & 0.0470 \\
+        MetaTransformer & 12-mer, stride=12 & 12  &  0.64\% & 0.0023 \\
+        MetaTransformer & 13-mer, stride=13 & 11  &  0.51\% & 0.0026 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-Two independent effects can be read from Table~\ref{tab:tokenization-ablation}:
+Three independent effects can be read from Tables~\ref{tab:tokenization-ablation}--\ref{tab:tokenization-ablation-species}:
 
 \paragraph{Effect of pre-training (6-mer tokenization held constant).}
-NT-v2 + LoRA (65.29\%) outperforms MetaTransformer with the same non-overlapping 6-mer tokenization (47.00\%) by \textbf{+18.29~pp}. Holding architecture and tokenization fixed, this isolates the contribution of large-scale genomic pre-training: the NT-v2 backbone, adapted via only 5.54M LoRA parameters, provides substantially more discriminative representations than a 5M-parameter model trained from scratch on identical data.
+NT-v2 + LoRA (65.29\% forward) outperforms MetaTransformer with the same non-overlapping 6-mer tokenization (47.00\%) by \textbf{+18.29~pp}. Holding architecture and tokenization fixed, this isolates the contribution of large-scale genomic pre-training: the NT-v2 backbone, adapted via only 5.54M LoRA parameters, provides substantially more discriminative representations than a 5M-parameter model trained from scratch on identical data.
 
 \paragraph{Effect of tokenization (MetaTransformer architecture held constant).}
-Switching from non-overlapping 6-mer to overlapping 12-mer within the same MetaTransformer architecture yields \textbf{+31.83~pp} (47.00\% $\to$ 78.83\%), representing nearly $2\times$ the pre-training advantage. Two sub-factors drive this gap:
+Tokenization design has a far larger effect than pre-training. Two sub-effects compound:
 \begin{enumerate}
-    \item \textbf{Token discriminability}: A 12-mer spans 12 nucleotides vs.\ 6 for a 6-mer. Longer tokens capture more taxonomically specific sequence motifs---hexamers are shared across many distantly related taxa, while 12-mers are increasingly unique to individual lineages.
-    \item \textbf{Token count}: Non-overlapping 12-mer (stride$=$12) yields only 12 tokens per 150~bp read (40.66\%), discarding most positional information. Overlapping 12-mer (stride$=$1) yields 139 tokens (78.83\%), preserving full sequence context. The 38~pp gap between these two settings confirms that token density, not merely k-mer length, is critical.
+    \item \textbf{Stride (overlapping vs.\ non-overlapping)}: Across all $k$ values, overlapping stride$=$1 dominates non-overlapping stride$=k$. The gap widens dramatically with $k$: $+1.87$~pp for $k=6$, $+38.17$~pp for $k=12$, and $+60.12$~pp for $k=13$. Non-overlapping tokenization with large $k$ reduces each 150~bp read to as few as 11 tokens, discarding most sequence context.
+    \item \textbf{k-mer length (overlapping only)}: Among stride$=$1 configurations, longer $k$ yields monotonically higher accuracy: 6-mer (48.87\%) $<$ 12-mer (78.83\%) $<$ 13-mer (87.42\%) at genus level, and 9.13\% $<$ 16.79\% $<$ 49.62\% at species level. Longer tokens are taxonomically more specific---hexamers are shared across distant taxa, while 12-mers and 13-mers increasingly identify individual lineages.
 \end{enumerate}
 
-\paragraph{Convergence and capacity ceiling.}
-To determine whether 78.83\% is the true performance ceiling, training was extended into a second epoch. Train loss dropped sharply from 0.764 to 0.119, while validation loss \emph{worsened} from 1.203 to 2.288---a clear sign of overfitting. This result has two implications. First, 78.83\% is confirmed as the final, converged accuracy rather than a lower bound. Second, the rapid overfitting in the second epoch indicates that the 50M-read dataset is large enough to saturate the learning capacity of the 5M-parameter, single-encoder MetaTransformer within a single epoch. The model successfully memorises training patterns but cannot generalise further. A larger model with more parameters would likely push this ceiling higher.
+\paragraph{Tokenization surpasses pre-training: MetaTransformer 13-mer vs.\ NT-v2.}
+MetaTransformer with overlapping 13-mer tokenization, trained \emph{from scratch} on 45M reads, achieves \textbf{87.42\%} genus Top-1 accuracy---\textbf{+21.36~pp} above NT-v2 + LoRA with RC TTA (66.06\%), despite having ${\sim}100\times$ fewer parameters and no pre-training. At species level, MT 13-mer stride$=$1 reaches \textbf{49.62\%} (1,535 classes) without any hierarchical routing. This result demonstrates that task-specific tokenization design is a more decisive factor than pre-trained prior knowledge for metagenomic read classification.
+
+\paragraph{Convergence and capacity ceiling (12-mer).}
+To determine whether 78.83\% is the true ceiling for the 12-mer model, training was extended into a second epoch. Train loss dropped sharply from 0.764 to 0.119, while validation loss \emph{worsened} from 1.203 to 2.288---immediate overfitting. The 50M-read dataset saturates the 5M-parameter single-encoder MetaTransformer within one epoch.
 
 \paragraph{Implication for NT-v2.}
-NT-v2 is constrained to 6-mer tokenization by its pre-training design, which targets general-purpose genomic sequence modelling rather than taxonomic discrimination. These results indicate that the primary limitation of our GFM-based approach is the tokenization, not the backbone capacity or the LoRA adaptation strategy. A genomic foundation model pre-trained with overlapping 12-mer tokenization would combine the discriminative power of longer k-mers with the representational quality of large-scale pre-training. No such publicly available model currently exists.
+NT-v2 is constrained to 6-mer tokenization by its pre-training design. The ablation results show that this constraint is the primary limitation of our approach: switching to overlapping 13-mer tokenization on the same architecture and data yields a $+21.36$~pp improvement without any pre-training. A genomic foundation model pre-trained with overlapping large-$k$ tokenization on diverse microbial genomes would combine the discriminative power of longer k-mers with the representational quality of large-scale pre-training. No such model currently exists publicly.
 
 \section{Species-Level Classification at Scale}
 \label{sec:exp-species-scaled}
