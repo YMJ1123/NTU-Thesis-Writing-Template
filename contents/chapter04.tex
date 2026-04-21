@@ -309,9 +309,7 @@ Building on v8, we scale training data by another $10\times$ to 50M balanced rea
     \end{tabular}
 \end{table}
 
-Scaling from 5M to 50M balanced reads yields a further $+3.01$~pp improvement in RC TTA accuracy (63.05\% $\to$ 66.06\%$^\ddagger$). Critically, the number of F1$=$0 classes drops to \textbf{zero}, indicating that all 120 genera are now correctly classified in at least some reads.
-
-\emph{Note on table footnotes:} $^\dagger$~forward accuracy from the best checkpoint to date (epoch~22, still improving as of April 2026); $^\ddagger$~from the full evaluation run performed at epoch~10 (RC TTA re-evaluation pending for the epoch~22 checkpoint).
+Scaling from 5M to 50M balanced reads yields a further $+4.02$~pp improvement in RC TTA accuracy (63.05\% $\to$ 67.07\%). Critically, the number of F1$=$0 classes drops to \textbf{zero}, indicating that all 120 genera are now correctly classified in at least some reads.
 
 The marginal return diminishes relative to the previous $10\times$ scaling step: 500K$\to$5M yielded $+7.76$~pp while 5M$\to$50M yields $\geq+3.01$~pp for the same multiplicative data increase, consistent with a logarithmic scaling relationship. This sub-linear trend is expected under log-linear scaling laws and suggests that continued data scaling alone will not close the remaining gap with MetaTransformer.
 
