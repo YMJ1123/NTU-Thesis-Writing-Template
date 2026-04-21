@@ -665,7 +665,7 @@ The backbone ablation (Section~\ref{sec:exp-shallow}) isolates the contribution 
 Three independent effects can be read from Tables~\ref{tab:tokenization-ablation}--\ref{tab:tokenization-ablation-species}:
 
 \paragraph{Effect of pre-training (6-mer tokenization held constant).}
-NT-v2 + LoRA (65.29\% forward) outperforms MetaTransformer with the same non-overlapping 6-mer tokenization (47.00\%) by \textbf{+18.29~pp}. Holding architecture and tokenization fixed, this isolates the contribution of large-scale genomic pre-training: the NT-v2 backbone, adapted via only 5.54M LoRA parameters, provides substantially more discriminative representations than a 5M-parameter model trained from scratch on identical data.
+NT-v2 + LoRA (66.29\% forward) outperforms MetaTransformer with the same non-overlapping 6-mer tokenization (47.00\%) by \textbf{+19.29~pp}. Holding architecture and tokenization fixed, this isolates the contribution of large-scale genomic pre-training: the NT-v2 backbone, adapted via only 5.54M LoRA parameters, provides substantially more discriminative representations than a 5M-parameter model trained from scratch on identical data.
 
 \paragraph{Effect of tokenization (MetaTransformer architecture held constant).}
 Tokenization design has a far larger effect than pre-training. Two sub-effects compound:
