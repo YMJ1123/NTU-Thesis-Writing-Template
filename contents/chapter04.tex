@@ -580,13 +580,13 @@ Based on MetaTransformer's success with a similarly shallow architecture (albeit
         \toprule
         \textbf{Metric} & \textbf{v9 (NT-v2 + LoRA)} & \textbf{v11 (Shallow)} & \textbf{$\Delta$} \\
         \midrule
-        Micro Accuracy (fwd) & 65.29\% & 53.80\% & $-11.49$~pp \\
-        Micro Accuracy (RC TTA) & \textbf{66.06\%} & 53.88\% & $-12.18$~pp \\
-        Balanced Accuracy & 37.52\% & 22.24\% & $-15.28$~pp \\
-        F1 (macro) & 43.05\% & 25.78\% & $-17.27$~pp \\
+        Micro Accuracy (fwd) & 66.29\% & 53.80\% & $-12.49$~pp \\
+        Micro Accuracy (RC TTA) & \textbf{67.07\%} & 53.88\% & $-13.19$~pp \\
+        Balanced Accuracy & 39.91\% & 22.24\% & $-17.67$~pp \\
+        F1 (macro) & 44.82\% & 25.78\% & $-19.04$~pp \\
         F1$=$0 classes & 0 & 3 & $+3$ \\
-        RC TTA gain & $+0.77$~pp & $+0.08$~pp & --- \\
-        Best epoch & 10 / 30 & 15 / 15 & --- \\
+        RC TTA gain & $+0.78$~pp & $+0.08$~pp & --- \\
+        Best epoch & 30 / 30 & 15 / 15 & --- \\
         Inference throughput & $\sim$5,170 r/s & $\sim$750,000 r/s & $\approx$145$\times$ \\
         VRAM (training) & $\sim$5 GB & $\sim$0.07 GB & --- \\
         \bottomrule
