@@ -30,7 +30,7 @@ This work has several limitations that should be acknowledged:
     
     \item \textbf{Single read length}: All experiments use 150~bp reads. Performance at other read lengths (e.g., 250~bp for Illumina MiSeq, or long reads from Oxford Nanopore / PacBio) has not been evaluated.
     
-    \item \textbf{Incomplete data scaling}: Training on the full 258M dataset was not completed at the time of writing, leaving the upper bound of the scaling trajectory unconfirmed. The v9 (50M) experiment is complete, achieving 66.06\% RC TTA accuracy.
+    \item \textbf{Incomplete data scaling}: Training on the full 258M dataset was not completed at the time of writing, leaving the upper bound of the scaling trajectory unconfirmed. The v9 (50M) experiment is complete, achieving 67.07\% RC TTA accuracy.
     
     \item \textbf{No streaming data loader}: Current implementation loads all training reads into memory, limiting scalability beyond $\sim$50M reads without substantial RAM ($>$50~GB).
     
