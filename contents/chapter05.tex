@@ -68,7 +68,7 @@ The effectiveness of this approach scales directly with genus-level accuracy: at
 
 \subsection{Tokenization Study}
 
-The controlled ablation (Section~\ref{sec:exp-tokenization}) establishes overlapping large-$k$ tokenization as the dominant design factor. MetaTransformer 13-mer stride$=$1 achieves 87.42\% genus and 49.62\% species accuracy trained from scratch, surpassing NT-v2 + LoRA by 21.36~pp. Remaining open questions include:
+The controlled ablation (Section~\ref{sec:exp-tokenization}) establishes overlapping large-$k$ tokenization as the dominant design factor. MetaTransformer 13-mer stride$=$1 achieves 87.42\% genus and 49.62\% species accuracy trained from scratch, surpassing NT-v2 + LoRA by 20.35~pp. Remaining open questions include:
 \begin{itemize}
     \item Does RC TTA provide an equivalent benefit ($\sim+1$~pp) for 12-mer or 13-mer models, and what is the combined accuracy ceiling with TTA?
     \item Is $k=13$ the optimum, or do larger $k$ values (e.g.\ $k=15$ or $k=21$) continue to improve? The monotonic trend across $k \in \{6, 12, 13\}$ suggests further gains may be possible.
