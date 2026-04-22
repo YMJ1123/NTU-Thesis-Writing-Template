@@ -832,4 +832,6 @@ The experimental results lead to several key conclusions:
     \item \textbf{Pre-trained backbone provides a substantial advantage}: The controlled ablation (v9 vs.\ v11) shows a 12.18~pp accuracy gap in favor of the 29-layer pre-trained NT-v2 backbone over a single-layer randomly initialized Transformer at the same 50M data scale, confirming that pre-training on 850 reference genomes provides representations that meaningfully improve read discrimination.
 
     \item \textbf{Hardware is sufficient}: Current NVIDIA H100 hardware is adequately provisioned; the operational bottleneck is the SLURM time limit rather than computational resources.
+
+    \item \textbf{Per-genus classifiers reduce long-tail failures}: Dedicated per-genus species classifiers reduce F1$=$0 species from 804 to 362--401, confirming that genus-scoped classification provides a more favourable learning signal for rare taxa.  However, overall Top-1 accuracy requires either higher genus accuracy ($>$80\%) or stronger per-genus models (50M-scale training with LoRA) to surpass the flat sp\_v4 baseline.
 \end{enumerate}
