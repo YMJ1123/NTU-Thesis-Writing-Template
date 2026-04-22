@@ -781,6 +781,41 @@ Masking logits to the \emph{true} genus raises Top-1 to 27.9\% ($+$11.5~pp) and 
 \paragraph{Long-tail species remain the hardest challenge.}
 Even under oracle routing, 632 of 1,535 species retain F1$=$0 (compared to 804 under the flat baseline). The majority of these species have insufficient per-species training examples to acquire discriminative representations at the current scale; the full 50M-read evaluation is expected to reduce, but not eliminate, this long-tail problem.
 
+\subsection{Per-Genus Species Classifiers (100K-read Subset)}
+\label{sec:spv4-per-genus}
+
+As a complementary architecture to the single flat sp\_v4 classifier, we trained 81 dedicated per-genus species classifiers using a frozen NT-v2 backbone and a lightweight attention-pooling head (Section~\ref{sec:method-species-eval}).  Each classifier is responsible only for discriminating among the species within its assigned genus (average 12.8 species per genus); 39 single-species genera require no classifier and always return the unique species deterministically.  Training used a 5M-read balanced subset (approximately 3,260 reads per species) with backbone weights frozen throughout.
+
+The complete 100K-read evaluation compares all six modes: four routing modes applied to the single sp\_v4 model (Table~\ref{tab:hierarchical-prelim}) and two per-genus pipeline modes.  All experiments use the same v9 genus model (epoch~30, 65.7\% subset accuracy) for genus assignment.  Table~\ref{tab:per-genus-eval} summarises the results.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Complete hierarchical species evaluation on 100K-read subset.  Flat, Hard Top-5, Soft, and Oracle modes use sp\_v4 (ep26); Per-genus modes use dedicated per-genus NT-v2 classifiers trained on the 5M balanced subset.}
+    \label{tab:per-genus-eval}
+    \begin{tabular}{llcccc}
+        \toprule
+        \textbf{Model} & \textbf{Mode} & \textbf{Top-1} & \textbf{Top-5} & \textbf{Top-10} & \textbf{F1 (macro)} \\
+        \midrule
+        \multirow{4}{*}{sp\_v4 (ep26)} & Flat (baseline)     & 16.4\% & 36.7\% & 46.7\% & 0.137 \\
+                                        & Hard Top-5 routing  & 16.5\% & 36.4\% & 46.1\% & 0.139 \\
+                                        & Soft routing        & 16.2\% & 36.6\% & 46.2\% & 0.135 \\
+                                        & Oracle (true genus) & 27.9\% & 55.4\% & 65.3\% & 0.256 \\
+        \midrule
+        \multirow{2}{*}{Per-genus (5M)} & Predicted genus (v9) & 11.2\% & 26.0\% & 32.9\% & 0.109 \\
+                                         & Oracle genus (true)  & 21.8\% & 48.7\% & 60.2\% & 0.204 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\paragraph{Genus routing errors dominate the per-genus pipeline.}
+With predicted genus routing (v9, 65.7\% accuracy), the per-genus pipeline achieves only 11.2\% Top-1---5.2~pp \emph{below} the flat sp\_v4 baseline.  The 34.3\% genus error rate is more damaging here than in the routing modes applied to sp\_v4 logits: when the wrong genus model is selected, every read in that genus is classified against the wrong species set, producing near-zero accuracy for those reads.  By contrast, sp\_v4 Hard Top-5 routing retains some partial signal from the flat logits even when the top-1 genus is wrong.
+
+\paragraph{Per-genus oracle underperforms sp\_v4 oracle.}
+Even under perfect genus assignment, per-genus oracle achieves 21.8\%---6.1~pp below sp\_v4 oracle (27.9\%).  This gap reflects the weaker individual per-genus classifiers: each was trained on $\sim$3,260 reads per species (compared to $\sim$32,600 for sp\_v4) with a frozen backbone rather than LoRA fine-tuning.  The per-genus approach would likely exceed the sp\_v4 oracle if each classifier received 50M-scale training with an adapted backbone.
+
+\paragraph{Long-tail coverage improves substantially.}
+Despite the lower Top-1 accuracy, the per-genus architecture reduces the number of species with F1$=$0 from 804 (flat sp\_v4) to 401 under predicted routing and 362 under oracle routing.  This suggests that the per-genus framing---where each rare species competes only within its genus rather than against all 1,535 classes---provides a more favourable learning signal for rare species, even at reduced training scale.
+
 \section{Summary of Findings}
 
 The experimental results lead to several key conclusions:
