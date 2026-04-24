@@ -59,12 +59,7 @@ The most immediate next step is completing training on the full 258M-read datase
 
 \subsection{Species-Level Scaling and Hierarchical Classification}
 
-Species classification at the 500K scale achieved only $\sim$8\% accuracy (1,535 classes), with oracle-genus evaluation capping at $\sim$21\%. Training with 50M balanced reads (sp\_v4, Section~\ref{sec:exp-species-scaled}) is expected to dramatically improve species-level performance. Upon completion, the two-stage hierarchical classification pipeline can be evaluated:
-\begin{enumerate}
-    \item Genus prediction (using the v9 model) to generate a candidate species set.
-    \item Species classification within the candidate set (using the sp\_v4 model).
-\end{enumerate}
-The effectiveness of this approach scales directly with genus-level accuracy: at 67.07\% RC TTA accuracy (v9), top-5 routing covers the correct genus in $\sim$90.0\% of reads (v9 Top-5 accuracy), providing a substantially reduced candidate set for species discrimination.
+Species classification at the 500K scale achieved only $\sim$8\% accuracy (1,535 classes), with oracle-genus evaluation capping at $\sim$21\%. Scaling to 50M balanced reads (sp\_v4, Section~\ref{sec:spv4-final}) lifted forward-only Top-1 accuracy to 17.55\%, with Top-5 reaching 38.19\% and only 191 of 1,535 species retaining F1$=$0. The hierarchical classification pipeline---genus prediction via the v9 model, followed by species classification within the candidate set---was validated on a 100K held-out subset (Section~\ref{sec:spv4-hierarchical-prelim}): oracle-genus routing raised Top-1 to 27.9\% ($+$11.5~pp), while top-$k$ and soft routing yielded negligible gains under the current 65.7\%--67\% genus accuracy regime. Meaningful real routing improvement therefore requires pushing genus accuracy substantially higher, which in turn motivates the tokenization study below. Full 5M-scale evaluation of the routing modes was constrained by the 200~GB per-job memory ceiling on TWCC and is deferred to a streaming-metrics implementation of the evaluation pipeline.
 
 \subsection{Tokenization Study}
 
