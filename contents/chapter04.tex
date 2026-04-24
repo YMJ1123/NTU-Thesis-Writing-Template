@@ -762,11 +762,11 @@ The species task is substantially more difficult than genus classification: 1,53
 \paragraph{Extended evaluation modes.}
 Full-scale evaluation of RC~TTA, oracle-genus, and top-$k$ genus routing on the 5M validation set was attempted but exceeded the 200~GB memory ceiling on the TWCC \texttt{normal} partition: the current \texttt{evaluate.py} retains all 5M $\times$ 1{,}535 logit and probability arrays ($\sim$60~GB of \texttt{float32} per pass) simultaneously when combining modes, which a streaming implementation could avoid. Because the genus-level RC~TTA benefit has already been quantified (+0.78~pp, Section~\ref{sec:exp-v9}) and the hierarchical routing analysis on the 100K subset (Section~\ref{sec:spv4-hierarchical-prelim}) already captures the key qualitative findings---oracle-genus gain of $+11.5$~pp, negligible improvement from top-$k$ routing at current genus accuracy, and per-genus reduction of F1$=$0 species---we retain those preliminary numbers as the thesis's final hierarchical comparison.
 
-\subsection{Toward Hierarchical Classification}
+\subsection{Hierarchical Classification Pipeline}
 
-Once the species classifier (sp\_v4) completes training, the top-$k$ genus routing evaluation mode (Section~\ref{sec:method-species-eval}) can be re-evaluated using the fully trained v9 genus model (67.07\% RC TTA accuracy). At this genus accuracy level, top-5 routing covers the correct genus in approximately 90.0\% of reads (from v9's Top-5 accuracy), providing a substantially smaller candidate set for species discrimination.
+With sp\_v4 converged, the top-$k$ genus routing evaluation mode (Section~\ref{sec:method-species-eval}) is combined with the v9 genus model (67.07\% RC TTA accuracy). At this genus accuracy level, top-5 routing covers the correct genus in approximately 90.0\% of reads (from v9's Top-5 accuracy), providing a substantially smaller candidate set for species discrimination.
 
-The planned hierarchical classification pipeline operates as follows:
+The hierarchical classification pipeline operates as follows:
 \begin{enumerate}
     \item The genus classifier produces top-$k$ genus predictions (e.g., $k = 5$).
     \item The candidate species set is computed as the union of species belonging to these $k$ genera.
