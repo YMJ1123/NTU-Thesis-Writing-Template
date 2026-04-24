@@ -709,15 +709,15 @@ Following the data scaling analysis for genus classification, we extend the 50M 
 
 The species model is initialized from the v9 genus model's backbone weights via transfer learning (\texttt{--init\_from}), which automatically loads matching LoRA parameters while skipping the genus-specific classification head layers (120-class $\to$ 1,535-class dimension mismatch). This allows the species model to benefit from the genus-tuned backbone representations.
 
-\subsection{Interim Results (sp\_v4, Epoch 26)}
-\label{sec:spv4-interim}
+\subsection{Final Results (sp\_v4, Epoch 30)}
+\label{sec:spv4-final}
 
-sp\_v4 training has completed 26 epochs as of April 2026, reaching a forward validation accuracy of \textbf{17.31\%} (1,535 classes). Table~\ref{tab:spv4-interim} shows the progression across epochs.
+sp\_v4 training converged at epoch~30 (April~2026), reaching a forward validation accuracy of \textbf{17.55\%} on the full 5M held-out set (1,535 classes). Table~\ref{tab:spv4-progress} shows the progression across epochs; Table~\ref{tab:spv4-final-metrics} presents the complete metric profile at convergence.
 
 \begin{table}[htbp]
     \centering
-    \caption{sp\_v4 interim training progress (species classification, 1,535 classes, 50M reads).}
-    \label{tab:spv4-interim}
+    \caption{sp\_v4 training progress (species classification, 1,535 classes, 50M reads).}
+    \label{tab:spv4-progress}
     \begin{tabular}{cccc}
         \toprule
         \textbf{Epoch} & \textbf{Val Acc (fwd)} & \textbf{Val F1 (macro)} & \textbf{Note} \\
@@ -728,14 +728,39 @@ sp\_v4 training has completed 26 epochs as of April 2026, reaching a forward val
         12 & 15.51\% & 13.65\% & End of 2\textsuperscript{nd} job \\
         13 & 15.85\% & 13.97\% & Resume fix applied \\
         18 & 16.37\% & 14.46\% & \\
-        26 & \textbf{17.31\%} & \textbf{15.28\%} & Current best \\
+        26 & 17.31\% & 15.28\% & \\
+        30 & \textbf{17.55\%} & \textbf{15.70\%} & Converged \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-The same LR restart issue that affected v9 also appeared at epoch~7 of sp\_v4 (dip of $-0.79$~pp), and was resolved by the same resume-logic fix from epoch~13 onward. Training is ongoing and has not yet converged; the learning curve shows a consistent upward trend with no sign of plateau (Figure~\ref{fig:learning-curves}, right panel).
+The same LR restart issue that affected v9 also appeared at epoch~7 of sp\_v4 (dip of $-0.79$~pp), and was resolved by the same resume-logic fix from epoch~13 onward. The learning curve plateaued between epochs~26 and~30 with the cosine schedule reaching its minimum, indicating convergence (Figure~\ref{fig:learning-curves}, right panel).
 
-The species task is substantially more difficult than genus classification: 1,535 classes versus 120, with each species receiving only $\sim$29,316 balanced reads instead of $\sim$375,000. The current 17.31\% accuracy, while seemingly low, represents meaningful discrimination given the large class count (random baseline: 0.065\%). A full evaluation including RC TTA and top-$k$ genus routing will be performed once training converges.
+\begin{table}[htbp]
+    \centering
+    \caption{sp\_v4 final forward-only evaluation on the 5M held-out set (epoch~30 checkpoint).}
+    \label{tab:spv4-final-metrics}
+    \begin{tabular}{lr}
+        \toprule
+        \textbf{Metric} & \textbf{Value} \\
+        \midrule
+        Top-1 accuracy              & \textbf{17.55\%} \\
+        Top-3 accuracy              & 31.26\% \\
+        Top-5 accuracy              & 38.19\% \\
+        Top-10 accuracy             & 47.65\% \\
+        Balanced accuracy           & 17.56\% \\
+        F1 (macro)                  & 0.157 \\
+        F1 (weighted)               & 0.157 \\
+        Classes with F1 $=$ 0       & 191 / 1,535 (12.4\%) \\
+        Inference throughput        & 5{,}171 reads/sec \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The species task is substantially more difficult than genus classification: 1,535 classes versus 120, with each species receiving only $\sim$29,316 balanced reads instead of $\sim$375,000. The final 17.55\% accuracy, while modest in absolute terms, represents meaningful discrimination given the large class count (random baseline: 0.065\%, a relative lift of $\sim$270$\times$). Encouragingly, only 191 of 1,535 species have F1$=$0 under forward-only evaluation on the full 5M set---well below the 804 observed on the 100K-subset evaluation (Section~\ref{sec:spv4-hierarchical-prelim})---indicating that the long-tail problem is substantially less severe at full-scale evaluation than preliminary subset analysis suggested.
+
+\paragraph{Extended evaluation modes.}
+Full-scale evaluation of RC~TTA, oracle-genus, and top-$k$ genus routing on the 5M validation set was attempted but exceeded the 200~GB memory ceiling on the TWCC \texttt{normal} partition: the current \texttt{evaluate.py} retains all 5M $\times$ 1{,}535 logit and probability arrays ($\sim$60~GB of \texttt{float32} per pass) simultaneously when combining modes, which a streaming implementation could avoid. Because the genus-level RC~TTA benefit has already been quantified (+0.78~pp, Section~\ref{sec:exp-v9}) and the hierarchical routing analysis on the 100K subset (Section~\ref{sec:spv4-hierarchical-prelim}) already captures the key qualitative findings---oracle-genus gain of $+11.5$~pp, negligible improvement from top-$k$ routing at current genus accuracy, and per-genus reduction of F1$=$0 species---we retain those preliminary numbers as the thesis's final hierarchical comparison.
 
 \subsection{Toward Hierarchical Classification}
 
