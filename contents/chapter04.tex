@@ -841,6 +841,124 @@ Even under perfect genus assignment, per-genus oracle achieves 21.8\%---6.1~pp b
 \paragraph{Long-tail coverage improves substantially.}
 Despite the lower Top-1 accuracy, the per-genus architecture reduces the number of species with F1$=$0 from 804 (flat sp\_v4) to 401 under predicted routing and 362 under oracle routing.  This suggests that the per-genus framing---where each rare species competes only within its genus rather than against all 1,535 classes---provides a more favourable learning signal for rare species, even at reduced training scale.
 
+\section{Sample-Level Application Evaluation}
+\label{sec:exp-sample}
+
+Per-read classification accuracy captures only one dimension of practical utility.
+In metagenomics, classifiers are applied to entire sequenced specimens---collections of reads whose aggregate predicted composition is used to answer ecological and clinical questions: which organisms are present, and at what relative abundance?
+This section evaluates the v9 genus model (67.07\% RC~TTA per-read accuracy) under two sample-level metrics: relative abundance estimation and binary genus detection.
+
+\subsection{Experimental Setup}
+
+Evaluations are conducted on the 5M-read validation set (120 genera, balanced).
+Two types of synthetic metagenomic samples are constructed from the already-computed RC~TTA predictions (Section~\ref{sec:exp-v9}); no GPU inference is required.
+
+\textbf{Random-partition samples} (abundance estimation): 100 non-overlapping samples of 50,000 reads each are formed by random permutation of the validation set.
+Each sample contains reads from all genera present in the validation set, with a composition determined by the random draw.
+Relative abundance estimation is evaluated by comparing the true fraction $p_g = (\text{true reads of genus } g) / 50\,000$ against the predicted fraction $\hat{p}_g = (\text{predicted reads of genus } g) / 50\,000$.
+
+\textbf{Sparse-community samples} (binary detection): 200 samples of 50,000 reads are constructed such that each sample contains reads from exactly 60 of the 120 genera (selected uniformly at random per sample).
+The 60 absent genera serve as true negatives, enabling rigorous specificity measurement.
+
+\subsection{Relative Abundance Estimation}
+
+Table~\ref{tab:sample-abundance} summarises the abundance estimation accuracy across the 100 random-partition samples.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Relative abundance estimation accuracy (100 random-partition samples, 50K reads each, all 120 genera present).}
+    \label{tab:sample-abundance}
+    \begin{tabular}{lcc}
+        \toprule
+        \textbf{Metric} & \textbf{Mean} & \textbf{Std} \\
+        \midrule
+        Pearson $r$ (predicted vs.\ true abundance) & 0.9932 & 0.0004 \\
+        Spearman $\rho$ & 0.9312 & 0.0080 \\
+        Bray-Curtis dissimilarity & 0.0937 & 0.0017 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Despite a 33\% per-read error rate, the predicted community composition correlates with the true composition at Pearson $r = 0.993$.
+The low Bray-Curtis dissimilarity of 0.094 indicates that the aggregate abundance profile is well-preserved: misclassified reads tend to be distributed broadly across genera rather than systematically inflating any single taxon, so the errors partially cancel at the sample level.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.55\textwidth]{figures/abundance_scatter.png}
+    \caption{True vs.\ predicted relative abundance for 120 genera across 100 synthetic samples (20,000-point subsample shown).  Each point is one (sample, genus) pair.  Pearson $r = 0.993$.}
+    \label{fig:abundance-scatter}
+\end{figure}
+
+\subsection{Genus Detection (Binary Presence/Absence)}
+
+A genus is ``detected'' in a sample if at least one read is predicted to belong to that genus.
+Table~\ref{tab:sample-detection-abundance} reports detection sensitivity at each true-abundance level,
+computed over all 200 sparse-community samples.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Detection sensitivity by true relative abundance (detection threshold: $\geq$1 predicted read).
+    Genera truly absent from the sample are excluded from sensitivity computation.}
+    \label{tab:sample-detection-abundance}
+    \begin{tabular}{lcr}
+        \toprule
+        \textbf{True abundance} & \textbf{Sensitivity} & \textbf{Genus-instances} \\
+        \midrule
+        0.01\%--0.1\%  & 93.9\% & 651  \\
+        0.1\%--1\%     & 97.6\% & 7,654 \\
+        1\%--5\%       & 100.0\% & 2,975 \\
+        $>$5\%         & 100.0\% & 720  \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Genera present at $\geq 1\%$ relative abundance are detected with 100\% sensitivity.
+This is expected: a genus at 1\% of a 50,000-read sample contributes 500 reads, and at 67\% per-read recall the expected number of correct predictions is 335, making false-negative detection essentially impossible.
+Even at 0.01\%--0.1\% abundance (5--50 reads per genus per sample), sensitivity remains 93.9\%.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.65\textwidth]{figures/sensitivity_by_abundance.png}
+    \caption{Sample-level genus detection sensitivity by true relative abundance (detection threshold: $\geq$1 predicted read), aggregated over 200 sparse-community samples.
+    Annotation shows the number of (sample, genus) instances in each bucket.}
+    \label{fig:sensitivity-by-abundance}
+\end{figure}
+
+When the detection threshold is raised to match the presence threshold (a genus is ``detected'' only if its \emph{predicted} fraction $\geq$ the same abundance cutoff), specificity improves substantially:
+
+\begin{table}[htbp]
+    \centering
+    \caption{Binary genus detection at matched abundance thresholds.
+    A genus is ``truly present'' if true fraction $\geq$ threshold; ``detected'' if predicted fraction $\geq$ threshold.
+    Aggregated over 200 sparse-community samples (50K reads, 60/120 genera present each).}
+    \label{tab:sample-detection-threshold}
+    \begin{tabular}{lccccc}
+        \toprule
+        \textbf{Threshold} & \textbf{Sensitivity} & \textbf{Specificity} & \textbf{Precision} & \textbf{TP} & \textbf{FP} \\
+        \midrule
+        $\geq$0.05\%  & 80.8\% & 49.6\% & 61.6\% & 9,697 & 6,047 \\
+        $\geq$0.10\%  & 68.1\% & 65.0\% & 63.6\% & 7,729 & 4,425 \\
+        $\geq$0.50\%  & 71.6\% & 92.4\% & 74.9\% & 4,148 & 1,392 \\
+        $\geq$1.00\%  & 71.3\% & 96.3\% & 77.8\% & 2,634 & 752  \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+At a 0.5\% threshold, specificity reaches 92.4\% while sensitivity is 71.6\%: the model correctly abstains from reporting absent genera in 92.4\% of cases, and correctly confirms present genera in 71.6\% of cases.
+The asymmetry at the $\geq$0.1\% threshold (lower sensitivity than $\geq$0.5\%) arises because some truly-present genera at low abundance are underestimated in predicted abundance but still receive $\geq$1 predicted read (they are ``detected'' in Table~\ref{tab:sample-detection-abundance} but fall short of the 0.1\% predicted-fraction threshold).
+
+\subsection{Summary}
+
+At 67\% per-read accuracy, the genus classifier provides:
+\begin{itemize}
+    \item Near-perfect relative abundance estimation: Pearson $r = 0.993$, Bray-Curtis 0.094.
+    \item Complete detection sensitivity (100\%) for genera at $\geq$1\% relative abundance.
+    \item 93.9\% detection sensitivity even at 0.01\%--0.1\% abundance.
+    \item At a 0.5\% abundance reporting threshold: 71.6\% sensitivity, 92.4\% specificity, 74.9\% precision.
+\end{itemize}
+These results demonstrate that per-read accuracy substantially understates the practical utility of the model.
+The primary limitation of a lower detection sensitivity at the 0.5--1\% threshold level is a consequence of the 67\% per-read accuracy ceiling, which in turn is primarily limited by NT-v2's 6-mer tokenization constraint (Section~\ref{sec:exp-tokenization}).
+
 \section{Summary of Findings}
 
 The experimental results lead to several key conclusions:
