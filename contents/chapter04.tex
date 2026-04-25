@@ -680,6 +680,43 @@ MetaTransformer with overlapping 13-mer tokenization, trained \emph{from scratch
 \paragraph{Convergence and capacity ceiling (12-mer).}
 To determine whether 78.83\% is the true ceiling for the 12-mer model, training was extended into a second epoch. Train loss dropped sharply from 0.764 to 0.119, while validation loss \emph{worsened} from 1.203 to 2.288---immediate overfitting. The 50M-read dataset saturates the 5M-parameter single-encoder MetaTransformer within one epoch.
 
+\paragraph{Overlapping tokenization within pre-trained GFMs (5M scale).}
+The MetaTransformer ablation above is conducted entirely from scratch at 50M scale.
+To isolate the effect of overlapping tokenization \emph{within the pre-trained GFM family}, we additionally fine-tune two other pre-trained DNA language models on the same 5M balanced dataset using identical training settings (LoRA $r=16$, attention-pooling head):
+\begin{itemize}
+    \item \textbf{DNABERT}~\cite{Ji2021}: BERT-base (86M params) pre-trained on the human reference genome with overlapping 6-mer tokenization (stride$=$1, 145 tokens per 150~bp read).
+    \item \textbf{DNABERT-2}~\cite{Zhou2023}: BERT-base (117M params) pre-trained on a multi-species genome collection using learned BPE tokenization ($\sim$34 tokens per read).
+\end{itemize}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Pre-trained GFM backbone comparison at 5M balanced reads (genus-level, 120 classes).
+    All models use LoRA $r=16$ fine-tuning and the same attention-pooling head.
+    RC TTA is applied to all models.}
+    \label{tab:backbone-tokenization-5M}
+    \begin{tabular}{llcccc}
+        \toprule
+        \textbf{Model} & \textbf{Tokenization} & \textbf{Tokens/read} & \textbf{Params} & \textbf{RC TTA Acc} & \textbf{Macro F1} \\
+        \midrule
+        NT-v2 + LoRA (v8)  & 6-mer, stride=6 (non-overlap) & 25  & 499M & \textbf{63.05\%} & \textbf{0.449} \\
+        DNABERT + LoRA     & 6-mer, stride=1 (overlap)     & 145 & 86M  & 61.78\%          & 0.384 \\
+        DNABERT-2 + LoRA   & BPE ($\sim$34 tokens)          & $\sim$34 & 117M & 58.88\%     & 0.323 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Three observations follow from Table~\ref{tab:backbone-tokenization-5M}.
+
+First, NT-v2 with \emph{non-overlapping} 6-mer tokenization outperforms DNABERT with \emph{overlapping} 6-mer tokenization by $+1.27$~pp.
+At 5M training reads, the pre-training advantage from NT-v2's larger backbone (499M vs.\ 86M parameters) and more diverse pre-training corpus (850 microbial genomes vs.\ human genome only) outweighs the tokenization benefit of overlapping stride.
+This contrasts with the MetaTransformer results: when starting from scratch on the same data, overlapping tokenization provides a large benefit ($+1.87$~pp at $k=6$, $+60.12$~pp at $k=13$); but when starting from a strong pre-trained representation, the non-overlapping NT-v2 backbone already captures sufficient local context through its positional encodings.
+
+Second, DNABERT with overlapping 6-mer tokenization (pre-trained, 86M, 5M data, 61.78\%) outperforms MetaTransformer with the same overlapping 6-mer tokenization (from scratch, 5M params, 50M data, 48.87\%), despite ten times less training data.
+This confirms that pre-training on genomic sequences provides a substantial data-efficiency advantage---even a smaller pre-trained model is more data-efficient than a larger randomly initialised model.
+
+Third, DNABERT-2's BPE tokenization (58.88\%) performs worse than either 6-mer model despite having a similar parameter count to DNABERT.
+BPE segments DNA by frequency-based byte pairs rather than fixed-length k-mers, which may fragment taxonomically informative motifs; the learned vocabulary may not align well with the k-mer statistics that distinguish metagenomic reads.
+
 \paragraph{Implication for NT-v2.}
 NT-v2 is constrained to 6-mer tokenization by its pre-training design. The ablation results show that this constraint is the primary limitation of our approach: switching to overlapping 13-mer tokenization on the same architecture and data yields a $+20.35$~pp improvement without any pre-training. A genomic foundation model pre-trained with overlapping large-$k$ tokenization on diverse microbial genomes would combine the discriminative power of longer k-mers with the representational quality of large-scale pre-training. No such model currently exists publicly.
 
