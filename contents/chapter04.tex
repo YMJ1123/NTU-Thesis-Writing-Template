@@ -685,7 +685,7 @@ The MetaTransformer ablation above is conducted entirely from scratch at 50M sca
 To isolate the effect of overlapping tokenization \emph{within the pre-trained GFM family}, we additionally fine-tune two other pre-trained DNA language models on the same 5M balanced dataset using identical training settings (LoRA $r=16$, attention-pooling head):
 \begin{itemize}
     \item \textbf{DNABERT}~\cite{Ji2021}: BERT-base (86M params) pre-trained on the human reference genome with overlapping 6-mer tokenization (stride$=$1, 145 tokens per 150~bp read).
-    \item \textbf{DNABERT-2}~\cite{Zhou2023}: BERT-base (117M params) pre-trained on a multi-species genome collection using learned BPE tokenization ($\sim$34 tokens per read).
+    \item \textbf{DNABERT-2}~\cite{Zhou2024dnabert2}: BERT-base (117M params) pre-trained on a multi-species genome collection using learned BPE tokenization ($\sim$34 tokens per read).
 \end{itemize}
 
 \begin{table}[htbp]
