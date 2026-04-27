@@ -717,6 +717,13 @@ This confirms that pre-training on genomic sequences provides a substantial data
 Third, DNABERT-2's BPE tokenization (58.88\%) performs worse than either 6-mer model despite having a similar parameter count to DNABERT.
 BPE segments DNA by frequency-based byte pairs rather than fixed-length k-mers, which may fragment taxonomically informative motifs; the learned vocabulary may not align well with the k-mer statistics that distinguish metagenomic reads.
 
+\paragraph{Methodological note on training equivalence.}
+The three models use the same learning rate ($5\times10^{-4}$ head/LoRA, $3\times10^{-5}$ backbone), warmup ratio (5\%), cosine decay schedule, and epoch count (30), but differ in batch size (NT-v2: 32, DNABERT: 128, DNABERT-2: 256) due to GPU memory constraints imposed by sequence length differences (25, 145, and $\sim$34 tokens per read respectively).
+Consequently, the total number of gradient updates differs: approximately 453K for NT-v2, 117K for DNABERT, and 59K for DNABERT-2.
+All three learning curves were still improving at epoch 30 (gain $<0.1$~pp per epoch), with the cosine schedule decaying the learning rate to near zero by the final epoch.
+The comparison is therefore epoch-based---each model has seen the training data 30 times---rather than step-based or compute-matched.
+This is standard practice in fine-tuning comparisons, and the observed ranking (NT-v2 $>$ DNABERT $>$ DNABERT-2) is unlikely to be reversed by additional training: DNABERT, despite receiving 3.9$\times$ fewer gradient updates than NT-v2, lags by only $1.27$~pp, while DNABERT-2's gap of $4.17$~pp is consistent across all training stages and attributable primarily to its BPE tokenization.
+
 \paragraph{Implication for NT-v2.}
 NT-v2 is constrained to 6-mer tokenization by its pre-training design. The ablation results show that this constraint is the primary limitation of our approach: switching to overlapping 13-mer tokenization on the same architecture and data yields a $+20.35$~pp improvement without any pre-training. A genomic foundation model pre-trained with overlapping large-$k$ tokenization on diverse microbial genomes would combine the discriminative power of longer k-mers with the representational quality of large-scale pre-training. No such model currently exists publicly.
 
