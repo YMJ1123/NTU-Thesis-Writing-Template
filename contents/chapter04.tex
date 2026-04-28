@@ -927,6 +927,11 @@ Table~\ref{tab:sample-abundance} summarises the abundance estimation accuracy ac
 Despite a 33\% per-read error rate, the predicted community composition correlates with the true composition at Pearson $r = 0.993$.
 The low Bray-Curtis dissimilarity of 0.094 indicates that the aggregate abundance profile is well-preserved: misclassified reads tend to be distributed broadly across genera rather than systematically inflating any single taxon, so the errors partially cancel at the sample level.
 
+A structural property of this evaluation warrants noting.
+Because all 100 random-partition samples are drawn from the same species-level balanced validation set, every sample shares the same \emph{expected} genus abundance profile (genus $g$ always contributes $n_g/1{,}535$ reads on average).
+The Pearson $r = 0.993$ therefore measures how well the classifier tracks this fixed profile under binomial sampling noise, not how well it would generalise to communities with genuinely varying compositions.
+The sparse-community analysis below, in which each sample is constructed from a different random subset of 60 genera, imposes genuine presence/absence variation across samples and provides a more realistic evaluation of binary detection performance.
+
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.55\textwidth]{figures/abundance_scatter.png}
