@@ -898,7 +898,8 @@ Evaluations are conducted on the 5M-read validation set (120 genera, balanced).
 Two types of synthetic metagenomic samples are constructed from the already-computed RC~TTA predictions (Section~\ref{sec:exp-v9}); no GPU inference is required.
 
 \textbf{Random-partition samples} (abundance estimation): 100 non-overlapping samples of 50,000 reads each are formed by random permutation of the validation set.
-Each sample contains reads from all genera present in the validation set, with a composition determined by the random draw.
+All 120 genera are present in each sample.
+Because the training data are balanced at the species level (each of the 1,535 species contributes an equal number of reads), the expected abundance of genus $g$ across all samples is $n_g / 1{,}535$, where $n_g$ is its species count in the reference database; genera with more member species are proportionally more abundant.
 Relative abundance estimation is evaluated by comparing the true fraction $p_g = (\text{true reads of genus } g) / 50\,000$ against the predicted fraction $\hat{p}_g = (\text{predicted reads of genus } g) / 50\,000$.
 
 \textbf{Sparse-community samples} (binary detection): 200 samples of 50,000 reads are constructed such that each sample contains reads from exactly 60 of the 120 genera (selected uniformly at random per sample).
