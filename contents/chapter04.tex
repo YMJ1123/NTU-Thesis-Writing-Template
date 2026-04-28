@@ -930,7 +930,7 @@ The low Bray-Curtis dissimilarity of 0.094 indicates that the aggregate abundanc
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.55\textwidth]{figures/abundance_scatter.png}
-    \caption{True vs.\ predicted relative abundance for 120 genera across 100 synthetic samples (20,000-point subsample shown).  Each point is one (sample, genus) pair.  Pearson $r = 0.993$.}
+    \caption{True vs.\ predicted relative abundance across 100 random-partition samples (all 12,000 (sample, genus) pairs shown).  Each point is one (sample, genus) pair.  The visible clusters correspond to groups of genera sharing the same species count $n_g$: because the dataset is species-level balanced, every genus with $n_g$ species has true abundance $n_g/1{,}535$ in expectation, collapsing to the same $x$-coordinate.  Pearson $r = 0.993$.}
     \label{fig:abundance-scatter}
 \end{figure}
 
