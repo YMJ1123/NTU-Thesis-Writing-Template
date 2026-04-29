@@ -1006,12 +1006,13 @@ Improving binary detection performance would require either higher per-read accu
 At 67\% per-read accuracy, the genus classifier provides:
 \begin{itemize}
     \item Near-perfect relative abundance estimation: Pearson $r = 0.993$, Bray-Curtis 0.094.
-    \item Complete detection sensitivity (100\%) for genera at $\geq$1\% relative abundance.
+    \item Complete detection sensitivity (100\%) for genera at $\geq$1\% relative abundance (detection threshold: $\geq$1 predicted read).
     \item 93.9\% detection sensitivity even at 0.01\%--0.1\% abundance.
-    \item At a 0.5\% abundance reporting threshold: 71.6\% sensitivity, 92.4\% specificity, 74.9\% precision.
+    \item Binary detection AUC = 0.705; sensitivity at 95\% specificity = 17.2\%.
 \end{itemize}
-These results demonstrate that per-read accuracy substantially understates the practical utility of the model.
-The primary limitation of a lower detection sensitivity at the 0.5--1\% threshold level is a consequence of the 67\% per-read accuracy ceiling, which in turn is primarily limited by NT-v2's 6-mer tokenization constraint (Section~\ref{sec:exp-tokenization}).
+These results demonstrate that per-read accuracy substantially understates the practical utility of the model for relative abundance profiling.
+The binary presence/absence detection task is more challenging: 33\% per-read misclassification introduces a $\sim$0.28\% noise floor for absent genera, limiting specificity at low detection thresholds.
+Improving this metric requires either higher per-read accuracy (reducing the noise floor) or a statistical test for presence above background noise.
 
 \section{Summary of Findings}
 
