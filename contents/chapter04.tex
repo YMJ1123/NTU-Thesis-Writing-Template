@@ -974,28 +974,32 @@ Even at 0.01\%--0.1\% abundance (5--50 reads per genus per sample), sensitivity 
     \label{fig:sensitivity-by-abundance}
 \end{figure}
 
-When the detection threshold is raised to match the presence threshold (a genus is ``detected'' only if its \emph{predicted} fraction $\geq$ the same abundance cutoff), specificity improves substantially:
+To provide a threshold-invariant summary of binary detection performance, we perform a ROC analysis with \emph{fixed} binary ground truth and a \emph{swept} detection threshold.
+The ground truth is determined by the sparse-community construction: a genus is ``truly present'' in sample $i$ if and only if it was explicitly included in that sample's present set; the 60 absent genera are true negatives.
+The detection score is the predicted relative abundance of the genus in that sample (predicted count divided by 50,000 reads).
+Sweeping this score threshold from high to low yields the ROC curve shown in Figure~\ref{fig:roc-detection}.
 
-\begin{table}[htbp]
+\begin{figure}[htbp]
     \centering
-    \caption{Binary genus detection at matched abundance thresholds.
-    A genus is ``truly present'' if true fraction $\geq$ threshold; ``detected'' if predicted fraction $\geq$ threshold.
-    Aggregated over 200 sparse-community samples (50K reads, 60/120 genera present each).}
-    \label{tab:sample-detection-threshold}
-    \begin{tabular}{lccccc}
-        \toprule
-        \textbf{Threshold} & \textbf{Sensitivity} & \textbf{Specificity} & \textbf{Precision} & \textbf{TP} & \textbf{FP} \\
-        \midrule
-        $\geq$0.05\%  & 80.8\% & 49.6\% & 61.6\% & 9,697 & 6,047 \\
-        $\geq$0.10\%  & 68.1\% & 65.0\% & 63.6\% & 7,729 & 4,425 \\
-        $\geq$0.50\%  & 71.6\% & 92.4\% & 74.9\% & 4,148 & 1,392 \\
-        $\geq$1.00\%  & 71.3\% & 96.3\% & 77.8\% & 2,634 & 752  \\
-        \bottomrule
-    \end{tabular}
-\end{table}
+    \includegraphics[width=0.55\textwidth]{figures/roc_detection.png}
+    \caption{ROC curve for genus presence/absence detection.
+    Ground truth is binary (from sparse-community construction); detection score is predicted relative abundance.
+    Aggregated over 200 sparse-community samples (50K reads, 60/120 genera present each).
+    Key operating points at fixed specificity targets are marked.}
+    \label{fig:roc-detection}
+\end{figure}
 
-At a 0.5\% threshold, specificity reaches 92.4\% while sensitivity is 71.6\%: the model correctly abstains from reporting absent genera in 92.4\% of cases, and correctly confirms present genera in 71.6\% of cases.
-The asymmetry at the $\geq$0.1\% threshold (lower sensitivity than $\geq$0.5\%) arises because some truly-present genera at low abundance are underestimated in predicted abundance but still receive $\geq$1 predicted read (they are ``detected'' in Table~\ref{tab:sample-detection-abundance} but fall short of the 0.1\% predicted-fraction threshold).
+The area under the ROC curve (AUC) is 0.705.
+At a fixed specificity of 95\%, sensitivity is 17.2\%; at 90\% specificity, sensitivity is 30.9\%; at 80\% specificity, sensitivity is 46.2\%.
+
+The modest AUC reflects a fundamental noise-floor problem introduced by per-read misclassification.
+At 33\% error rate, a truly absent genus in a 50,000-read sample is expected to receive approximately $50{,}000 \times 0.33 / 120 \approx 138$ misclassified reads from other genera, corresponding to a spurious predicted abundance of $\sim$0.28\%.
+This constitutes a per-sample noise floor: to achieve 95\% specificity, the detection threshold must exceed 1.49\% predicted abundance, which simultaneously suppresses the detection of genuinely low-abundance genera.
+
+The ROC analysis highlights an important asymmetry between the two sample-level tasks evaluated here.
+Relative abundance estimation (Section~\ref{sec:sample-abundance}) achieves excellent performance (Pearson $r = 0.993$) because misclassification errors are approximately symmetric---reads misclassified \emph{out of} genus $g$ are roughly cancelled by reads misclassified \emph{into} $g$---so that predicted abundances aggregate to near-true values.
+Binary detection, by contrast, requires distinguishing a truly absent genus (receiving $\sim$138 predicted reads) from a truly present but low-abundance genus (receiving only slightly more); at 67\% per-read accuracy this distinction is difficult.
+Improving binary detection performance would require either higher per-read accuracy (reducing the noise floor) or a calibrated statistical test for the presence signal above background, which is left for future work.
 
 \subsection{Summary}
 
