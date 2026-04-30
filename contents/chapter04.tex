@@ -1014,6 +1014,42 @@ These results demonstrate that per-read accuracy substantially understates the p
 The binary presence/absence detection task is more challenging: 33\% per-read misclassification introduces a $\sim$0.28\% noise floor for absent genera, limiting specificity at low detection thresholds.
 Improving this metric requires either higher per-read accuracy (reducing the noise floor) or a statistical test for presence above background noise.
 
+\subsection{Comparison with MetaTransformer}
+\label{sec:sample-mt-comparison}
+
+To contextualise the NT-v2 sample-level results, we apply identical evaluation to two MetaTransformer models: the 13-mer stride=1 model (87.43\% genus Top-1) and the 6-mer stride=1 model (48.82\%), using predictions extracted from the same 50M validation set.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Sample-level evaluation across three models.
+    Same evaluation protocol: 100 random-partition samples and 200 sparse-community samples, each 50K reads, 60/120 genera present per sparse sample.}
+    \label{tab:sample-model-comparison}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Metric} & \textbf{NT-v2 v9} & \textbf{MT 6-mer s=1} & \textbf{MT 13-mer s=1} \\
+                        & (67.07\%)          & (48.82\%)              & (87.43\%) \\
+        \midrule
+        Pearson $r$ (abundance)   & 0.993 & 0.984 & \textbf{0.999} \\
+        Bray-Curtis dissimilarity & 0.094 & 0.167 & \textbf{0.028} \\
+        Sensitivity $\geq$1\%     & 100\% & 99.9\% & \textbf{100\%} \\
+        Sensitivity 0.1--1\%      & 97.6\% & 86.8\% & \textbf{100\%} \\
+        ROC AUC (binary detection)& 0.705 & 0.569 & \textbf{0.900} \\
+        Sensitivity @ 95\% spec   & 17.2\% & 9.4\% & \textbf{47.7\%} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The MT 13-mer model outperforms NT-v2 v9 on all metrics.
+The improvement in relative abundance estimation is modest (Pearson $r$: $0.993 \to 0.999$; Bray-Curtis: $0.094 \to 0.028$), consistent with the finding that abundance estimation is robust to per-read error through cancellation.
+The improvement in binary detection is substantially larger: ROC AUC increases from 0.705 to 0.900, and sensitivity at 95\% specificity increases from 17.2\% to 47.7\%.
+
+This asymmetry arises from the noise-floor mechanism described in Section~\ref{sec:sample-detection}.
+At 87\% per-read accuracy, the expected spurious predicted abundance for an absent genus is $50{,}000 \times 0.13 / 120 \approx 54$ reads ($\sim$0.11\%), compared to $\sim$138 reads ($\sim$0.28\%) at 67\% accuracy.
+This reduction in the noise floor is the direct cause of the large gain in binary detection AUC.
+
+The MT 6-mer stride=1 model (48.82\%) demonstrates the complementary effect: lower per-read accuracy degrades all metrics, with the most severe penalty on binary detection (AUC 0.569, near random).
+Together, these three data points confirm that higher per-read accuracy benefits sample-level tasks disproportionately for binary detection relative to abundance estimation.
+
 \section{Summary of Findings}
 
 The experimental results lead to several key conclusions:
