@@ -188,9 +188,9 @@ def fig_data_scaling():
                 arrowprops=dict(arrowstyle="<->", color="gray", lw=1.2))
     ax.text(1.5e6, 59.5, "+7.76 pp\n(10×)", fontsize=8, ha="center", color="gray")
 
-    ax.annotate("", xy=(5e7, 66.06), xytext=(5e6, 63.05),
+    ax.annotate("", xy=(5e7, 67.07), xytext=(5e6, 63.05),
                 arrowprops=dict(arrowstyle="<->", color="gray", lw=1.2))
-    ax.text(1.5e7, 65.1, "+3.01 pp\n(10×)", fontsize=8, ha="center", color="gray")
+    ax.text(1.5e7, 65.5, "+4.02 pp\n(10×)", fontsize=8, ha="center", color="gray")
 
     plt.savefig(OUT / "data_scaling.pdf", bbox_inches="tight")
     plt.savefig(OUT / "data_scaling.png", bbox_inches="tight")
