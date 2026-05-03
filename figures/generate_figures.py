@@ -253,49 +253,78 @@ def fig_backbone_ablation():
 # ─────────────────────────────────────────────────────────────────────────────
 def fig_rc_tta():
     exps   = ["v3\n500K", "v4\n500K", "v5b\n500K\nLA", "v7\n500K\nRC-cons.",
-              "v8\n5M", "v9\n50M\n(NT-v2)", "v11\n50M\n(shallow)"]
-    fwd    = [53.92, 53.75, 52.29, 54.10, 62.02, 65.29, 53.80]
-    rc_tta = [55.36, 55.29, 53.58, 55.18, 63.05, 66.06, 53.88]
+              "v8\n5M", "v9\n50M\n(NT-v2)",
+              "DNABERT\n5M", "DNABERT-2\n5M",
+              "v11\n50M\n(shallow)"]
+    fwd    = [53.92, 53.75, 52.29, 54.10, 62.02, 65.29,
+              61.20, 57.35,
+              53.80]
+    rc_tta = [55.36, 55.29, 53.58, 55.18, 63.05, 66.06,
+              61.78, 58.88,
+              53.88]
     gains  = [r - f for r, f in zip(rc_tta, fwd)]
 
     x = np.arange(len(exps))
     width = 0.35
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6),
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 6),
                                     gridspec_kw={"height_ratios": [3, 1]})
     fig.subplots_adjust(hspace=0.1)
 
     # Top: grouped bar chart
     color_fwd    = "#7BAFD4"
     color_rctta  = "#2166AC"
+    color_dna    = "#74C476"   # green for DNABERT group
+    color_dna_tt = "#238B45"
 
-    ax1.bar(x - width/2, fwd,    width, label="Forward only",   color=color_fwd,   alpha=0.88, edgecolor="white")
-    ax1.bar(x + width/2, rc_tta, width, label="+ RC TTA",        color=color_rctta, alpha=0.88, edgecolor="white")
+    bar_fwd_colors   = [color_fwd]*6 + [color_dna]*2 + [color_fwd]
+    bar_rctta_colors = [color_rctta]*6 + [color_dna_tt]*2 + [color_rctta]
+
+    for i, (f, r, cf, cr) in enumerate(zip(fwd, rc_tta, bar_fwd_colors, bar_rctta_colors)):
+        ax1.bar(x[i] - width/2, f, width, color=cf, alpha=0.88, edgecolor="white")
+        ax1.bar(x[i] + width/2, r, width, color=cr, alpha=0.88, edgecolor="white")
+
+    from matplotlib.patches import Patch
+    ax1.legend(handles=[
+        Patch(color=color_fwd,    label="Forward only (NT-v2 / shallow)"),
+        Patch(color=color_rctta,  label="+ RC TTA (NT-v2 / shallow)"),
+        Patch(color=color_dna,    label="Forward only (DNABERT family)"),
+        Patch(color=color_dna_tt, label="+ RC TTA (DNABERT family)"),
+    ], fontsize=8, loc="lower right", framealpha=0.9)
 
     ax1.set_xticks([])
     ax1.set_ylabel("Genus Accuracy (%)")
     ax1.set_title("RC TTA Benefit Across Experiments")
-    ax1.legend(loc="lower right", framealpha=0.9)
     ax1.set_ylim(40, 72)
     ax1.set_xlim(-0.6, len(exps) - 0.4)
 
-    # Separate v11 visually
+    # Separators
     ax1.axvline(x=5.5, color="lightgray", lw=1.2, ls="--")
-    ax1.text(5.52, 68, "← NT-v2 backbone  |  random init →",
-             fontsize=8, color="gray", va="top")
+    ax1.axvline(x=7.5, color="lightgray", lw=1.2, ls="--")
+    ax1.text(5.52, 70, "← NT-v2", fontsize=7.5, color="gray", va="top")
+    ax1.text(5.85, 70, "DNABERT →", fontsize=7.5, color="gray", va="top")
+    ax1.text(7.52, 70, "← rand.", fontsize=7.5, color="gray", va="top")
 
-    # Bottom: gain
-    bar_colors = [COLORS["v9"] if g > 0.5 else COLORS["v11"] for g in gains]
+    # Bottom: gain — DNABERT bars in green
+    bar_colors = []
+    for i, g in enumerate(gains):
+        if i in (6, 7):
+            bar_colors.append(color_dna_tt)
+        elif g > 0.5:
+            bar_colors.append(COLORS["v9"])
+        else:
+            bar_colors.append(COLORS["v11"])
     ax2.bar(x, gains, width=0.55, color=bar_colors, alpha=0.85, edgecolor="white")
     for i, g in enumerate(gains):
         ax2.text(x[i], g + 0.02, f"+{g:.2f}", ha="center", va="bottom", fontsize=8)
 
     ax2.set_xticks(x)
-    ax2.set_xticklabels(exps, fontsize=8.5)
+    ax2.set_xticklabels(exps, fontsize=8)
     ax2.set_ylabel("Gain (pp)")
     ax2.set_ylim(0, 2.0)
     ax2.set_xlim(-0.6, len(exps) - 0.4)
     ax2.axvline(x=5.5, color="lightgray", lw=1.2, ls="--")
+    ax2.axvline(x=7.5, color="lightgray", lw=1.2, ls="--")
 
     plt.savefig(OUT / "rc_tta_benefit.pdf", bbox_inches="tight")
     plt.savefig(OUT / "rc_tta_benefit.png", bbox_inches="tight")
