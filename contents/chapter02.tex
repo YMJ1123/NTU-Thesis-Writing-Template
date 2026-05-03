@@ -77,7 +77,7 @@ The model produces contextual embeddings for each token in the input sequence, y
 
 \textbf{Evo}~\cite{Nguyen2024} is a 7B-parameter model based on the StripedHyena architecture~\cite{Poli2024}, capable of modeling DNA sequences up to 131K nucleotides. While powerful for long-range genomic modeling, its large size makes it challenging to deploy for metagenomic classification tasks involving hundreds of millions of short reads.
 
-Across these models, a consistent theme emerges: tokenization strategy is a critical design axis. \citet{Lindsey2025tokenizer} systematically evaluate character, BPE, $k$-mer, Unigram, and WordPiece tokenizers across 44 genomic classification tasks and find accuracy differences of up to 5 percentage points depending on tokenizer choice, corroborating our own ablation results in Chapter~\ref{ch:experiments}.
+Across these models, a consistent theme emerges: tokenization strategy is a critical design axis. \textcite{Lindsey2025tokenizer} systematically evaluate character, BPE, $k$-mer, Unigram, and WordPiece tokenizers across 44 genomic classification tasks and find accuracy differences of up to 5 percentage points depending on tokenizer choice, corroborating our own ablation results in Chapter~\ref{ch:experiments}.
 
 \subsection{GFMs for Metagenomic Classification}
 \label{sec:bg-gfm-metagenomics}
