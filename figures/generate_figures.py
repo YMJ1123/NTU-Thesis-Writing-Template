@@ -203,7 +203,7 @@ def fig_data_scaling():
 # ─────────────────────────────────────────────────────────────────────────────
 def fig_backbone_ablation():
     metrics = ["Micro\nAccuracy", "Balanced\nAccuracy", "F1\n(macro)", "Top-3\nAccuracy", "Top-5\nAccuracy"]
-    v9_vals  = [66.06, 37.52, 43.05, 83.74, 89.56]
+    v9_vals  = [67.07, 39.91, 44.82, 84.40, 90.03]
     v11_vals = [53.88, 22.24, 25.78, 73.85, 81.86]
 
     x = np.arange(len(metrics))
