@@ -315,7 +315,7 @@ The marginal return diminishes relative to the previous $10\times$ scaling step:
 \paragraph{Training progress and LR restart incidents.}
 v9 training required multiple SLURM jobs due to the 48-hour time limit. Before a bug fix was applied to the checkpoint-resume logic, two job restarts inadvertently reset the cosine learning-rate scheduler to its initial warmup phase, causing temporary accuracy dips: $-0.54$~pp at epoch~7 and $-1.39$~pp at epoch~11. In both cases the model recovered within 3--5 epochs and surpassed the pre-dip performance level. The underlying issue---\texttt{EarlyStopping.best} being silently set to \texttt{None} from an incomplete checkpoint key---was corrected in the resume logic; from epoch~17 onward the scheduler state is correctly restored and the learning rate continues its cosine decay without interruption.
 
-As of epoch~22 (April 2026), the forward validation accuracy stands at \textbf{65.68\%} and is still rising (Figure~\ref{fig:learning-curves}). The training curve shows no sign of plateau, suggesting that further improvement is expected before the cosine schedule reaches zero at epoch~30. Once training completes, a full evaluation including RC TTA will be performed to obtain the definitive result.
+Training completed at epoch~30 (April~2026), reaching a forward validation accuracy of \textbf{66.29\%} and RC~TTA accuracy of \textbf{67.07\%} (Figure~\ref{fig:learning-curves}). The learning curve plateaued between epochs~26 and~30 as the cosine schedule reached its minimum, indicating convergence.
 
 \begin{figure}[htbp]
     \centering
