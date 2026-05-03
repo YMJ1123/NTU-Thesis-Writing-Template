@@ -138,7 +138,7 @@ def fig_training_dynamics():
 def fig_data_scaling():
     # Our results
     reads  = np.array([500_000, 5_000_000, 50_000_000])
-    acc    = np.array([55.29, 63.05, 66.06])
+    acc    = np.array([55.29, 63.05, 67.07])
 
     # MetaTransformer: 98.3% recall, full HGR-UMGS (coverage 4); x-position is approximate (training throughput estimate)
     meta_reads = 614_000_000
