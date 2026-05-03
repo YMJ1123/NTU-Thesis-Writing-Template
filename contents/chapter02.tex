@@ -71,7 +71,13 @@ The model produces contextual embeddings for each token in the input sequence, y
 
 \textbf{DNABERT-2}~\cite{Zhou2024dnabert2} replaces $k$-mer tokenization with Byte Pair Encoding (BPE), eliminating the need to choose a fixed $k$ and enabling more flexible sequence representation. It also adopts a multi-species pre-training strategy.
 
+\textbf{HyenaDNA}~\cite{Nguyen2023hyena} adopts single-nucleotide tokenization combined with sub-quadratic Hyena convolutions, enabling context windows up to 1M tokens at a fraction of the compute cost of attention-based models. Its single-character vocabulary eliminates the $k$ design choice entirely, representing the opposite end of the tokenization design space from $k$-mer models.
+
+\textbf{Caduceus}~\cite{Schiff2024caduceus} is the first RC-equivariant bidirectional DNA language model. By constructing BiMamba layers with hard-coded reverse-complement weight sharing, Caduceus enforces strand symmetry at the architectural level rather than relying on augmentation or post-hoc inference tricks. This is directly relevant to the RC consistency analysis in Section~\ref{sec:bg-rc-symmetry}; unlike Caduceus, the NT-v2 backbone does not natively enforce RC equivariance, motivating our use of RC training augmentation and RC TTA.
+
 \textbf{Evo}~\cite{Nguyen2024} is a 7B-parameter model based on the StripedHyena architecture~\cite{Poli2024}, capable of modeling DNA sequences up to 131K nucleotides. While powerful for long-range genomic modeling, its large size makes it challenging to deploy for metagenomic classification tasks involving hundreds of millions of short reads.
+
+Across these models, a consistent theme emerges: tokenization strategy is a critical design axis. \citet{Lindsey2025tokenizer} systematically evaluate character, BPE, $k$-mer, Unigram, and WordPiece tokenizers across 44 genomic classification tasks and find accuracy differences of up to 5 percentage points depending on tokenizer choice, corroborating our own ablation results in Chapter~\ref{ch:experiments}.
 
 \subsection{GFMs for Metagenomic Classification}
 \label{sec:bg-gfm-metagenomics}
