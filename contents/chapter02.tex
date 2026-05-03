@@ -35,6 +35,8 @@ Deep learning methods learn discriminative representations directly from sequenc
 
 \textbf{DeepMicrobes}~\cite{Liang2020} applies a bidirectional LSTM with attention to one-hot encoded nucleotide sequences, achieving competitive performance on species-level classification but requiring substantial training data and compute.
 
+\textbf{BERTax}~\cite{Mock2022bertax} adapts the BERT architecture to DNA taxonomic classification at superkingdom, phylum, and genus levels. Rather than relying on sequence similarity to a reference database, BERTax learns contextual $k$-mer representations and demonstrates generalisation to novel organisms with no close relatives in the training set. This work establishes the viability of transformer-based language models for read-level taxonomic assignment, motivating the use of larger pre-trained GFMs in this thesis.
+
 \textbf{MetaTransformer}~\cite{Wichmann2023} is the most directly relevant prior work to this thesis. It employs a custom Transformer architecture that operates on learned 12-mer embeddings. Key design choices include:
 \begin{itemize}
     \item \textbf{12-mer tokenization}: Input reads are segmented into non-overlapping 12-mers, each mapped to a learnable embedding vector. The choice of $k=12$ balances vocabulary size ($4^{12} \approx 16.7$M possible 12-mers, though only $\sim$1.4M appear in training data) against sequence granularity.
