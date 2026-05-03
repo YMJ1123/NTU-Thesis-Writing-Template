@@ -229,8 +229,8 @@ Due to the 48-hour SLURM time limit, training required two jobs: the initial run
 
 The results reveal clear log-linear scaling behaviour:
 \begin{enumerate}
-    \item \textbf{Accuracy}: Each $10\times$ data increase yields a substantial but diminishing gain in RC TTA accuracy: $+7.76$~pp (500K$\to$5M) and $+3.01$~pp (5M$\to$50M). The sub-linear trend is consistent with logarithmic scaling laws.
-    \item \textbf{Macro F1}: Data scaling disproportionately benefits rare classes: $+12.27$~pp at the first step and $+4.15$~pp at the second. At 50M reads, all 120 genera have non-zero F1 for the first time.
+    \item \textbf{Accuracy}: Each $10\times$ data increase yields a substantial but diminishing gain in RC TTA accuracy: $+7.76$~pp (500K$\to$5M) and $+4.02$~pp (5M$\to$50M). The sub-linear trend is consistent with logarithmic scaling laws.
+    \item \textbf{Macro F1}: Data scaling disproportionately benefits rare classes: $+12.27$~pp at the first step and $+6.85$~pp at the second. At 50M reads, all 120 genera have non-zero F1 for the first time.
     \item \textbf{F1$=$0 classes}: The number of unclassifiable genera drops from 9 to 2 (v8) and finally to 0 (v9), meaning every genus in the dataset is correctly predicted for at least some reads.
     \item \textbf{Overfitting}: The train-validation gap shrinks dramatically from 6.25\% (v4) to 1.30\% (v8) to $<$1\% (v9), confirming that the model transitions from data starvation to well-generalised training as data volume increases.
 \end{enumerate}
