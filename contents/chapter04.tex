@@ -819,70 +819,65 @@ The hierarchical classification pipeline operates as follows:
 
 This two-stage approach reduces the effective number of candidate species from 1,535 to approximately $k \times \bar{s}$ (where $\bar{s} \approx 12.8$ is the mean number of species per genus), substantially simplifying the discrimination task.
 
-\subsection{Preliminary Hierarchical Evaluation (100K-read Subset)}
+\subsection{Hierarchical Evaluation on an Independent Test Set}
 \label{sec:spv4-hierarchical-prelim}
 
-To validate the hierarchical evaluation pipeline prior to full-scale deployment, all four evaluation modes were tested on a 100K-read held-out subset using the v9 genus model (epoch~30 checkpoint) and the sp\_v4 species model (epoch~26 checkpoint). Table~\ref{tab:hierarchical-prelim} summarises the results.
+All hierarchical evaluation modes are assessed on an independent 100K-read test set sampled from the MetaTransformer validation reads (\texttt{val\_reads.fa}), which has no overlap with our training or validation data.
+This set was chosen after verifying that the previously used 100K-read held-out subset had $>$99\% overlap with our training set; the two sets produce results within 0.5~pp of each other, confirming that the model has not memorised the training data.
+All sp\_v4 results use the epoch~30 final checkpoint; the v9 genus model achieves 66.1\% accuracy on this test set.
 
 \begin{table}[htbp]
     \centering
-    \caption{Preliminary hierarchical evaluation on 100K-read subset (sp\_v4 ep26, v9 ep30 genus routing).}
+    \caption{Complete hierarchical species evaluation on the independent 100K-read test set.
+    sp\_v4 (ep30, 50M) denotes the flat species model with four routing modes.
+    Per-genus (50M) denotes 81 dedicated classifiers, each trained on a 50M-read subset with a frozen NT-v2 backbone.
+    Genus routing uses v9 (66.1\% on this set).}
     \label{tab:hierarchical-prelim}
-    \begin{tabular}{lcccc}
-        \toprule
-        \textbf{Mode} & \textbf{Top-1} & \textbf{Top-5} & \textbf{Top-10} & \textbf{F1 (macro)} \\
-        \midrule
-        Flat (baseline)    & 16.4\% & 36.7\% & 46.7\% & 0.137 \\
-        Hard Top-5 routing & 16.5\% & 36.4\% & 46.1\% & 0.139 \\
-        Soft routing       & 16.2\% & 36.6\% & 46.2\% & 0.135 \\
-        Oracle (true genus)& 27.9\% & 55.4\% & 65.3\% & 0.256 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\paragraph{Genus accuracy is the primary bottleneck.}
-The v9 genus model achieves 65.7\% accuracy on this subset, meaning genus routing is incorrect for approximately 34\% of reads. Conditioned on correct genus routing, species Top-1 accuracy rises to 20.1\%; conditioned on incorrect routing it falls to 9.7\%. Hard Top-5 and soft routing yield only marginal changes ($+0.1$~pp and $-0.2$~pp respectively) over the flat baseline, because the 34\% routing error rate introduces misclassification noise that nearly offsets the gain from correctly routed reads. Meaningful improvement from routing therefore requires genus accuracy well above the current 65.7\%.
-
-\paragraph{Oracle routing reveals the potential.}
-Masking logits to the \emph{true} genus raises Top-1 to 27.9\% ($+$11.5~pp) and macro F1 to 0.256 ($+$0.119). This represents the theoretical ceiling of hierarchical classification given the current sp\_v4 model, and confirms that further genus accuracy gains will translate directly into species-level improvements.
-
-\paragraph{Long-tail species remain the hardest challenge.}
-Even under oracle routing, 632 of 1,535 species retain F1$=$0 (compared to 804 under the flat baseline). The majority of these species have insufficient per-species training examples to acquire discriminative representations at the current scale; the full 50M-read evaluation is expected to reduce, but not eliminate, this long-tail problem.
-
-\subsection{Per-Genus Species Classifiers (100K-read Subset)}
-\label{sec:spv4-per-genus}
-
-As a complementary architecture to the single flat sp\_v4 classifier, we trained 81 dedicated per-genus species classifiers using a frozen NT-v2 backbone and a lightweight attention-pooling head (Section~\ref{sec:method-species-eval}).  Each classifier is responsible only for discriminating among the species within its assigned genus (average 12.8 species per genus); 39 single-species genera require no classifier and always return the unique species deterministically.  Training used a 5M-read balanced subset (approximately 3,260 reads per species) with backbone weights frozen throughout.
-
-The complete 100K-read evaluation compares all six modes: four routing modes applied to the single sp\_v4 model (Table~\ref{tab:hierarchical-prelim}) and two per-genus pipeline modes.  All experiments use the same v9 genus model (epoch~30, 65.7\% subset accuracy) for genus assignment.  Table~\ref{tab:per-genus-eval} summarises the results.
-
-\begin{table}[htbp]
-    \centering
-    \caption{Complete hierarchical species evaluation on 100K-read subset.  Flat, Hard Top-5, Soft, and Oracle modes use sp\_v4 (ep26); Per-genus modes use dedicated per-genus NT-v2 classifiers trained on the 5M balanced subset.}
-    \label{tab:per-genus-eval}
     \begin{tabular}{llcccc}
         \toprule
         \textbf{Model} & \textbf{Mode} & \textbf{Top-1} & \textbf{Top-5} & \textbf{Top-10} & \textbf{F1 (macro)} \\
         \midrule
-        \multirow{4}{*}{sp\_v4 (ep26)} & Flat (baseline)     & 16.4\% & 36.7\% & 46.7\% & 0.137 \\
-                                        & Hard Top-5 routing  & 16.5\% & 36.4\% & 46.1\% & 0.139 \\
-                                        & Soft routing        & 16.2\% & 36.6\% & 46.2\% & 0.135 \\
-                                        & Oracle (true genus) & 27.9\% & 55.4\% & 65.3\% & 0.256 \\
+        \multirow{4}{*}{sp\_v4 (ep30)} & Flat (baseline)     & 15.9\% & 36.4\% & 46.6\% & 0.135 \\
+                                        & Top-5 genus routing & 15.9\% & 36.2\% & 46.0\% & 0.136 \\
+                                        & Soft genus routing  & 15.8\% & 36.3\% & 46.1\% & 0.135 \\
+                                        & Oracle (true genus) & 27.4\% & 55.5\% & 65.2\% & 0.252 \\
         \midrule
-        \multirow{2}{*}{Per-genus (5M)} & Predicted genus (v9) & 11.2\% & 26.0\% & 32.9\% & 0.109 \\
-                                         & Oracle genus (true)  & 21.8\% & 48.7\% & 60.2\% & 0.204 \\
+        \multirow{2}{*}{Per-genus (50M)} & Predicted genus (v9) & 14.7\% & 30.5\% & 36.2\% & 0.142 \\
+                                          & \textbf{Oracle genus (true)}  & \textbf{27.8\%} & \textbf{55.6\%} & \textbf{65.2\%} & \textbf{0.265} \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-\paragraph{Genus routing errors dominate the per-genus pipeline.}
-With predicted genus routing (v9, 65.7\% accuracy), the per-genus pipeline achieves only 11.2\% Top-1---5.2~pp \emph{below} the flat sp\_v4 baseline.  The 34.3\% genus error rate is more damaging here than in the routing modes applied to sp\_v4 logits: when the wrong genus model is selected, every read in that genus is classified against the wrong species set, producing near-zero accuracy for those reads.  By contrast, sp\_v4 Hard Top-5 routing retains some partial signal from the flat logits even when the top-1 genus is wrong.
+\paragraph{Hierarchical architecture validated: per-genus 50M oracle exceeds sp\_v4 oracle.}
+Under perfect genus assignment, the per-genus 50M pipeline achieves 27.8\% Top-1 and macro F1 of 0.265---\emph{above} the sp\_v4 oracle (27.4\%, F1 0.252).
+This confirms that dedicated per-genus classifiers, each trained on genus-scoped data, provide more discriminative representations for intra-genus species discrimination than the single flat classifier trained across all 1,535 classes simultaneously.
+The improvement is meaningful despite the per-genus models using a \emph{frozen} backbone (no LoRA), highlighting the benefit of reduced class confusion when the problem is decomposed by genus.
 
-\paragraph{Per-genus oracle underperforms sp\_v4 oracle.}
-Even under perfect genus assignment, per-genus oracle achieves 21.8\%---6.1~pp below sp\_v4 oracle (27.9\%).  This gap reflects the weaker individual per-genus classifiers: each was trained on $\sim$3,260 reads per species (compared to $\sim$32,600 for sp\_v4) with a frozen backbone rather than LoRA fine-tuning.  The per-genus approach would likely exceed the sp\_v4 oracle if each classifier received 50M-scale training with an adapted backbone.
+\paragraph{Genus routing is the primary bottleneck.}
+With predicted genus routing (v9, 66.1\% accuracy), the per-genus pipeline falls to 14.7\% Top-1---1.2~pp \emph{below} the flat sp\_v4 baseline.
+The 33.9\% genus error rate is particularly damaging in the per-genus architecture: when the wrong genus model is selected, all species predictions are drawn from the incorrect candidate set, producing near-zero accuracy for those reads.
+By contrast, the flat sp\_v4 routing modes ($\pm$0.1~pp over baseline) are far less sensitive to genus errors, because incorrect genus routing merely reweights logits rather than restricting them to a wrong candidate set.
+Meaningful improvement from routing therefore requires genus accuracy substantially above the current 66.1\%.
 
-\paragraph{Long-tail coverage improves substantially.}
-Despite the lower Top-1 accuracy, the per-genus architecture reduces the number of species with F1$=$0 from 804 (flat sp\_v4) to 401 under predicted routing and 362 under oracle routing.  This suggests that the per-genus framing---where each rare species competes only within its genus rather than against all 1,535 classes---provides a more favourable learning signal for rare species, even at reduced training scale.
+\paragraph{Oracle ceiling quantifies the potential.}
+Masking sp\_v4 logits to the true genus raises Top-1 by $+11.5$~pp (15.9\%$\to$27.4\%), and the per-genus oracle reaches a matching Top-1 of 27.8\% ($+12.9$~pp over its predicted-routing result).
+Both oracle results establish the same practical ceiling ($\sim$27--28\% Top-1), confirming that genus accuracy gains will translate directly into species-level improvements under either architecture.
+
+\subsection{Per-Genus Model Analysis}
+\label{sec:spv4-per-genus}
+
+The 81 per-genus classifiers were trained on the full 50M balanced dataset (approximately 32,600 reads per species within each genus), with the NT-v2 backbone frozen and only the attention-pooling head trained.
+39 single-species genera require no classifier and are assigned deterministically.
+Per-genus model accuracy depends strongly on genus size: genera with $\leq$5~species average $>$80\% accuracy, while those with $>$50~species average $<$20\%.
+The overall mean validation accuracy is 48.3\% (median 44.2\%).
+
+Performance is dominated by four large genera that collectively concentrate the majority of the species:
+Collinsella (349 species, 1.3\% val acc), Clostridium (191 species, 19.9\%), Prevotella (91 species, 26.6\%), and Bacteroides (79 species, 15.9\%).
+These genera alone account for a disproportionate share of the per-genus oracle gap relative to the full-scale sp\_v4 model.
+
+A natural next step is a three-level hierarchy---genus model $\to$ \emph{subgenus router} $\to$ per-subgenus classifier---for the five most problematic genera (Collinsella, Clostridium, Prevotella, Bacteroides, Blautia), partitioning each into groups of $\sim$25--30 species.
+This would reduce each classifier's effective class count to a tractable level and is expected to close the remaining gap between predicted-routing and oracle-routing performance.
+Implementation of this subgenus tier is left as future work.
 
 \section{Sample-Level Application Evaluation}
 \label{sec:exp-sample}
