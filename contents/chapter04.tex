@@ -934,7 +934,7 @@ The sparse-community analysis below, in which each sample is constructed from a 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.55\textwidth]{figures/abundance_scatter.png}
-    \caption{True vs.\ predicted relative abundance across 100 random-partition samples (all 12,000 (sample, genus) pairs shown).  Each point is one (sample, genus) pair.  The visible clusters correspond to groups of genera sharing the same species count $n_g$: because the dataset is species-level balanced, every genus with $n_g$ species has true abundance $n_g/1{,}535$ in expectation, collapsing to the same $x$-coordinate.  Pearson $r = 0.993$.}
+    \caption{True vs.\ predicted relative abundance across 100 random-partition samples (all 12,000 (sample, genus) pairs shown).  Each point is one (sample, genus) pair.  The visible clusters correspond to groups of genera sharing the same species count $n_g$: because the dataset is species-level balanced, every genus with $n_g$ species has true abundance $n_g/1{,}535$ in expectation, collapsing to the same $x$-coordinate.  Pearson $r = 0.993$.  Points at larger $x$-values drift slightly above the identity line, reflecting a systematic overestimation of high-abundance genera attributable to classification bias (Section~\ref{sec:sample-abundance}).}
     \label{fig:abundance-scatter}
 \end{figure}
 
