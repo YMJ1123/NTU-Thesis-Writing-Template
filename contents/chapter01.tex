@@ -57,17 +57,17 @@ The specific objectives of this thesis are:
 The main contributions of this thesis are as follows:
 
 \begin{enumerate}
-    \item \textbf{A token-level GFM classification framework}: We propose a classification pipeline that feeds the complete token-level output of a pre-trained Nucleotide Transformer v2~\cite{DallaTorre2023} into a learnable attention-pooling classification head, fine-tuned with LoRA. This approach preserves rich positional and contextual information that is lost in mean-pooling approaches.
-    
-    \item \textbf{Systematic data scaling analysis}: Through extensive experiments spanning 500K to 50M training reads, we demonstrate that training data volume is the dominant factor determining classification accuracy. Increasing training data from 500K to 5M balanced reads yields a $+7.8$ percentage point improvement in genus-level accuracy (55.3\% $\to$ 63.1\%), while architectural modifications alone yield at most $\pm0.5$ percentage points.
-    
-    \item \textbf{Reverse-complement test-time augmentation}: We demonstrate that averaging logits from forward and reverse-complement passes at inference time consistently improves accuracy by $+0.1$ to $+1.5$ percentage points at no additional training cost, with larger gains for pre-trained models and smaller gains for randomly initialized architectures.
-    
-    \item \textbf{Multi-level taxonomic evaluation}: We provide a comprehensive evaluation framework supporting genus-level (120 classes) and species-level (1,535 classes) classification, including oracle-genus evaluation, top-$k$ genus routing, and per-class performance analysis.
-    
-    \item \textbf{Controlled backbone ablation}: We design a controlled experiment comparing the pre-trained 29-layer NT-v2 backbone against a single-layer Transformer trained from scratch (MetaTransformer-style), using the same tokenizer and classification head. This isolates the contribution of pre-trained representations from model capacity and tokenization effects.
-    
-    \item \textbf{Computational resource assessment}: We provide a detailed analysis of GPU memory, compute utilization, and training time on NVIDIA H100 hardware, offering practical guidance for scaling GFM-based classifiers to production metagenomic datasets.
+    \item \textbf{Systematic evaluation of GFM fine-tuning for metagenomic classification}: We provide an end-to-end empirical study of pre-trained genomic foundation models (NT-v2, DNABERT, DNABERT-2) for short-read taxonomic classification, spanning frozen-embedding baselines, parameter-efficient fine-tuning, data scaling, RC test-time augmentation, and sample-level utility. The proposed token-level pipeline---feeding the complete token-level output of NT-v2 into a learnable attention-pooling head, fine-tuned with LoRA---preserves the positional and contextual information lost in mean-pooling approaches.
+
+    \item \textbf{Data scaling within a fixed GFM-based architecture}: Through extensive experiments spanning 500K to 50M training reads, we show that within the NT-v2 framework, training data volume is the dominant performance factor with diminishing returns: $500\text{K}\to 5\text{M}$ yields $+7.76$~pp (55.29\% $\to$ 63.05\%) and $5\text{M}\to 50\text{M}$ a further $+4.02$~pp (to 67.07\%), while architectural and training-technique ablations yield at most $\pm0.5$~pp.
+
+    \item \textbf{Pre-training is beneficial under fixed 6-mer tokenization}: A controlled backbone ablation (29-layer pre-trained NT-v2 vs.\ a single-layer randomly initialized Transformer at the same 50M scale and identical tokenization and head) isolates a $+13.19$~pp pre-training advantage in RC-TTA accuracy ($67.07\%$ vs.\ $53.88\%$), confirming that GFM pre-training contributes meaningfully when tokenization is held constant.
+
+    \item \textbf{Tokenization is the dominant cross-architecture factor}: Holding the architecture (MetaTransformer) fixed and varying $k \in \{6, 12, 13\}$ and stride, we show that overlapping long-$k$ tokenization is the single largest performance driver: MT 13-mer stride$=$1 trained \emph{from scratch} on 50M reads reaches 87.42\% genus Top-1, $+20.35$~pp above NT-v2 + LoRA with RC TTA (67.07\%) despite no pre-training. NT-v2's non-overlapping 6-mer tokenizer is therefore identified as the principal structural limitation of the proposed approach.
+
+    \item \textbf{Reverse-complement test-time augmentation}: We demonstrate that averaging logits from forward and RC passes at inference consistently improves accuracy by $+0.1$ to $+1.5$~pp at no additional training cost, with larger gains for pre-trained models and near-zero gain for randomly initialized architectures, supporting the interpretation that RC TTA primarily corrects pre-training-induced strand biases.
+
+    \item \textbf{Hierarchical species classification and sample-level utility}: We provide a multi-level evaluation framework for genus (120 classes) and species (1,535 classes) classification. Per-genus 50M LoRA classifiers under oracle-genus routing reach 27.8\% Top-1, exceeding the flat sp\_v4 oracle ceiling of 27.4\% and validating per-genus specialisation as the correct hierarchical direction; the genus-routing accuracy ($\sim$66\%--67\%) is identified as the remaining bottleneck. At the sample level, 67\% per-read accuracy translates---on species-balanced random-partition synthetic samples---to Pearson $r = 0.993$ for relative abundance and 100\% sensitivity for genera at $\geq 1\%$ abundance.
 \end{enumerate}
 
 \section{Thesis Organization}
