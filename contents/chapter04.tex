@@ -946,7 +946,7 @@ The low Bray-Curtis dissimilarity of 0.094 indicates that the aggregate abundanc
 
 Inspection of Figure~\ref{fig:abundance-scatter} reveals a subtle directional tendency: high-abundance genera show slight overestimation, visible as points drifting above the identity line at larger $x$-values.
 This is consistent with a classification-bias mechanism: reads misclassified away from rare genera disproportionately fall into the decision regions of common genera, which have broader learned representations owing to their larger species membership.
-Although the ART simulation used a coverage-based protocol (yielding 263--413 reads per genome depending on genome length), species-level balanced subsampling equalises read counts per species prior to evaluation, removing any genome-length contribution from the true abundance profile; the overestimation is therefore attributable to classifier bias rather than a data-generation artefact.
+Although ART was run under a coverage-normalised schedule (Section~\ref{sec:method-data}) so that each genome contributes a comparable number of reads (within $\sim\!260$--$410$), species-level balanced subsampling further equalises read counts per species prior to evaluation; the resulting true abundance profile depends only on the number of species per genus, not on individual genome lengths. The overestimation is therefore attributable to classifier bias rather than a data-generation artefact.
 
 A structural property of this evaluation warrants noting.
 Because all 100 random-partition samples are drawn from the same species-level balanced validation set, every sample shares the same \emph{expected} genus abundance profile (genus $g$ always contributes $n_g/1{,}535$ reads on average).
