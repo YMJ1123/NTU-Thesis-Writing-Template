@@ -28,9 +28,12 @@ Concurrently, the field of genomics has witnessed the development of \emph{genom
 Models such as the Nucleotide Transformer~\cite{DallaTorre2023}, DNABERT~\cite{Ji2021}, DNABERT-2~\cite{Zhou2024dnabert2}, and Evo~\cite{Nguyen2024} have demonstrated strong performance across diverse genomic tasks, including promoter prediction, splice site identification, and variant effect prediction. 
 These models offer a compelling alternative to task-specific feature engineering: by pre-training on vast genomic corpora, they capture rich sequence semantics that can be transferred to downstream tasks through fine-tuning.
 
-Despite their promise, the application of GFMs to metagenomic taxonomic classification remains underexplored. 
-A na\"ive approach---extracting mean-pooled embeddings from a frozen pre-trained model and training a linear classifier---discards the positional and local information encoded in individual token representations. 
-This thesis investigates whether a \emph{token-level} approach, which preserves the full sequence of token embeddings and employs parameter-efficient fine-tuning, can substantially improve metagenomic taxonomic classification.
+Despite their promise, the application of GFMs to metagenomic taxonomic classification remains underexplored, and several open questions remain.
+A na\"ive approach---extracting mean-pooled embeddings from a frozen pre-trained model and training a linear classifier---discards the positional and local information encoded in individual token representations.
+A separate but equally important question concerns \emph{tokenization}: most existing GFMs (including NT-v2) use non-overlapping or short-$k$ tokenization schemes inherited from masked-language-model pre-training, yet $k$-mer-based metagenomic classifiers commonly rely on overlapping long $k$-mers (e.g., $k = 12$--13) for taxonomic specificity.
+It is therefore unclear whether large-scale GFM pre-training can compensate for tokenization choices that are mismatched to the downstream taxonomic task.
+
+This thesis investigates two complementary questions: (i)~whether a \emph{token-level} approach, preserving the full sequence of token embeddings and employing parameter-efficient fine-tuning, can substantially improve metagenomic taxonomic classification over frozen-embedding baselines; and (ii)~whether GFM pre-training is sufficient to compensate for the absence of task-specific $k$-mer tokenization, or whether tokenization design imposes a structural ceiling that pre-training alone cannot overcome.
 
 \section{Problem Statement}
 \label{sec:intro-problem}
