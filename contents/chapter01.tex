@@ -46,8 +46,9 @@ The specific objectives of this thesis are:
 \begin{enumerate}
     \item \textbf{Token-level representation}: Investigate whether preserving the full sequence of token embeddings from a genomic foundation model, rather than using mean-pooled summaries, improves taxonomic classification accuracy.
     \item \textbf{Parameter-efficient fine-tuning}: Evaluate the effectiveness of LoRA (Low-Rank Adaptation)~\cite{Hu2022} for adapting a 498M-parameter pre-trained model to the taxonomic classification task with minimal trainable parameters.
-    \item \textbf{Data scaling}: Quantify the relationship between training data volume and classification performance, and determine the data requirements for achieving competitive accuracy.
-    \item \textbf{Comprehensive evaluation}: Assess performance across multiple metrics (micro accuracy, macro F1, top-$k$ accuracy) and at both genus and species taxonomic levels.
+    \item \textbf{Data scaling}: Quantify the relationship between training data volume and classification performance within a fixed GFM-based architecture, and determine the data requirements for achieving competitive accuracy.
+    \item \textbf{Pre-training vs.\ tokenization}: Through controlled cross-architecture ablations holding training data and capacity comparable, isolate the contributions of (a)~large-scale genomic pre-training and (b)~$k$-mer tokenization design to taxonomic-classification performance, and identify the dominant bottleneck of the proposed approach.
+    \item \textbf{Multi-level and sample-level evaluation}: Assess performance across multiple metrics (micro accuracy, macro F1, top-$k$ accuracy) at both genus and species taxonomic levels, and characterize how per-read accuracy translates to sample-level utility (relative-abundance estimation, presence/absence detection).
 \end{enumerate}
 
 \section{Contributions}
