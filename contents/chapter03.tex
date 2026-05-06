@@ -306,11 +306,38 @@ To facilitate progressive scaling from smaller to larger datasets, we implement 
 \section{Data Pipeline}
 \label{sec:method-data}
 
-\subsection{Training Data Generation}
+\subsection{Reference Database and Taxonomy}
 
-Training data consists of simulated metagenomic reads generated from reference genomes using the ART simulator~\cite{Huang2012}, following the same protocol as MetaTransformer~\cite{Wichmann2023}. Reference genomes are drawn from the Human Gastrointestinal Reference genome database (HGR-UMGS)~\cite{Almeida2019}, covering 120 genera and 1,535 species of human gut-associated microorganisms.
+Reference genomes are drawn from the Human Gastrointestinal Reference genome database (HGR-UMGS)~\cite{Almeida2019}, comprising two sources merged at the genus level: the Human Gut Reference (HGR; \texttt{taxonomy\_hgr.tab}) and the Unified Human Gastrointestinal Genome--derived Metagenome-Assembled Genomes Survey (UMGS; \texttt{taxonomy\_umgs.tab}).
+The database covers \textbf{1{,}535 genomes spanning 120 genera}; because the source taxonomy is provided only down to genus, each genome is treated as a distinct ``species'' and is identified by its genome ID (e.g., \texttt{11861\_6\_55}).
+Read headers therefore encode the full label hierarchy as
+\texttt{>lbl|species\_class|genome\_id|genus\_class|genus\_name},
+which is parsed at load time to produce both 120-class genus and 1{,}535-class species labels.
+The same database underlies MetaTransformer~\cite{Wichmann2023}, which simplifies cross-method comparison.
 
-Each simulated read is 150~bp in length (matching typical Illumina HiSeq output) and is labeled with its source organism's genus and species.
+\subsection{ART Read Simulation}
+
+Training data consists of simulated metagenomic short reads generated from these reference genomes using the ART Illumina simulator~\cite{Huang2012}, following the same simulation protocol as MetaTransformer~\cite{Wichmann2023}.
+ART is invoked in paired-end mode with the HiSeq~2500 (HS25) error profile, 150~bp read length, and fragment-length distribution $\mathcal{N}(\mu = 400, \sigma = 50)$~bp.
+
+To prevent dataset composition from being driven by genome-length differences, reads are generated under a \emph{coverage-normalised} schedule rather than a fixed-coverage schedule.
+The longest reference genome is assigned a coverage factor of $3\times$, and shorter genomes are assigned proportionally higher coverage so that, in expectation, every genome contributes the same number of reads to the merged FASTA.
+In practice, this yields per-genome read counts within a narrow band ($\sim\!260$--$410$ reads per genome) due to discretisation; the relative class composition is therefore determined by the number of genomes per genus rather than by total genus genome length.
+
+\paragraph{Pipeline.}
+The full pipeline executes in five stages:
+\begin{enumerate}
+    \item ART generates paired-end reads for each genome FASTA under the coverage-normalised schedule above.
+    \item Per-genome FASTQ outputs are merged into a single FASTQ stream.
+    \item The stream is split into 64 chunks for parallel FASTQ$\to$FASTA conversion and label injection.
+    \item The chunks are concatenated and shuffled with \texttt{seq-shuf} to produce the unified \texttt{reads.fa} ($\sim\!47$~GB, $\sim\!258$M reads).
+    \item Balanced subsampling (Section~\ref{sec:method-subsampling}) draws fixed-size subsamples (e.g., 50M, 5M, 500K) from \texttt{reads.fa}.
+\end{enumerate}
+
+\paragraph{Reproducibility note.}
+ART is invoked without a fixed \texttt{--rndSeed}, so the underlying $\sim\!258$M-read \texttt{reads.fa} is not bit-for-bit reproducible (a fresh ART run would draw new noise realisations and read positions), although its statistical properties---per-genome coverage, label distribution, and read-length distribution---are reproducible by construction.
+Downstream of the simulator, the balanced-subsampling stage uses a fixed seed (\texttt{seed=42}), so all balanced subsamples (500K, 5M, 50M) used in this thesis are exactly reproducible from a given \texttt{reads.fa}.
+This asymmetry is acknowledged as a methodological limitation and is the dominant non-determinism in the data pipeline.
 
 \subsection{Balanced Subsampling}
 \label{sec:method-subsampling}
