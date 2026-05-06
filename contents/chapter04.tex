@@ -1063,7 +1063,7 @@ The experimental results lead to several key conclusions:
     
     \item \textbf{Overfitting signals data starvation}: The transition from 6.25\% to 1.30\% train-validation gap when scaling from 500K to 5M reads confirms that the model was severely data-limited at the smaller scale.
     
-    \item \textbf{Pre-trained backbone provides a substantial advantage}: The controlled ablation (v9 vs.\ v11) shows a 12.18~pp accuracy gap in favor of the 29-layer pre-trained NT-v2 backbone over a single-layer randomly initialized Transformer at the same 50M data scale, confirming that pre-training on 850 reference genomes provides representations that meaningfully improve read discrimination.
+    \item \textbf{Pre-trained backbone provides a substantial advantage}: The controlled ablation (v9 vs.\ v11) shows a 13.19~pp accuracy gap in favor of the 29-layer pre-trained NT-v2 backbone over a single-layer randomly initialized Transformer at the same 50M data scale, confirming that pre-training on 850 reference genomes provides representations that meaningfully improve read discrimination.
 
     \item \textbf{Hardware is sufficient}: Current NVIDIA H100 hardware is adequately provisioned; the operational bottleneck is the SLURM time limit rather than computational resources.
 
