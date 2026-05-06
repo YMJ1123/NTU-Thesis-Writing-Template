@@ -997,7 +997,7 @@ At 33\% error rate, a truly absent genus in a 50,000-read sample is expected to 
 This constitutes a per-sample noise floor: to achieve 95\% specificity, the detection threshold must exceed 1.49\% predicted abundance, which simultaneously suppresses the detection of genuinely low-abundance genera.
 
 The ROC analysis highlights an important asymmetry between the two sample-level tasks evaluated here.
-Relative abundance estimation (Section~\ref{sec:sample-abundance}) achieves excellent performance (Pearson $r = 0.993$) because misclassification errors are approximately symmetric---reads misclassified \emph{out of} genus $g$ are roughly cancelled by reads misclassified \emph{into} $g$---so that predicted abundances aggregate to near-true values.
+Relative abundance estimation (Section~\ref{sec:sample-abundance}) achieves excellent performance (Pearson $r = 0.993$) because misclassification errors are broadly symmetric---reads misclassified \emph{out of} genus $g$ are largely cancelled by reads misclassified \emph{into} $g$---so that predicted abundances aggregate close to true values, despite a modest systematic tendency for high-abundance genera to be slightly overestimated owing to classification bias.
 Binary detection, by contrast, requires distinguishing a truly absent genus (receiving $\sim$138 predicted reads) from a truly present but low-abundance genus (receiving only slightly more); at 67\% per-read accuracy this distinction is difficult.
 Improving binary detection performance would require either higher per-read accuracy (reducing the noise floor) or a calibrated statistical test for the presence signal above background, which is left for future work.
 
