@@ -364,15 +364,15 @@ We evaluate species-level classification (1,535 classes) using the 500K dataset 
 
 \begin{table}[htbp]
     \centering
-    \caption{Species classification results (500K dataset, 1,535 classes).}
+    \caption{Species classification results (500K dataset, 1,535 classes). All metrics under RC TTA. ``Oracle Acc'' uses the true genus label to mask species logits.}
     \label{tab:species-results}
-    \begin{tabular}{llcccr}
+    \begin{tabular}{llcccc}
         \toprule
         \textbf{Version} & \textbf{Description} & \textbf{RC TTA Acc} & \textbf{Oracle Acc} & \textbf{F1-macro} & \textbf{F1$=$0} \\
         \midrule
-        sp\_v1 & Baseline & 8.32\% & 20.88\% & --- & 613 \\
-        sp\_v2 & LA $\tau$=0.3 & 8.37\% & 20.85\% & 20.0\% & 433 \\
-        sp\_v3 & Weighted sampler & 8.01\% & 20.48\% & 19.9\% & 392 \\
+        sp\_v1 & Baseline           & 8.32\% & 20.88\% & 6.77\% & 628 \\
+        sp\_v2 & LA $\tau$=0.3      & 8.37\% & 20.85\% & 7.20\% & 552 \\
+        sp\_v3 & Weighted sampler   & 8.01\% & 20.48\% & 7.09\% & 539 \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -381,11 +381,11 @@ Direct species classification achieves only $\sim$8\% accuracy, which, while far
 
 \subsection{Oracle-Genus Evaluation}
 
-Oracle-genus evaluation reveals that even with perfect genus knowledge, species-level accuracy reaches only $\sim$21\%. This ceiling indicates that the model struggles with \emph{intra-genus} discrimination---distinguishing species within the same genus---which is expected given the high sequence similarity among congeners at the 150~bp read length.
+Oracle-genus evaluation reveals that even with perfect genus knowledge, species-level accuracy reaches only $\sim$21\% at the 500K scale. This preliminary ceiling indicates that the model struggles with \emph{intra-genus} discrimination---distinguishing species within the same genus---which is expected given the high sequence similarity among congeners at the 150~bp read length. Section~\ref{sec:spv4-hierarchical-prelim} revisits this ceiling at the 50M scale, where it lifts to 27.4\% (sp\_v4) and 27.8\% (per-genus 50M).
 
 \subsection{Effect of Class Imbalance Mitigation}
 
-Logit adjustment ($\tau=0.3$, sp\_v2) and weighted sampling (sp\_v3) both substantially reduce the number of F1$=$0 classes (from 613 to 433 and 392, respectively) with minimal impact on overall accuracy ($<0.4$~pp). This demonstrates that class imbalance mitigation is valuable for improving the breadth of species covered, even when it does not improve aggregate accuracy.
+Logit adjustment ($\tau=0.3$, sp\_v2) and weighted sampling (sp\_v3) both reduce the number of F1$=$0 classes under direct RC-TTA evaluation (from 628 in sp\_v1 to 552 and 539, respectively) with minimal impact on overall accuracy ($<0.4$~pp). The same trend appears under oracle-genus evaluation, where F1$=$0 drops from 433 (sp\_v1) to 406 (sp\_v2) and 392 (sp\_v3). This demonstrates that class imbalance mitigation is valuable for improving the breadth of species covered, even when it does not improve aggregate accuracy.
 
 \subsection{Top-$k$ Genus Routing}
 
