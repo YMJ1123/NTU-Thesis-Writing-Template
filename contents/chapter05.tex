@@ -41,65 +41,24 @@ This work has several limitations that should be acknowledged:
 
 \section{Future Work}
 
-Several promising directions emerge from this work:
+The findings above point to four primary future directions:
 
-\subsection{Domain-Specific Pre-trained Foundation Models}
+\subsection{Microbial Foundation Models with Overlapping Long-$k$ Tokenization}
 
-The tokenization ablation (Section~\ref{sec:exp-tokenization}) establishes that overlapping 12-mer tokenization is more beneficial than 6-mer pre-training for this task. The ideal direction is therefore a foundation model pre-trained with overlapping 12-mer (or similarly long) tokenization on large microbial genome collections---no such publicly available model currently exists. Promising avenues include:
-\begin{itemize}
-    \item Pre-training a transformer on the GTDB database~\cite{Parks2022} ($>$400,000 microbial genomes) with 12-mer tokenization, which would combine the discriminative power of long k-mers with the representational quality of large-scale pre-training.
-    \item Fine-tuning NT-v2 with a learned 12-mer projection layer to bridge the tokenization gap without full re-pre-training, though this approach may be limited by the model's pre-trained 6-mer positional encodings.
-\end{itemize}
+The tokenization ablation (Section~\ref{sec:exp-tokenization}) identifies overlapping long-$k$ tokenization as the dominant performance driver, yet no publicly available genomic foundation model currently combines this property with large-scale pre-training on diverse microbial genomes. The most promising direction is therefore to pre-train a transformer on the GTDB database~\cite{Parks2022} ($>$400,000 microbial genomes) with overlapping 12-mer or 13-mer tokenization, which would combine the discriminative power of long $k$-mers established here with the representational quality of pre-training.
+Open empirical questions include (i)~whether RC TTA provides an equivalent benefit ($\sim+1$~pp) at $k = 12$/13, (ii)~whether $k > 13$ continues to improve accuracy, and (iii)~whether learned (e.g., BPE) variable-length tokenization can match or exceed fixed long-$k$ schemes. A complementary, lower-cost direction is to fine-tune NT-v2 with a learned 12-mer projection layer; this is bounded above by the model's pre-trained 6-mer positional encodings and is therefore expected to be a partial mitigation rather than a full solution.
 
-\subsection{Full-Scale Data Training}
+\subsection{Full-Scale and Streaming Training}
 
-The most immediate next step is completing training on the full 258M-read dataset. Our data scaling analysis predicts that this could yield genus-level accuracy in the 82--90\% range, substantially narrowing the gap with MetaTransformer. Achieving this requires either:
-\begin{itemize}
-    \item Implementing a streaming data loader that reads from disk, eliminating the in-memory requirement.
-    \item Requesting extended SLURM time limits (72+ hours) or developing a multi-job training orchestration system.
-\end{itemize}
+Our data scaling analysis predicts that completing training on the full 258M-read HGR-UMGS dataset could lift NT-v2 + LoRA genus accuracy into the 82--90\% range. Realising this requires (a)~a streaming data loader that reads from disk to remove the current in-memory ceiling, and (b)~a multi-job training orchestration system or extended SLURM time allocations to cover the longer training horizon. The same infrastructure would enable per-species 50M and full-scale species-level training, which is currently bottlenecked by the same memory constraint.
 
-\subsection{Species-Level Scaling and Hierarchical Classification}
+\subsection{Hierarchical Routing Improvements for Species Classification}
 
-Species classification at the 500K scale achieved only $\sim$8\% accuracy (1,535 classes). Scaling to 50M balanced reads (sp\_v4, Section~\ref{sec:spv4-final}) lifted flat-baseline Top-1 to 15.9\%, with Top-5 reaching 36.4\% and only 191 of 1,535 species retaining F1$=$0. Hierarchical evaluation on a 100K independent test set (Section~\ref{sec:spv4-hierarchical-prelim}) yields two key findings: (i)~sp\_v4 oracle-genus routing reaches Top-1 of 27.4\% ($+$11.5~pp over flat baseline), and (ii)~per-genus 50M LoRA classifiers under oracle-genus routing reach 27.8\%, exceeding the sp\_v4 oracle ceiling by $+$0.4~pp and confirming that per-genus specialisation captures intra-genus variation more accurately than a single joint model. The bottleneck is genus-routing accuracy (66.1\%--67.07\%): predicted routing currently lowers Top-1 to 14.7\%, below the flat baseline, because any routing error directs a read to a genus-specialist model that does not recognise the true species. Partitioning the five largest genera (\textit{Collinsella}, \textit{Clostridium}, \textit{Prevotella}, \textit{Bacteroides}, \textit{Blautia}) into subgroups of 25--30 species each---a three-layer routing architecture---is the most direct path to closing this gap.
+Per-genus 50M classifiers under oracle-genus routing reach 27.8\% species Top-1 (Section~\ref{sec:spv4-hierarchical-prelim}), exceeding the flat sp\_v4 oracle (27.4\%) and validating per-genus specialisation. Predicted routing through the 66\%--67\% genus model, however, lowers Top-1 to 14.7\%---below the flat baseline---because per-genus specialists do not recognise reads from genera they were not trained on. The most direct path to closing this gap is a three-layer routing architecture: partitioning the five largest genera (\textit{Collinsella}, \textit{Clostridium}, \textit{Prevotella}, \textit{Bacteroides}, \textit{Blautia}) into subgroups of 25--30 species, training a per-subgenus router, and only descending to a per-genus specialist after subgenus disambiguation. Improving genus-routing accuracy itself is bounded by NT-v2's 6-mer tokenization and is therefore best addressed indirectly through the long-$k$ pre-training direction above.
 
-\subsection{Tokenization Study}
+\subsection{Real-World Validation and Calibrated Sample-Level Estimation}
 
-The controlled ablation (Section~\ref{sec:exp-tokenization}) establishes overlapping large-$k$ tokenization as the dominant design factor. MetaTransformer 13-mer stride$=$1 achieves 87.42\% genus and 49.62\% species accuracy trained from scratch, surpassing NT-v2 + LoRA by 20.35~pp. Remaining open questions include:
-\begin{itemize}
-    \item Does RC TTA provide an equivalent benefit ($\sim+1$~pp) for 12-mer or 13-mer models, and what is the combined accuracy ceiling with TTA?
-    \item Is $k=13$ the optimum, or do larger $k$ values (e.g.\ $k=15$ or $k=21$) continue to improve? The monotonic trend across $k \in \{6, 12, 13\}$ suggests further gains may be possible.
-    \item Would BPE tokenization---which learns variable-length tokens from data---discover taxonomically informative motifs of varying length more efficiently than fixed $k$-mer windows?
-    \item A 13-mer pre-trained genomic foundation model would combine the tokenization advantage with representational pre-training quality. Building or fine-tuning such a model is the most direct path to exceeding the current 87.42\% ceiling.
-\end{itemize}
-
-\subsection{Architectural Improvements}
-
-\textbf{Multi-layer feature fusion}: Current experiments use only the last hidden layer of NT-v2. Combining representations from multiple layers (e.g., via weighted averaging or learned gating) could capture both low-level sequence features and high-level semantic information~\cite{DallaTorre2023}.
-
-\textbf{Adapter fusion}: Training separate LoRA adapters for genus and species tasks and combining them through adapter fusion~\cite{Pfeiffer2021} could enable joint hierarchical classification without duplicating the backbone.
-
-\subsection{Real-World Validation}
-
-Validating the classifier on real metagenomic sequencing data from public repositories (e.g., Human Microbiome Project~\cite{HMP2012}) is essential for assessing practical applicability. This includes evaluating robustness to:
-\begin{itemize}
-    \item Sequencing errors and quality variations across platforms.
-    \item Host DNA contamination.
-    \item Novel or uncharacterized taxa absent from the training database (out-of-distribution detection).
-\end{itemize}
-
-\subsection{Efficiency Optimization}
-
-For practical deployment in clinical or environmental monitoring settings, inference speed is critical. Potential optimizations include:
-\begin{itemize}
-    \item \textbf{Model distillation}: Distilling the 498M-parameter LoRA-adapted model into a smaller task-specific model (e.g., 50M parameters).
-    \item \textbf{Quantization}: Applying INT8 or INT4 quantization to reduce memory and accelerate inference.
-    \item \textbf{Batched inference}: Optimizing the inference pipeline for high-throughput batch processing of millions of reads.
-\end{itemize}
-
-\subsection{Pre-training Strategy}
-
-The current work fine-tunes a model pre-trained on 850 genomes from 174 species. A foundation model pre-trained specifically on a larger, more diverse collection of microbial genomes (e.g., the full GTDB database with $>$400,000 genomes~\cite{Parks2022}) may provide more suitable representations for metagenomic classification, reducing the amount of task-specific fine-tuning data required.
+Validation on real metagenomic data from public repositories (e.g., the Human Microbiome Project~\cite{HMP2012}) is essential for assessing practical applicability. This includes (i)~robustness to sequencing errors and platform-specific quality profiles, (ii)~handling host DNA contamination, and (iii)~out-of-distribution detection for taxa absent from the training database. In parallel, the random-partition abundance evaluation in Section~\ref{sec:exp-sample} measures stability under fixed expected composition rather than generalisation across compositionally variable communities; future evaluation should therefore use sparse, asymmetric, and real microbiome-derived sample compositions, paired with (iv)~calibrated statistical tests for presence/absence above the per-sample noise floor and (v)~learned abundance correction that compensates for the observed systematic overestimation of high-abundance genera (Section~\ref{sec:sample-abundance}).
 
 \section{Concluding Remarks}
 
