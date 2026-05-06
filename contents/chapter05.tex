@@ -17,6 +17,8 @@ This thesis has investigated the application of genomic foundation models to met
 
 \textbf{RC TTA is a robust, free improvement.} Reverse-complement test-time augmentation consistently improves accuracy by $+1$ to $+1.5$ percentage points across all experimental conditions, requiring no additional training cost.
 
+\textbf{Per-genus specialisation validates the hierarchical architecture.} Evaluation on a 100K independent test set demonstrates that per-genus 50M LoRA classifiers achieve oracle-genus Top-1 of 27.8\%, exceeding the flat sp\_v4 oracle of 27.4\% and confirming that per-genus specialisation captures intra-genus species variation more accurately than a single joint classifier. The genus-routing bottleneck (predicted routing: 14.7\% vs.\ flat baseline: 15.9\%) is precisely quantified, providing a clear improvement target.
+
 \textbf{Per-read accuracy understates sample-level utility.} Sample-level evaluation over 200 synthetic 50,000-read communities demonstrates that 67\% per-read accuracy translates to Pearson $r = 0.993$ for relative abundance estimation (Bray-Curtis dissimilarity 0.094) and 100\% genus detection sensitivity for taxa present at $\geq$1\% relative abundance. At a 0.5\% abundance reporting threshold, specificity reaches 92.4\%.
 
 \textbf{Current hardware is sufficient.} The NVIDIA H100 80~GB GPU is adequately provisioned for this workload, with VRAM utilization below 50\% even at batch size 256. The operational bottleneck is the SLURM time limit rather than computational resources.
