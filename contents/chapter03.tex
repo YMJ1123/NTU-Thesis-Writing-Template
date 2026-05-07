@@ -334,10 +334,22 @@ The full pipeline executes in five stages:
     \item Balanced subsampling (Section~\ref{sec:method-subsampling}) draws fixed-size subsamples (e.g., 50M, 5M, 500K) from \texttt{reads.fa}.
 \end{enumerate}
 
-\paragraph{Reproducibility note.}
-ART is invoked without a fixed \texttt{--rndSeed}, so the underlying $\sim\!258$M-read \texttt{reads.fa} is not bit-for-bit reproducible (a fresh ART run would draw new noise realisations and read positions), although its statistical properties---per-genome coverage, label distribution, and read-length distribution---are reproducible by construction.
-Downstream of the simulator, the balanced-subsampling stage uses a fixed seed (\texttt{seed=42}), so all balanced subsamples (500K, 5M, 50M) used in this thesis are exactly reproducible from a given \texttt{reads.fa}.
-This asymmetry is acknowledged as a methodological limitation and is the dominant non-determinism in the data pipeline.
+\paragraph{Reproducibility audit.}
+We conducted an explicit audit of randomness sources across the full pipeline.
+The findings are summarised below.
+
+\emph{Reproducible by construction.}
+The balanced-subsampling stage (Section~\ref{sec:method-subsampling}) seeds Python's \texttt{random} module with \texttt{seed=42}, so all balanced subsamples (500K, 5M, 50M) used in this thesis are exactly reproducible from a given \texttt{reads.fa}.
+The train/validation split is computed by sklearn's \texttt{train\_test\_split} with \texttt{random\_state=42} (Section~\ref{sec:method-data}), and is therefore also deterministic for a fixed input subsample.
+
+\emph{Not bit-for-bit reproducible.}
+ART is invoked without \texttt{--rndSeed}, so the underlying $\sim\!258$M-read \texttt{reads.fa} would differ between fresh runs in individual read positions and per-base error realisations, although its aggregate statistical properties (per-genome coverage, label distribution, read-length distribution) are reproducible by construction.
+The training script likewise does not set \texttt{torch.manual\_seed}, \texttt{numpy.random.seed}, or \texttt{torch.cuda.manual\_seed\_all}; \texttt{torch.backends.cudnn.deterministic} is left at its default (\texttt{False}); and the PyTorch \texttt{DataLoader} is constructed without \texttt{worker\_init\_fn}, so each worker's \texttt{numpy} and \texttt{random} states are uncontrolled.
+Resume from a checkpoint restores model weights, optimiser state, and learning-rate scheduler state, but does not restore the PyTorch / CUDA / NumPy / Python RNG states, so a run resumed after a SLURM 48-hour timeout is not bit-for-bit identical to a hypothetical uninterrupted run.
+
+\emph{Empirical impact.}
+We did not perform repeated multi-seed runs of the full 50M-scale experiments due to compute constraints, but the residual non-determinism above is expected to produce run-to-run variation on the order of $\pm 0.1$--$0.3$~pp in genus Top-1 accuracy, which is small relative to the effects discussed in this thesis ($+13.19$~pp pre-training, $+20.35$~pp tokenization).
+We acknowledge this as a methodological limitation and a candidate target for tightening in any follow-up study.
 
 \subsection{Balanced Subsampling}
 \label{sec:method-subsampling}
