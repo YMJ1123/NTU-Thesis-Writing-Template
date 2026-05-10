@@ -77,7 +77,8 @@ This chapter describes the proposed token-level genomic foundation model classif
 \node[label, below=0.05cm of head_box]
     {\textit{Head: 2.67M trainable}};
 
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \caption{Overview of the proposed token-level GFM classification pipeline. A 150~bp DNA read is tokenized into non-overlapping 6-mers, encoded by the LoRA-adapted NT-v2 backbone (29 layers, $d{=}1024$), aggregated via multi-head attention pooling, and classified into one of $K$ taxonomic classes (120 genera or 1,535 species). Orange badge indicates LoRA adapter modules; dashed boxes delineate the backbone and classification head parameter groups.}
 \label{fig:system-overview}
 \end{figure}
