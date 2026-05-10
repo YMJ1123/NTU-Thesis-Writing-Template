@@ -693,13 +693,15 @@ To isolate the effect of overlapping tokenization \emph{within the pre-trained G
     All models use LoRA $r=16$ fine-tuning and the same attention-pooling head.
     RC TTA is applied to all models.}
     \label{tab:backbone-tokenization-5M}
+    \small
+    \setlength{\tabcolsep}{4pt}
     \begin{tabular}{llcccc}
         \toprule
         \textbf{Model} & \textbf{Tokenization} & \textbf{Tokens/read} & \textbf{Params} & \textbf{RC TTA Acc} & \textbf{Macro F1} \\
         \midrule
-        NT-v2 + LoRA (v8)  & 6-mer, stride=6 (non-overlap) & 25  & 499M & \textbf{63.05\%} & \textbf{0.449} \\
-        DNABERT + LoRA     & 6-mer, stride=1 (overlap)     & 145 & 86M  & 61.78\%          & 0.384 \\
-        DNABERT-2 + LoRA   & BPE ($\sim$34 tokens)          & $\sim$34 & 117M & 58.88\%     & 0.323 \\
+        NT-v2 + LoRA (v8)  & 6-mer ($s{=}6$, non-overlap) & 25       & 499M & \textbf{63.05\%} & \textbf{0.449} \\
+        DNABERT + LoRA     & 6-mer ($s{=}1$, overlap)     & 145      & 86M  & 61.78\%          & 0.384 \\
+        DNABERT-2 + LoRA   & BPE                          & $\sim$34 & 117M & 58.88\%          & 0.323 \\
         \bottomrule
     \end{tabular}
 \end{table}
