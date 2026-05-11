@@ -899,9 +899,58 @@ Performance is dominated by four large genera that collectively concentrate the 
 Collinsella (349 species, 1.3\% val acc), Clostridium (191 species, 19.9\%), Prevotella (91 species, 26.6\%), and Bacteroides (79 species, 15.9\%).
 These genera alone account for a disproportionate share of the per-genus oracle gap relative to the full-scale sp\_v4 model.
 
-A natural next step is a three-level hierarchy---genus model $\to$ \emph{subgenus router} $\to$ per-subgenus classifier---for the five most problematic genera (Collinsella, Clostridium, Prevotella, Bacteroides, Blautia), partitioning each into groups of $\sim$25--30 species.
-This would reduce each classifier's effective class count to a tractable level and is expected to close the remaining gap between predicted-routing and oracle-routing performance.
-Implementation of this subgenus tier is left as future work.
+To address this bottleneck, we investigate whether inserting a subgenus routing tier between the genus model and per-genus classifiers can reduce the effective class count and improve species Top-1 accuracy.
+
+\subsection{Subgenus Routing: A Negative Result}
+\label{sec:subgenus-routing}
+
+The four hardest genera---Collinsella (349~species), Clostridium (191), Prevotella (91), and Bacteroides (79)---each expose per-genus classifiers to hundreds of closely related species simultaneously.
+The hypothesis motivating subgenus routing is that partitioning each large genus into subgroups of $\sim$25--30 species would reduce intra-classifier confusion and improve species Top-1 under both oracle and predicted genus routing.
+
+\paragraph{Subgenus partition.}
+NT-v2 embeddings are extracted for a random subsample of training reads from each of the five largest genera (adding Blautia to the four above), and $K$-means clustering with $K = \lceil n_g / 27 \rceil$ is applied to define species-to-cluster assignments.
+Each resulting subgenus group is assigned a dedicated attention-pooling head trained on that cluster's reads with a frozen backbone, mirroring the per-genus training setup.
+
+\paragraph{Embedding analysis.}
+Before evaluating routing performance, we examine whether NT-v2's 6-mer representations encode sufficient within-genus discriminative structure to support a $K$-means partition.
+For Collinsella (the most challenging genus at 349~species), the silhouette coefficient of the species-level embedding clusters is $0.03$, indicating near-random cluster structure.
+UMAP projection confirms this: the 349-species embedding space forms a continuous, undifferentiated blob with no visible per-species or per-cluster separation.
+This suggests that NT-v2's non-overlapping 6-mer representations do not distinguish species within a genus at the embedding level.
+
+\paragraph{Routing results.}
+Two routing strategies are evaluated on the independent 100K test set:
+\begin{itemize}
+    \item \textbf{Hard routing}: each read is assigned to the highest-scoring subgenus cluster before selecting the per-subgenus classifier.
+    \item \textbf{Soft routing}: logits from multiple subgenus classifiers are combined with confidence-weighted aggregation.
+\end{itemize}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Subgenus routing results on the independent 100K test set (species Top-1 accuracy).
+    ``Per-genus baseline'' is from Table~\ref{tab:hierarchical-prelim}.}
+    \label{tab:subgenus-routing}
+    \small
+    \setlength{\tabcolsep}{5pt}
+    \begin{tabular}{lcc}
+        \toprule
+        \textbf{Method} & \textbf{Predicted routing} & \textbf{Oracle routing} \\
+        \midrule
+        Per-genus (50M) baseline     & 14.7\%  & 27.8\% \\
+        + Hard subgenus routing      & 13.2\%  & 25.6\% \\
+        + Soft subgenus routing      & 13.6\%  & 26.1\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Both routing strategies \emph{decrease} Top-1 accuracy relative to the per-genus baseline.
+Hard routing reduces predicted-routing Top-1 from 14.7\% to 13.2\% ($-$1.5~pp) and oracle-routing Top-1 from 27.8\% to 25.6\% ($-$2.2~pp); soft routing recovers slightly (13.6\%/26.1\%) but still falls below the baseline under both routing conditions.
+
+\paragraph{Analysis.}
+The failure is consistent with the embedding analysis.
+Because $K$-means on NT-v2's 6-mer representations cannot identify biologically coherent species groups within a genus, the subgenus partition introduces an additional routing error source without any compensating reduction in intra-classifier confusion.
+Reads that are already difficult to discriminate at the genus level become harder when routed to the wrong subgenus group.
+The bottleneck is therefore representational quality---NT-v2's non-overlapping 6-mer tokenisation does not encode sufficient within-genus resolution to support a subgenus-level partition---rather than routing architecture depth.
+Improving within-genus species classification requires better sequence representations (e.g., overlapping long-$k$ tokenisation) rather than deeper routing hierarchies.
 
 \section{Sample-Level Application Evaluation}
 \label{sec:exp-sample}
