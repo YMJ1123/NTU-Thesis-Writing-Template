@@ -895,6 +895,16 @@ Meaningful improvement from routing therefore requires genus accuracy substantia
 Masking sp\_v4 logits to the true genus raises Top-1 by $+11.5$~pp (15.9\%$\to$27.4\%), and the per-genus oracle reaches a matching Top-1 of 27.8\% ($+12.9$~pp over its predicted-routing result).
 Both oracle results establish the same practical ceiling ($\sim$27--28\% Top-1), confirming that genus accuracy gains will translate directly into species-level improvements under either architecture.
 
+\paragraph{MetaTransformer 13-mer surpasses the NT-v2 oracle ceiling.}
+The MT 13-mer flat species model achieves \textbf{49.74\%} Top-1 on the same independent test set---\textbf{+21.9~pp} above the best NT-v2 result under any routing mode (per-genus oracle, 27.8\%).
+This margin, attained without any hierarchical routing, demonstrates that 13-mer overlapping tokenisation raises the intra-genus discriminability ceiling far beyond what routing architecture can recover within the NT-v2 framework.
+
+\paragraph{Router quality governs the direction of hierarchical masking benefit.}
+Applying per-genus logit masking with the MT 13-mer genus router (87.5\% accuracy) raises species Top-1 by \textbf{+1.12~pp} (49.74\%$\to$50.86\%).
+The same masking with the MT 6-mer genus router (48.9\% accuracy) \emph{decreases} Top-1 by \textbf{$-$2.81~pp} (9.22\%$\to$6.41\%).
+This bidirectional pattern directly parallels the NT-v2 finding---per-genus oracle $+12.9$~pp, predicted routing $-1.2$~pp---and generalises the conclusion: hierarchical masking is beneficial if and only if the genus router is accurate enough that masking removes more wrong candidates than it accidentally excludes correct ones.
+The 87.5\% MT 13-mer genus router crosses this threshold; the 66.1\% NT-v2 v9 router does not.
+
 \subsection{Per-Genus Model Analysis}
 \label{sec:spv4-per-genus}
 
