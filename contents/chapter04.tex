@@ -855,7 +855,9 @@ All sp\_v4 results use the epoch~30 final checkpoint; the v9 genus model achieve
     \caption{Complete hierarchical species evaluation on the independent 100K-read test set.
     sp\_v4 (ep30, 50M) denotes the flat species model with four routing modes.
     Per-genus (50M) denotes 81 dedicated classifiers, each trained on a 50M-read subset with a frozen NT-v2 backbone.
-    Genus routing uses v9 (66.1\% on this set).}
+    NT-v2 genus routing uses v9 (66.1\% on this set).
+    MT hierarchical uses a single MT genus model for routing and a single MT species model with per-genus logit masking; it is not a per-genus classifier ensemble.
+    Top-5, Top-10, and macro F1 are not reported for MT (Top-1 only).}
     \label{tab:hierarchical-prelim}
     \begin{tabular}{llcccc}
         \toprule
@@ -867,7 +869,13 @@ All sp\_v4 results use the epoch~30 final checkpoint; the v9 genus model achieve
                                         & Oracle (true genus) & 27.4\% & 55.5\% & 65.2\% & 0.252 \\
         \midrule
         \multirow{2}{*}{Per-genus (50M)} & Predicted genus (v9) & 14.7\% & 30.5\% & 36.2\% & 0.142 \\
-                                          & \textbf{Oracle genus (true)}  & \textbf{27.8\%} & \textbf{55.6\%} & \textbf{65.2\%} & \textbf{0.265} \\
+                                          & Oracle genus (true)  & 27.8\% & 55.6\% & 65.2\% & 0.265 \\
+        \midrule
+        \multirow{2}{*}{MT 13-mer ($s{=}1$)} & Flat (no routing)              & \textbf{49.74\%} & --- & --- & --- \\
+                                              & Hierarchical (MT genus, 87.5\%) & \textbf{50.86\%} & --- & --- & --- \\
+        \midrule
+        \multirow{2}{*}{MT 6-mer ($s{=}1$)}  & Flat (no routing)              & 9.22\%  & --- & --- & --- \\
+                                              & Hierarchical (MT genus, 48.9\%) & 6.41\%  & --- & --- & --- \\
         \bottomrule
     \end{tabular}
 \end{table}
