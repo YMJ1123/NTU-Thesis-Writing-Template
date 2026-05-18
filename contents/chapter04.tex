@@ -536,11 +536,11 @@ To isolate the contribution of the pre-trained 29-layer NT-v2 backbone from the 
 
 \begin{table}[htbp]
     \centering
-    \caption{Controlled ablation: NT-v2 backbone (v9) vs.\ shallow Transformer (v11). All other components are held constant.}
+    \caption{Controlled ablation: NT-v2 backbone (NT-Genus) vs.\ shallow Transformer (Shallow-Genus). All other components are held constant.}
     \label{tab:shallow-design}
     \begin{tabular}{lcc}
         \toprule
-        \textbf{Component} & \textbf{v9 (NT-v2 + LoRA)} & \textbf{v11 (Shallow)} \\
+        \textbf{Component} & \textbf{NT-Genus} & \textbf{Shallow-Genus} \\
         \midrule
         Tokenizer & 6-mer (NT-v2) & 6-mer (NT-v2) \\
         Encoder & 29-layer, $d{=}1024$ & 1-layer, $d{=}128$ \\
