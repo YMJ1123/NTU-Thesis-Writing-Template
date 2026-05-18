@@ -605,7 +605,7 @@ Several additional observations are noteworthy:
     \item \textbf{Pre-training vs.\ tokenization}: This experiment isolates pre-training while holding tokenization constant (6-mer), yielding a +13.19~pp pre-training advantage. Section~\ref{sec:exp-tokenization} further shows that switching to overlapping 12-mer tokenization within the MetaTransformer architecture yields +31.83~pp---nearly $2.5\times$ larger than the pre-training effect. The remaining gap between Shallow-Genus (54\%) and MetaTransformer on the full dataset is therefore attributable primarily to tokenization design, with training data volume as a secondary factor.
 \end{enumerate}
 
-\figref{fig:backbone-ablation} presents a direct visual comparison of v9 and v11 across five evaluation metrics, quantifying the benefit of the pre-trained backbone across all dimensions.
+\figref{fig:backbone-ablation} presents a direct visual comparison of NT-Genus and Shallow-Genus across five evaluation metrics, quantifying the benefit of the pre-trained backbone across all dimensions.
 
 \begin{figure}[htbp]
     \centering
