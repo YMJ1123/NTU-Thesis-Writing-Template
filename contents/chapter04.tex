@@ -1232,6 +1232,16 @@ The MT 13-mer result (49.7\%) crosses this threshold, demonstrating that overlap
 Applying per-genus logit masking to the MT 13-mer predictions (Section~\ref{sec:spv4-hierarchical-prelim}) produces consistent improvements across all four sample-level metrics: Pearson $r$ increases from 0.466 to 0.478 (+0.012), Bray-Curtis dissimilarity decreases from 0.378 to 0.369 ($-$0.009), ROC AUC increases from 0.96563 to 0.96711 (+0.0015), and sensitivity at 95\% specificity increases from 82.6\% to 83.1\%.
 Although each individual gain is modest in absolute terms, the consistency across all four metrics confirms that genus-guided logit masking provides a small but reliable improvement when the genus router quality is sufficient (87.5\% MT 13-mer genus router).
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.90\textwidth]{figures/mt13_flat_vs_hier_detection.png}
+    \caption{MT 13-mer flat versus hierarchical species detection as a function of predicted abundance threshold (100K test set, 1,535 species).
+    \textbf{Left}: sensitivity (true positive rate).
+    \textbf{Right}: specificity (true negative rate).
+    Hierarchical masking consistently improves sensitivity at every abundance threshold while maintaining equivalent specificity, confirming a reliable benefit when the genus router accuracy is sufficient.}
+    \label{fig:mt13-flat-vs-hier}
+\end{figure}
+
 \paragraph{6-mer models at the species level.}
 The MT 6-mer flat model achieves only 9.2\% per-read accuracy and Pearson $r = 0.065$; applying hierarchical masking with the 48.9\% MT 6-mer genus router further \emph{reduces} read accuracy to 6.4\% and Pearson $r$ to 0.034.
 Both results fall far below the practical utility threshold.
