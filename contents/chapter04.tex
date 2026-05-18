@@ -880,8 +880,8 @@ All NT-Species results use the epoch~30 final checkpoint; the NT-Genus model ach
     \end{tabular}
 \end{table}
 
-\paragraph{Hierarchical architecture validated: per-genus 50M oracle exceeds sp\_v4 oracle.}
-Under perfect genus assignment, the per-genus 50M pipeline achieves 27.8\% Top-1 and macro F1 of 0.265---\emph{above} the sp\_v4 oracle (27.4\%, F1 0.252).
+\paragraph{Hierarchical architecture validated: per-genus 50M oracle exceeds NT-Species oracle.}
+Under perfect genus assignment, the per-genus 50M pipeline achieves 27.8\% Top-1 and macro F1 of 0.265---\emph{above} the NT-Species oracle (27.4\%, F1 0.252).
 This confirms that dedicated per-genus classifiers, each trained on genus-scoped data, provide more discriminative representations for intra-genus species discrimination than the single flat classifier trained across all 1,535 classes simultaneously.
 The improvement is meaningful despite the per-genus models using a \emph{frozen} backbone (no LoRA), highlighting the benefit of reduced class confusion when the problem is decomposed by genus.
 
