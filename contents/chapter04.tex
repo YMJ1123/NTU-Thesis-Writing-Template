@@ -565,7 +565,7 @@ If the shallow variant substantially underperforms, it validates the value of th
 
 Based on MetaTransformer's success with a similarly shallow architecture (albeit with 12-mer tokenization and a much larger training set), we hypothesize:
 \begin{itemize}
-    \item The shallow variant will underperform v9 at the same data scale (50M), because the 6-mer tokenizer produces shorter token sequences than 12-mers, requiring more encoder capacity to capture equivalent patterns.
+    \item The shallow variant will underperform NT-Genus at the same data scale (50M), because the 6-mer tokenizer produces shorter token sequences than 12-mers, requiring more encoder capacity to capture equivalent patterns.
     \item The performance gap will quantify the ``value of pre-training'' under fixed tokenization, informing whether future work should invest in larger backbones or better tokenizers.
 \end{itemize}
 
