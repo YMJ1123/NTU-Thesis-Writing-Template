@@ -610,7 +610,7 @@ Several additional observations are noteworthy:
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.90\textwidth]{figures/backbone_ablation.pdf}
-    \caption{Backbone ablation: pre-trained NT-v2 + LoRA (v9, green) vs.\ single-layer randomly initialized Transformer (v11, purple), both trained on 50M balanced reads. Numbers above bars indicate the absolute gain of v9 over v11. The pre-trained backbone consistently outperforms the shallow variant across all metrics, with the largest gap in F1 (macro) ($+19.0$~pp) and Balanced Accuracy ($+17.6$~pp), reflecting v9's superior discrimination of rare genera.}
+    \caption{Backbone ablation: pre-trained NT-v2 + LoRA (NT-Genus, green) vs.\ single-layer randomly initialized Transformer (Shallow-Genus, purple), both trained on 50M balanced reads. Numbers above bars indicate the absolute gain of NT-Genus over Shallow-Genus. The pre-trained backbone consistently outperforms the shallow variant across all metrics, with the largest gap in F1 (macro) ($+19.0$~pp) and Balanced Accuracy ($+17.6$~pp), reflecting NT-Genus's superior discrimination of rare genera.}
     \label{fig:backbone-ablation}
 \end{figure}
 
