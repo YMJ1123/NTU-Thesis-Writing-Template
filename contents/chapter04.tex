@@ -1137,16 +1137,19 @@ This comparison serves two purposes: to isolate the contribution of the NT-v2 pr
     \end{tabular}
 \end{table}
 
-The MT 13-mer model outperforms NT-v2 v9 on all metrics.
-The improvement in relative abundance estimation is modest (Pearson $r$: $0.993 \to 0.999$; Bray-Curtis: $0.094 \to 0.028$), consistent with the finding that abundance estimation is robust to per-read error through cancellation.
-The improvement in binary detection is substantially larger: ROC AUC increases from 0.705 to 0.900, and sensitivity at 95\% specificity increases from 17.2\% to 47.7\%.
+\textbf{Under identical 6-mer tokenisation, NT-v2 v9 outperforms MetaTransformer across all sample-level metrics.}
+Pearson~$r$ increases from 0.984 (MT 6-mer) to 0.993 (NT-v2 v9), Bray-Curtis dissimilarity decreases from 0.167 to 0.094, and ROC AUC for binary detection increases from 0.569 to 0.705, with sensitivity at 95\% specificity nearly doubling (9.4\% $\to$ 17.2\%).
+This confirms that the NT-v2 pre-trained backbone contributes discriminative signal beyond what 6-mer tokenisation alone provides.
+
+Comparing NT-v2 v9 against the MT 13-mer baseline (87.43\%), the performance gap is task-dependent.
+For relative abundance estimation, the difference is modest: Pearson~$r = 0.993$ vs $0.999$, Bray-Curtis $0.094$ vs $0.028$---the NT-v2 abundance profile remains highly correlated with ground truth despite a 20~pp gap in per-read accuracy, demonstrating that abundance estimation at genus granularity (120 classes) is robust to per-read error.
+For binary genus detection, the gap is larger: ROC AUC 0.705 vs 0.900, and sensitivity at 95\% specificity 17.2\% vs 47.7\%.
 
 This asymmetry arises from the noise-floor mechanism described in Section~\ref{sec:sample-detection}.
 At 87\% per-read accuracy, the expected spurious predicted abundance for an absent genus is $50{,}000 \times 0.13 / 120 \approx 54$ reads ($\sim$0.11\%), compared to $\sim$138 reads ($\sim$0.28\%) at 67\% accuracy.
 This reduction in the noise floor is the direct cause of the large gain in binary detection AUC.
 
-The MT 6-mer stride=1 model (48.82\%) demonstrates the complementary effect: lower per-read accuracy degrades all metrics, with the most severe penalty on binary detection (AUC 0.569, near random).
-Together, these three data points confirm that higher per-read accuracy benefits sample-level tasks disproportionately for binary detection relative to abundance estimation.
+In summary, the NT-v2 v9 genus model achieves sample-level abundance profiles that approach the MT 13-mer ceiling (Pearson~$r$: $0.993$ vs $0.999$), while substantially outperforming the MT 6-mer baseline under equivalent tokenisation---demonstrating that the pre-trained backbone provides practical benefit independent of tokenisation length.
 
 \subsection{Species-Level Sample Evaluation}
 \label{sec:sample-species}
