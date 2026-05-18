@@ -434,7 +434,7 @@ The $2\times$ inference cost is the primary trade-off. For offline evaluation th
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{figures/rc_tta_benefit.pdf}
-    \caption{RC TTA benefit across experiments. Top: forward-only vs.\ RC TTA accuracy (blue: NT-v2 backbone; green: DNABERT family; right of second dashed line: random init). Bottom: absolute gain in percentage points. NT-v2-based models gain $+0.77$--$+1.54$~pp consistently. DNABERT gains only $+0.58$~pp, likely because its overlapping 6-mer tokenization is inherently more RC-symmetric than NT-v2's non-overlapping 6-mer. DNABERT-2 (BPE tokenization) gains $+1.53$~pp, similar to early NT-v2 experiments. The randomly initialized v11 gains only $+0.08$~pp, confirming that the benefit primarily corrects pre-training-induced strand biases.}
+    \caption{RC TTA benefit across experiments. Top: forward-only vs.\ RC TTA accuracy (blue: NT-v2 backbone; green: DNABERT family; right of second dashed line: random init). Bottom: absolute gain in percentage points. NT-v2-based models gain $+0.77$--$+1.54$~pp consistently. DNABERT gains only $+0.58$~pp, likely because its overlapping 6-mer tokenization is inherently more RC-symmetric than NT-v2's non-overlapping 6-mer. DNABERT-2 (BPE tokenization) gains $+1.53$~pp, similar to early NT-v2 experiments. The randomly initialized Shallow-Genus gains only $+0.08$~pp, confirming that the benefit primarily corrects pre-training-induced strand biases.}
     \label{fig:rc-tta}
 \end{figure}
 
