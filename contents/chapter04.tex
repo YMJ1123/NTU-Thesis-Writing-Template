@@ -752,7 +752,7 @@ Following the data scaling analysis for genus classification, we extend the 50M 
     \end{tabular}
 \end{table}
 
-The species model is initialized from the v9 genus model's backbone weights via transfer learning (\texttt{--init\_from}), which automatically loads matching LoRA parameters while skipping the genus-specific classification head layers (120-class $\to$ 1,535-class dimension mismatch). This allows the species model to benefit from the genus-tuned backbone representations.
+The species model is initialized from the NT-Genus model's backbone weights via transfer learning (\texttt{--init\_from}), which automatically loads matching LoRA parameters while skipping the genus-specific classification head layers (120-class $\to$ 1,535-class dimension mismatch). This allows the species model to benefit from the genus-tuned backbone representations.
 
 \subsection{NT-Species: Final Results (Epoch 30)}
 \label{sec:spv4-final}
