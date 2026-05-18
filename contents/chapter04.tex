@@ -836,7 +836,7 @@ To obtain a genuinely independent test set under the same data-generation pipeli
 This set has 0\% overlap with our 45M training pool and is used for all hierarchical-evaluation results below.
 
 \textbf{Empirical impact.}
-Re-evaluating the v9 genus model on both sets yielded 66.6\% (overlapping 100K) vs.\ 66.1\% (independent 100K), a difference of 0.5~pp; the sp\_v4 flat baseline differs by less than 0.4~pp between the two sets.
+Re-evaluating the NT-Genus model on both sets yielded 66.6\% (overlapping 100K) vs.\ 66.1\% (independent 100K), a difference of 0.5~pp; the NT-Species flat baseline differs by less than 0.4~pp between the two sets.
 We interpret this as evidence that the model has not memorised individual training reads---which would imply a much larger collapse on the disjoint set---but rather generalises at the read-content level.
 Nevertheless, all hierarchical numbers reported below use the independent test set, and earlier preliminary numbers from the contaminated 100K subset are not reused.
 
