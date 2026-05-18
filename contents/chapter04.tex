@@ -262,7 +262,7 @@ The temporary accuracy drop at epoch 15 is caused by the learning rate scheduler
 \subsection{NT-Genus Model: 50M Balanced Reads}
 \label{sec:exp-v9}
 
-Building on v8, we scale training data by another $10\times$ to 50M balanced reads. The batch size is increased from 32 to 256 (with gradient accumulation reduced from 2 to 1, yielding an effective batch size of 256) to improve GPU utilization. The model is initialized from v8's best checkpoint using \texttt{--init\_from} (transfer learning mode).
+Building on NT-Genus-5M, we scale training data by another $10\times$ to 50M balanced reads. The batch size is increased from 32 to 256 (with gradient accumulation reduced from 2 to 1, yielding an effective batch size of 256) to improve GPU utilization. The model is initialized from NT-Genus-5M's best checkpoint using \texttt{--init\_from} (transfer learning mode).
 
 \begin{table}[htbp]
     \centering
