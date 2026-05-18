@@ -596,7 +596,7 @@ The pre-trained 29-layer NT-v2 backbone outperforms the single-layer randomly in
 
 Several additional observations are noteworthy:
 \begin{enumerate}
-    \item \textbf{F1 gap is larger than accuracy gap}: The macro F1 gap ($-19.04$~pp) substantially exceeds the accuracy gap ($-13.19$~pp), indicating that v11 disproportionately fails on rare genera. This is consistent with v11's lower capacity for learning subtle sequence features distinguishing rare taxa.
+    \item \textbf{F1 gap is larger than accuracy gap}: The macro F1 gap ($-19.04$~pp) substantially exceeds the accuracy gap ($-13.19$~pp), indicating that Shallow-Genus disproportionately fails on rare genera. This is consistent with Shallow-Genus's lower capacity for learning subtle sequence features distinguishing rare taxa.
 
     \item \textbf{RC TTA nearly ineffective for v11}: The shallow, randomly initialized model shows only $+0.08$~pp from RC TTA (vs.\ $+0.77$~pp for v9), supporting the interpretation that RC TTA primarily corrects systematic strand biases acquired during pre-training rather than stochastic inference noise.
 
