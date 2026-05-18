@@ -886,9 +886,9 @@ This confirms that dedicated per-genus classifiers, each trained on genus-scoped
 The improvement is meaningful despite the per-genus models using a \emph{frozen} backbone (no LoRA), highlighting the benefit of reduced class confusion when the problem is decomposed by genus.
 
 \paragraph{Genus routing is the primary bottleneck.}
-With predicted genus routing (v9, 66.1\% accuracy), the per-genus pipeline falls to 14.7\% Top-1---1.2~pp \emph{below} the flat sp\_v4 baseline.
+With predicted genus routing (NT-Genus, 66.1\% accuracy), the per-genus pipeline falls to 14.7\% Top-1---1.2~pp \emph{below} the flat NT-Species baseline.
 The 33.9\% genus error rate is particularly damaging in the per-genus architecture: when the wrong genus model is selected, all species predictions are drawn from the incorrect candidate set, producing near-zero accuracy for those reads.
-By contrast, the flat sp\_v4 routing modes ($\pm$0.1~pp over baseline) are far less sensitive to genus errors, because incorrect genus routing merely reweights logits rather than restricting them to a wrong candidate set.
+By contrast, the flat NT-Species routing modes ($\pm$0.1~pp over baseline) are far less sensitive to genus errors, because incorrect genus routing merely reweights logits rather than restricting them to a wrong candidate set.
 Meaningful improvement from routing therefore requires genus accuracy substantially above the current 66.1\%.
 
 \paragraph{Oracle ceiling quantifies the potential.}
