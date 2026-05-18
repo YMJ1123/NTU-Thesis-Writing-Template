@@ -1141,6 +1141,61 @@ This reduction in the noise floor is the direct cause of the large gain in binar
 The MT 6-mer stride=1 model (48.82\%) demonstrates the complementary effect: lower per-read accuracy degrades all metrics, with the most severe penalty on binary detection (AUC 0.569, near random).
 Together, these three data points confirm that higher per-read accuracy benefits sample-level tasks disproportionately for binary detection relative to abundance estimation.
 
+\subsection{Species-Level Sample Evaluation}
+\label{sec:sample-species}
+
+The genus-level evaluation above establishes that aggregate abundance profiles are robust to per-read misclassification when the task granularity is low (120 classes).
+We now examine whether this robustness extends to species-level classification (1,535 classes), using the independent 100K test set introduced in Section~\ref{sec:spv4-hierarchical-prelim}.
+
+\paragraph{Evaluation protocol.}
+Because the 100K test set contains only $\sim$65 reads per species on average, sample parameters are reduced relative to the genus evaluation: reads per sample = 1,000 (100 non-overlapping partition samples); sparse-community samples use 50 genera present per sample.
+Five models are evaluated: the NT-v2 sp\_v4 flat classifier (Section~\ref{sec:exp-spv4}), the MT 13-mer flat and hierarchical species models, and the MT 6-mer flat and hierarchical species models (Section~\ref{sec:spv4-hierarchical-prelim}).
+
+\begin{table}[htbp]
+    \centering
+    \caption{Species-level sample evaluation on the 100K independent test set (1,535 species).
+    Genus-level results (120 classes, 5M pool, 50K reads/sample) are included as a reference row.
+    All MT species models use hierarchical logit masking as described in Section~\ref{sec:spv4-hierarchical-prelim}.}
+    \label{tab:sample-species-comparison}
+    \begin{tabular}{lccccc}
+        \toprule
+        \textbf{Model} & \textbf{Read Acc} & \textbf{Pearson $r$} & \textbf{Bray-Curtis} & \textbf{ROC AUC} & \textbf{Sens @ 95\% Spec} \\
+        \midrule
+        \multicolumn{6}{l}{\textit{Genus-level reference (120 classes, 5M pool)}} \\
+        MT 13-mer genus   & 87.4\% & 0.9993 & 0.028 & 0.900 & 47.7\% \\
+        NT-v2 v9 genus    & 67.1\% & 0.9932 & 0.094 & 0.705 & 17.2\% \\
+        MT  6-mer genus   & 48.8\% & 0.9840 & 0.167 & 0.569 &  9.4\% \\
+        \midrule
+        \multicolumn{6}{l}{\textit{Species-level (1,535 classes, 100K pool, 1K reads/sample)}} \\
+        NT-v2 sp\_v4 flat & 17.6\% & 0.007 & 0.325 & 0.722 &  3.8\% \\
+        MT  6-mer flat    &  9.2\% & 0.065 & 0.654 & 0.690 &  7.1\% \\
+        MT  6-mer hier.   &  6.4\% & 0.034 & 0.686 & 0.667 &  5.7\% \\
+        MT 13-mer flat    & 49.7\% & 0.466 & 0.378 & 0.966 & 82.6\% \\
+        MT 13-mer hier.   & 50.9\% & \textbf{0.478} & \textbf{0.369} & \textbf{0.967} & \textbf{83.1\%} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\paragraph{A practical utility threshold.}
+Table~\ref{tab:sample-species-comparison} reveals a marked discontinuity between models with read accuracy below $\sim$20\% and those above $\sim$50\%.
+The NT-v2 sp\_v4 flat classifier achieves 17.6\% per-read accuracy but Pearson $r \approx 0.007$---essentially no abundance correlation---while the MT 13-mer flat classifier achieves 49.7\% and Pearson $r = 0.466$.
+This non-linear behaviour is explained by the task granularity: with 1,535 species, each species constitutes only 0.065\% of a balanced community.
+At 17.6\% accuracy, 82.4\% of reads are misclassified, and each misclassified read can be assigned to any of the 1,534 incorrect species, generating a noise floor that overwhelms the true signal for any individual species.
+At 49.7\% accuracy, approximately half the reads are correctly assigned; the remaining half contribute noise, but the correct reads are sufficient to recover a partial correlation with the true abundance profile.
+
+This observation establishes a practical threshold for metagenomic utility at the species level: approximately 40--50\% per-read accuracy is required before sample-level abundance profiles become meaningful.
+Within the NT-v2 framework (maximum 15.9\% species Top-1 with 6-mer tokenisation), this threshold cannot be reached without a fundamental change to the tokenisation scheme.
+The MT 13-mer result (49.7\%) crosses this threshold, demonstrating that overlapping long-$k$ tokenisation is not merely a read-accuracy optimisation but a prerequisite for species-level abundance estimation.
+
+\paragraph{Hierarchical masking at the species level.}
+Applying per-genus logit masking to the MT 13-mer predictions (Section~\ref{sec:spv4-hierarchical-prelim}) produces consistent improvements across all four sample-level metrics: Pearson $r$ increases from 0.466 to 0.478 (+0.012), Bray-Curtis dissimilarity decreases from 0.378 to 0.369 ($-$0.009), ROC AUC increases from 0.96563 to 0.96711 (+0.0015), and sensitivity at 95\% specificity increases from 82.6\% to 83.1\%.
+Although each individual gain is modest in absolute terms, the consistency across all four metrics confirms that genus-guided logit masking provides a small but reliable improvement when the genus router quality is sufficient (87.5\% MT 13-mer genus router).
+
+\paragraph{6-mer models at the species level.}
+The MT 6-mer flat model achieves only 9.2\% per-read accuracy and Pearson $r = 0.065$; applying hierarchical masking with the 48.9\% MT 6-mer genus router further \emph{reduces} read accuracy to 6.4\% and Pearson $r$ to 0.034.
+Both results fall far below the practical utility threshold.
+Notably, the ROC AUC values for MT 6-mer models (0.667--0.690) are comparable to NT-v2 sp\_v4 (0.722), which has higher per-read accuracy but fewer taxa: the detection task difficulty depends on the noise floor, which scales inversely with per-read accuracy and directly with class count.
+
 \section{Summary of Findings}
 
 The experimental results lead to several key conclusions:
