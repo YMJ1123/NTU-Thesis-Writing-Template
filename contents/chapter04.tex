@@ -146,7 +146,7 @@ We now present the token-level approach, progressing from initial architecture v
 
 The training dynamics reveal severe overfitting: while training accuracy continues to increase to 62.7\%, validation accuracy saturates at $\sim$54\%. The growing train-validation gap (0\% $\to$ 9\%) indicates that the model has sufficient capacity to memorize the training data but fails to generalize, suggesting that 500K reads is insufficient to train a 498M-parameter model, even with only 1.1\% of parameters unfrozen.
 
-\figref{fig:training-dynamics} visualises the training trajectories across all three data scales, illustrating this transition from severe overfitting (v3, 500K) to well-generalised training (v9, 50M).
+\figref{fig:training-dynamics} visualises the training trajectories across all three data scales, illustrating this transition from severe overfitting (v3, 500K) to well-generalised training (NT-Genus, 50M).
 
 \begin{figure}[htbp]
     \centering
