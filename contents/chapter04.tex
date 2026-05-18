@@ -977,6 +977,11 @@ Per-read classification accuracy captures only one dimension of practical utilit
 In metagenomics, classifiers are applied to entire sequenced specimens---collections of reads whose aggregate predicted composition is used to answer ecological and clinical questions: which organisms are present, and at what relative abundance?
 This section evaluates the v9 genus model (67.07\% RC~TTA per-read accuracy) under two sample-level metrics: relative abundance estimation and binary genus detection.
 
+The choice of evaluation metrics follows the conventions established by community-wide benchmarks of metagenomic profilers.
+The Critical Assessment of Metagenome Interpretation (CAMI) challenges~\cite{Sczyrba2017,Meyer2022cami2} and the comprehensive classifier benchmark of McIntyre et al.~\cite{McIntyre2017} adopt the Pearson correlation coefficient between true and predicted per-taxon relative abundance as the primary measure of profile-level accuracy, alongside the Bray-Curtis dissimilarity~\cite{BrayCurtis1957}---a classical $\beta$-diversity index from quantitative ecology that captures pairwise compositional dissimilarity between communities and is widely used in microbiome studies.
+Pearson $r$ summarises whether the model preserves the linear shape of the abundance profile, while Bray-Curtis quantifies the magnitude of per-taxon error in $L_1$ units bounded to $[0, 1]$.
+The two metrics are complementary: a model can attain high Pearson $r$ by tracking the rank structure of abundant taxa while still incurring substantial Bray-Curtis dissimilarity from systematic over- or under-estimation, as we observe in Section~\ref{sec:sample-abundance} below.
+
 \subsection{Experimental Setup}
 
 Evaluations are conducted on the 5M-read validation set (120 genera, balanced).
