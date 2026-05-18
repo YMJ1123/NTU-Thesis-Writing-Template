@@ -1115,6 +1115,7 @@ Improving this metric requires either higher per-read accuracy (reducing the noi
 \label{sec:sample-mt-comparison}
 
 To contextualise the NT-v2 sample-level results, we apply identical evaluation to two MetaTransformer models: the 13-mer stride=1 model (87.43\% genus Top-1) and the 6-mer stride=1 model (48.82\%), using predictions extracted from the same 50M validation set.
+This comparison serves two purposes: to isolate the contribution of the NT-v2 pre-trained backbone from the effect of tokenisation by comparing models under identical 6-mer input, and to situate the NT-v2 result against the strongest available classifier.
 
 \begin{table}[htbp]
     \centering
