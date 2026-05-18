@@ -853,9 +853,9 @@ All NT-Species results use the epoch~30 final checkpoint; the NT-Genus model ach
 \begin{table}[htbp]
     \centering
     \caption{Complete hierarchical species evaluation on the independent 100K-read test set.
-    sp\_v4 (ep30, 50M) denotes the flat species model with four routing modes.
+    NT-Species (ep30, 50M) denotes the flat species model with four routing modes.
     Per-genus (50M) denotes 81 dedicated classifiers, each trained on a 50M-read subset with a frozen NT-v2 backbone.
-    NT-v2 genus routing uses v9 (66.1\% on this set).
+    NT-v2 genus routing uses NT-Genus (66.1\% on this set).
     MT hierarchical uses a single MT genus model for routing and a single MT species model with per-genus logit masking; it is not a per-genus classifier ensemble.
     Top-5, Top-10, and macro F1 are not reported for MT (Top-1 only).}
     \label{tab:hierarchical-prelim}
@@ -863,7 +863,7 @@ All NT-Species results use the epoch~30 final checkpoint; the NT-Genus model ach
         \toprule
         \textbf{Model} & \textbf{Mode} & \textbf{Top-1} & \textbf{Top-5} & \textbf{Top-10} & \textbf{F1 (macro)} \\
         \midrule
-        \multirow{4}{*}{sp\_v4 (ep30)} & Flat (baseline)     & 15.9\% & 36.4\% & 46.6\% & 0.135 \\
+        \multirow{4}{*}{NT-Species (ep30)} & Flat (baseline)     & 15.9\% & 36.4\% & 46.6\% & 0.135 \\
                                         & Top-5 genus routing & 15.9\% & 36.2\% & 46.0\% & 0.136 \\
                                         & Soft genus routing  & 15.8\% & 36.3\% & 46.1\% & 0.135 \\
                                         & Oracle (true genus) & 27.4\% & 55.5\% & 65.2\% & 0.252 \\
