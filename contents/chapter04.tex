@@ -600,7 +600,7 @@ Several additional observations are noteworthy:
 
     \item \textbf{RC TTA nearly ineffective for Shallow-Genus}: The shallow, randomly initialized model shows only $+0.08$~pp from RC TTA (vs.\ $+0.77$~pp for NT-Genus), supporting the interpretation that RC TTA primarily corrects systematic strand biases acquired during pre-training rather than stochastic inference noise.
 
-    \item \textbf{Efficiency trade-off}: v11 is $\sim$145$\times$ faster at inference (750K vs.\ 5,170 reads/sec) and uses $\sim$70$\times$ less VRAM during training. For latency-sensitive applications where 54\% accuracy is acceptable, v11 represents a viable lightweight alternative.
+    \item \textbf{Efficiency trade-off}: Shallow-Genus is $\sim$145$\times$ faster at inference (750K vs.\ 5,170 reads/sec) and uses $\sim$70$\times$ less VRAM during training. For latency-sensitive applications where 54\% accuracy is acceptable, Shallow-Genus represents a viable lightweight alternative.
 
     \item \textbf{Pre-training vs.\ tokenization}: This experiment isolates pre-training while holding tokenization constant (6-mer), yielding a +13.19~pp pre-training advantage. Section~\ref{sec:exp-tokenization} further shows that switching to overlapping 12-mer tokenization within the MetaTransformer architecture yields +31.83~pp---nearly $2.5\times$ larger than the pre-training effect. The remaining gap between v11 (54\%) and MetaTransformer on the full dataset is therefore attributable primarily to tokenization design, with training data volume as a secondary factor.
 \end{enumerate}
