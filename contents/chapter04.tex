@@ -1247,7 +1247,7 @@ Although each individual gain is modest in absolute terms, the consistency acros
 \paragraph{6-mer models at the species level.}
 The MT 6-mer flat model achieves only 9.2\% per-read accuracy and Pearson $r = 0.065$; applying hierarchical masking with the 48.9\% MT 6-mer genus router further \emph{reduces} read accuracy to 6.4\% and Pearson $r$ to 0.034.
 Both results fall far below the practical utility threshold.
-Notably, the ROC AUC values for MT 6-mer models (0.667--0.690) are comparable to NT-Species (0.722), which has higher per-read accuracy but fewer taxa: the detection task difficulty depends on the noise floor, which scales inversely with per-read accuracy and directly with class count.
+NT-Species (ROC AUC 0.785) outperforms both MT 6-mer models (0.667--0.690) on binary detection, consistent with its higher per-read accuracy (17.6\% versus 6--9\%); all three models fall far below the MT 13-mer ceiling (0.966--0.967).
 
 \section{Summary of Findings}
 
