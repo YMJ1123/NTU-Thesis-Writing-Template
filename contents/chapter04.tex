@@ -422,9 +422,9 @@ RC TTA provides a consistent $+1.0$ to $+1.5$~pp accuracy improvement across all
     
     \item \textbf{Diminishing returns with RC consistency training}: v7 (RC consistency, $+1.08$~pp) shows less benefit than vanilla models, because RC consistency training already encourages $f(s) \approx f(\bar{s})$ during training, leaving less residual strand asymmetry for RC TTA to correct.
 
-    \item \textbf{Scale-dependent diminishing returns}: The RC TTA benefit decreases slightly with data scale: $+1.44$~pp at 500K, $+1.03$~pp at 5M, and $+0.78$~pp at 50M (v9). Larger training sets expose the model to both strands of each locus more often, gradually reducing systematic strand-directional errors---though a non-trivial asymmetry persists even at 50M reads.
+    \item \textbf{Scale-dependent diminishing returns}: The RC TTA benefit decreases slightly with data scale: $+1.44$~pp at 500K, $+1.03$~pp at 5M, and $+0.78$~pp at 50M (NT-Genus). Larger training sets expose the model to both strands of each locus more often, gradually reducing systematic strand-directional errors---though a non-trivial asymmetry persists even at 50M reads.
 
-    \item \textbf{Near-zero benefit for randomly initialized models}: v11 (shallow Transformer, random initialization) shows only $+0.08$~pp from RC TTA. Without pre-training on a large genomic corpus, the model does not develop systematic strand-direction preferences, leaving little strand asymmetry for RC TTA to correct. This further supports the view that RC TTA primarily corrects pre-training-induced strand biases rather than stochastic inference noise.
+    \item \textbf{Near-zero benefit for randomly initialized models}: Shallow-Genus (shallow Transformer, random initialization) shows only $+0.08$~pp from RC TTA. Without pre-training on a large genomic corpus, the model does not develop systematic strand-direction preferences, leaving little strand asymmetry for RC TTA to correct. This further supports the view that RC TTA primarily corrects pre-training-induced strand biases rather than stochastic inference noise.
 \end{enumerate}
 
 The $2\times$ inference cost is the primary trade-off. For offline evaluation this is acceptable; for latency-sensitive deployment, RC-equivariant architectures~\cite{Brown2021rc} or RC consistency regularization~\cite{Ma2025rc} may be preferred alternatives.
