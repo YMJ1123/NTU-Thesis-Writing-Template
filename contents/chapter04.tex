@@ -320,7 +320,7 @@ Training completed at epoch~30 (April~2026), reaching a forward validation accur
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.95\textwidth]{figures/learning_curves.pdf}
-    \caption{Full validation accuracy curves for v9 (genus, left) and sp\_v4 (species, right) over all completed epochs. Red dotted vertical lines mark epochs where a SLURM job restart incorrectly reset the cosine LR scheduler, causing a temporary accuracy dip. The green shaded region indicates epochs trained after the resume bug fix was applied, during which the LR schedule correctly continues its cosine decay.}
+    \caption{Full validation accuracy curves for NT-Genus (genus, left) and NT-Species (species, right) over all completed epochs. Red dotted vertical lines mark epochs where a SLURM job restart incorrectly reset the cosine LR scheduler, causing a temporary accuracy dip. The green shaded region indicates epochs trained after the resume bug fix was applied, during which the LR schedule correctly continues its cosine decay.}
     \label{fig:learning-curves}
 \end{figure}
 
