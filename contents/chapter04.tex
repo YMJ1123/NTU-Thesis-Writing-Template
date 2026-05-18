@@ -1149,11 +1149,11 @@ This comparison serves two purposes: to isolate the contribution of the NT-v2 pr
 \end{figure}
 
 \textbf{Under identical 6-mer tokenisation, NT-Genus outperforms MetaTransformer across all sample-level metrics.}
-Pearson~$r$ increases from 0.984 (MT 6-mer) to 0.993 (NT-v2 v9), Bray-Curtis dissimilarity decreases from 0.167 to 0.094, and ROC AUC for binary detection increases from 0.569 to 0.705, with sensitivity at 95\% specificity nearly doubling (9.4\% $\to$ 17.2\%).
+Pearson~$r$ increases from 0.984 (MT 6-mer) to 0.993 (NT-Genus), Bray-Curtis dissimilarity decreases from 0.167 to 0.094, and ROC AUC for binary detection increases from 0.569 to 0.705, with sensitivity at 95\% specificity nearly doubling (9.4\% $\to$ 17.2\%).
 This confirms that the NT-v2 pre-trained backbone contributes discriminative signal beyond what 6-mer tokenisation alone provides.
 
-Comparing NT-v2 v9 against the MT 13-mer baseline (87.43\%), the performance gap is task-dependent.
-For relative abundance estimation, the difference is modest: Pearson~$r = 0.993$ vs $0.999$, Bray-Curtis $0.094$ vs $0.028$---the NT-v2 abundance profile remains highly correlated with ground truth despite a 20~pp gap in per-read accuracy, demonstrating that abundance estimation at genus granularity (120 classes) is robust to per-read error.
+Comparing NT-Genus against the MT 13-mer baseline (87.43\%), the performance gap is task-dependent.
+For relative abundance estimation, the difference is modest: Pearson~$r = 0.993$ vs $0.999$, Bray-Curtis $0.094$ vs $0.028$---the NT-Genus abundance profile remains highly correlated with ground truth despite a 20~pp gap in per-read accuracy, demonstrating that abundance estimation at genus granularity (120 classes) is robust to per-read error.
 For binary genus detection, the gap is larger: ROC AUC 0.705 vs 0.900, and sensitivity at 95\% specificity 17.2\% vs 47.7\%.
 
 This asymmetry arises from the noise-floor mechanism described in Section~\ref{sec:sample-detection}.
