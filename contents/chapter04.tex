@@ -1207,6 +1207,15 @@ Five models are evaluated: the NT-v2 sp\_v4 flat classifier (Section~\ref{sec:sp
     \end{tabular}
 \end{table}
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/species_summary_4panel.png}
+    \caption{Species-level evaluation summary across five models (100K independent test set, 1,535 species).
+    From left: read-level accuracy, Pearson $r$, $1 - \text{Bray-Curtis}$ (higher is better), and ROC AUC for binary species detection.
+    The MT 13-mer models cross the practical utility threshold at $\sim$50\% read accuracy; all 6-mer-based models fall below the threshold regardless of backbone or hierarchical masking.}
+    \label{fig:species-summary-4panel}
+\end{figure}
+
 \paragraph{A practical utility threshold.}
 Table~\ref{tab:sample-species-comparison} reveals a marked discontinuity between models with read accuracy below $\sim$20\% and those above $\sim$50\%.
 The NT-v2 sp\_v4 flat classifier achieves 17.6\% per-read accuracy but Pearson $r \approx 0.007$ and Spearman $\rho \approx 0.044$---essentially no abundance correlation in either magnitude or rank order---while the MT 13-mer flat classifier achieves 49.7\%, Pearson $r = 0.466$, and Spearman $\rho = 0.471$.
