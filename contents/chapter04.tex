@@ -708,7 +708,7 @@ To isolate the effect of overlapping tokenization \emph{within the pre-trained G
 
 Three observations follow from Table~\ref{tab:backbone-tokenization-5M}.
 
-First, NT-v2 with \emph{non-overlapping} 6-mer tokenization outperforms DNABERT with \emph{overlapping} 6-mer tokenization by $+1.27$~pp.
+First, NT-Genus-5M with \emph{non-overlapping} 6-mer tokenization outperforms DNABERT with \emph{overlapping} 6-mer tokenization by $+1.27$~pp.
 At 5M training reads, the pre-training advantage from NT-v2's larger backbone (499M vs.\ 86M parameters) and more diverse pre-training corpus (850 microbial genomes vs.\ human genome only) outweighs the tokenization benefit of overlapping stride.
 This contrasts with the MetaTransformer results: when starting from scratch on the same data, overlapping tokenization provides a large benefit ($+1.87$~pp at $k=6$, $+60.12$~pp at $k=13$); but when starting from a strong pre-trained representation, the non-overlapping NT-v2 backbone already captures sufficient local context through its positional encodings.
 
