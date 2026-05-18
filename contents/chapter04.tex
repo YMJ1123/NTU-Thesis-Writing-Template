@@ -975,7 +975,7 @@ Improving within-genus species classification requires better sequence represent
 
 Per-read classification accuracy captures only one dimension of practical utility.
 In metagenomics, classifiers are applied to entire sequenced specimens---collections of reads whose aggregate predicted composition is used to answer ecological and clinical questions: which organisms are present, and at what relative abundance?
-This section evaluates the v9 genus model (67.07\% RC~TTA per-read accuracy) under two sample-level metrics: relative abundance estimation and binary genus detection.
+This section evaluates the NT-Genus model (67.07\% RC~TTA per-read accuracy) under two sample-level metrics: relative abundance estimation and binary genus detection.
 
 The choice of evaluation metrics follows the conventions established by community-wide benchmarks of metagenomic profilers.
 The Critical Assessment of Metagenome Interpretation (CAMI) challenges~\cite{Sczyrba2017,Meyer2022cami2} adopt the Spearman rank correlation $\rho$ and the Bray-Curtis dissimilarity~\cite{BrayCurtis1957} as primary profile-level metrics; the abundance-estimation benchmark of Bracken~\cite{Lu2017}, together with the comprehensive classifier benchmark of McIntyre et al.~\cite{McIntyre2017}, additionally adopts the Pearson correlation coefficient $r$ between predicted and true per-taxon relative abundance.
