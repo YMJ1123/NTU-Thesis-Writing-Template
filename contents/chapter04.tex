@@ -754,7 +754,7 @@ Following the data scaling analysis for genus classification, we extend the 50M 
 
 The species model is initialized from the v9 genus model's backbone weights via transfer learning (\texttt{--init\_from}), which automatically loads matching LoRA parameters while skipping the genus-specific classification head layers (120-class $\to$ 1,535-class dimension mismatch). This allows the species model to benefit from the genus-tuned backbone representations.
 
-\subsection{Final Results (sp\_v4, Epoch 30)}
+\subsection{NT-Species: Final Results (Epoch 30)}
 \label{sec:spv4-final}
 
 sp\_v4 training converged at epoch~30 (April~2026), reaching a forward validation accuracy of \textbf{17.55\%} on the full 5M held-out set (1,535 classes). Table~\ref{tab:spv4-progress} shows the progression across epochs; Table~\ref{tab:spv4-final-metrics} presents the complete metric profile at convergence.
