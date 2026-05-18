@@ -1137,6 +1137,17 @@ This comparison serves two purposes: to isolate the contribution of the NT-v2 pr
     \end{tabular}
 \end{table}
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/genus_comparison_3model.png}
+    \caption{Sample-level genus evaluation across three models under identical protocol (100 random-partition samples, 200 sparse-community samples, 50K reads each, 120 genera).
+    \textbf{Left}: Pearson $r$ for relative abundance estimation.
+    \textbf{Centre}: Bray-Curtis dissimilarity (lower is better).
+    \textbf{Right}: ROC AUC for binary genus detection.
+    Under identical 6-mer tokenisation, NT-v2 v9 outperforms MT 6-mer on all three metrics; for abundance correlation, NT-v2 approaches the MT 13-mer ceiling (Pearson $r$: $0.993$ vs $0.999$).}
+    \label{fig:genus-comparison-3model}
+\end{figure}
+
 \textbf{Under identical 6-mer tokenisation, NT-v2 v9 outperforms MetaTransformer across all sample-level metrics.}
 Pearson~$r$ increases from 0.984 (MT 6-mer) to 0.993 (NT-v2 v9), Bray-Curtis dissimilarity decreases from 0.167 to 0.094, and ROC AUC for binary detection increases from 0.569 to 0.705, with sensitivity at 95\% specificity nearly doubling (9.4\% $\to$ 17.2\%).
 This confirms that the NT-v2 pre-trained backbone contributes discriminative signal beyond what 6-mer tokenisation alone provides.
