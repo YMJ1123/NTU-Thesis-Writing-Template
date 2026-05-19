@@ -1216,13 +1216,13 @@ Five models are evaluated: the NT-Species flat classifier (Section~\ref{sec:spv4
 \end{figure}
 
 \paragraph{A practical utility threshold.}
-Table~\ref{tab:sample-species-comparison} reveals a marked discontinuity between models with read accuracy below $\sim$20\% and those above $\sim$50\%.
-The NT-Species flat classifier achieves 17.6\% per-read accuracy but Pearson $r = 0.054$ and Spearman $\rho = 0.144$---near-zero abundance correlation in both magnitude and rank order---while the MT 13-mer flat classifier achieves 49.7\%, Pearson $r = 0.466$, and Spearman $\rho = 0.471$.
-The close agreement between Pearson and Spearman values in both regimes indicates that the failure of low-accuracy models is not driven by outlier taxa: the abundance profile is genuinely near-zero at both magnitude and rank-order levels.
-This non-linear behaviour is explained by the task granularity: with 1,535 species, each species constitutes only 0.065\% of a balanced community.
-At 17.6\% accuracy, 82.4\% of reads are misclassified; with 1,000 reads per sample, this generates approximately $1{,}000 \times 0.824 / 1{,}534 \approx 0.54$ spurious predicted reads per species, comparable to the expected signal of $\sim$0.65 reads per species at mean abundance.
-This near-unit signal-to-noise ratio suppresses abundance correlations to near zero.
-At 49.7\% accuracy, approximately half the reads are correctly assigned; the remaining half contribute noise, but the correct reads are sufficient to recover a partial correlation with the true abundance profile.
+Table~\ref{tab:sample-species-comparison} reveals a large performance gap between models with read accuracy below $\sim$20\% and those above $\sim$50\%.
+The NT-Species flat classifier achieves 17.8\% per-read accuracy with Pearson $r = 0.135$ and Spearman $\rho = 0.144$---low but non-zero abundance correlation---while the MT 13-mer flat classifier achieves 49.7\%, Pearson $r = 0.466$, and Spearman $\rho = 0.471$.
+The 3.4$\times$ gap in Pearson $r$ despite a 32~pp gap in read accuracy reflects highly non-linear signal-to-noise behaviour at the species level.
+With 1,535 species and 1,000 reads per sample, each species contributes on average only $\sim$0.65 reads to a sample.
+At 17.8\% accuracy, 82.2\% of reads are misclassified; these generate approximately $1{,}000 \times 0.822 / 1{,}534 \approx 0.54$ spurious predicted reads per species---a noise floor comparable to the expected signal.
+This near-unit signal-to-noise ratio constrains Pearson $r$ to $\approx 0.14$, well below the useful range for abundance profiling.
+At 49.7\% accuracy, approximately half the reads are correctly assigned; the reduced noise allows Pearson $r$ to rise to 0.466, crossing the practical utility threshold.
 
 This observation establishes a practical threshold for metagenomic utility at the species level: approximately 40--50\% per-read accuracy is required before sample-level abundance profiles become meaningful.
 Within the NT-v2 framework (maximum 15.9\% species Top-1 with 6-mer tokenisation), this threshold cannot be reached without a fundamental change to the tokenisation scheme.
