@@ -1230,8 +1230,17 @@ Within the NT-v2 framework (maximum 15.9\% species Top-1 with 6-mer tokenisation
 The MT 13-mer result (49.7\%) crosses this threshold, demonstrating that overlapping long-$k$ tokenisation is not merely a read-accuracy optimisation but a prerequisite for species-level abundance estimation.
 
 \paragraph{Hierarchical masking at the species level.}
+Table~\ref{tab:sample-species-comparison} includes per-genus logit masking results for all three router--model combinations evaluated, revealing that the direction of the masking effect depends entirely on router accuracy.
+
 Applying per-genus logit masking to the MT 13-mer predictions (Section~\ref{sec:spv4-hierarchical-prelim}) produces consistent improvements across all four sample-level metrics: Pearson $r$ increases from 0.466 to 0.478 (+0.012), Bray-Curtis dissimilarity decreases from 0.378 to 0.369 ($-$0.009), ROC AUC increases from 0.96563 to 0.96711 (+0.0015), and sensitivity at 95\% specificity increases from 82.6\% to 83.1\%.
-Although each individual gain is modest in absolute terms, the consistency across all four metrics confirms that genus-guided logit masking provides a small but reliable improvement when the genus router quality is sufficient (87.5\% MT 13-mer genus router).
+The reliability of this improvement is attributable to the 87.5\% MT 13-mer genus router: only 12.5\% of reads are assigned to the wrong genus, so masking removes far more false-positive candidate species than it accidentally excludes correct ones.
+
+By contrast, applying the same topk=1 masking with the 66.1\% NT-Genus router to the NT-Species model degrades all five metrics: read accuracy falls from 17.8\% to 15.8\% ($-$2.0~pp), Pearson $r$ decreases from 0.135 to 0.106 ($-$0.029), Bray-Curtis dissimilarity worsens from 0.589 to 0.608 (+0.019), and sensitivity at 95\% specificity drops from 55.2\% to 53.0\%.
+Only ROC AUC shows a marginal improvement (+0.002), insufficient to offset the degradation elsewhere.
+When 34\% of reads are routed to the wrong genus, masking excludes the correct species for those reads entirely, producing more structured (within-genus) but systematically incorrect predictions that distort the abundance profile.
+
+The three masking experiments thus form a clear monotonic pattern: 87.5\% router (MT 13-mer) yields consistent sample-level gains; 66.1\% router (NT-Genus) causes degradation on most metrics; 48.9\% router (MT 6-mer) causes the largest degradation.
+This confirms at the sample level what the read-level analysis in Section~\ref{sec:spv4-hierarchical-prelim} showed at the read level: hierarchical logit masking is beneficial if and only if the genus router accuracy is sufficient to ensure that masking removes more wrong candidates than it excludes correct ones.
 
 \begin{figure}[htbp]
     \centering
