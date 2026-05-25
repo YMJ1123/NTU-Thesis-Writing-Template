@@ -1260,6 +1260,23 @@ The MT 6-mer flat model achieves only 9.2\% per-read accuracy and Pearson $r = 0
 All three 6-mer-based models---NT-Species flat, NT-Species hier., and both MT 6-mer variants---fall far below the practical utility threshold for abundance profiling.
 On binary detection, NT-Species flat (ROC AUC 0.794) and NT-Species hier. (0.796) both outperform the MT 6-mer models (0.667--0.690), consistent with their higher per-read accuracy (17.8\%/15.8\% versus 6--9\%); all four models fall far below the MT 13-mer ceiling (0.966--0.967).
 
+\paragraph{Kraken2 baseline: $k$-mer matching is highly effective on in-database simulated reads.}
+To anchor the neural-network results against a representative non-learning baseline, we built a custom Kraken2 database ($k$=35, minimizer $l$=31) from the same 2{,}505 UMGS+HGR reference genomes used to train all neural models, then classified the same 100K independent test set.
+On the same test set under exactly the same reference inventory, Kraken2 reaches 66.2\% per-read accuracy with Pearson $r = 0.727$, Bray-Curtis $0.218$, and ROC AUC $0.925$ at the sample level (Table~\ref{tab:sample-species-comparison}).
+On most sample-level metrics this exceeds the best neural model: read accuracy +15~pp over MT 13-mer hier., Pearson $r$ $+0.25$, and Bray-Curtis $-0.15$.
+The $k$-mer approach succeeds here because simulated 150~bp reads are drawn directly from the reference genomes, so exact 35-mer matches are abundant and discriminative.
+Kraken2's commitment rate is 70\%: 30\% of reads either yield no $k$-mer hit (sequencing errors plus shared minimisers) or resolve to the LCA root.
+On the 70\% it does commit to, accuracy is 94.6\%---higher than any neural model.
+
+The one metric on which MT 13-mer hierarchical still wins is ROC AUC for species detection (0.967 vs.\ 0.925).
+This is consistent with Kraken2's binary nature: the 30\% of reads it abstains on produce no detection signal, capping its operating-point sensitivity.
+Neural models, by contrast, provide a soft probability for every read, populating the detection threshold sweep more densely.
+
+Critically, this comparison reflects the easiest case for $k$-mer matching---simulated reads drawn from genomes that are exactly in the database.
+In real metagenomics, the species of interest are frequently absent from any pre-built reference, which is what motivates learning-based methods.
+A direct test of out-of-database (OOD) robustness on a parallel validation set containing 219 GCF/RefSeq species absent from the custom DB shows Kraken2 accuracy on those reads dropping to 0\% (the database simply has no $k$-mers to match), while the neural models, trained on UMGS+HGR genomes, still produce a (low but non-zero) species posterior for each read.
+This OOD gap is what positions learning-based methods as complementary to, rather than directly competitive with, $k$-mer matching in real-world metagenomics workflows.
+
 \section{Summary of Findings}
 
 The experimental results lead to several key conclusions:
