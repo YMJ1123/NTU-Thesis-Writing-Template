@@ -1185,7 +1185,9 @@ Five models are evaluated: the NT-Species flat classifier (Section~\ref{sec:spv4
     \centering
     \small
     \caption{Species-level sample evaluation on the independent 100K test set (1,535 species, 1K reads/sample, 100 partition samples).
-    Genus-level results (120 classes, 5M pool, 50K reads/sample) are included as a reference row.}
+    Genus-level results (120 classes, 5M pool, 50K reads/sample) are included as a reference row.
+    The bottom block reports Kraken2 ($k$=35) on the same test set, with a custom database built from the same 2{,}505 UMGS+HGR genomes used to train the neural models.
+    For Kraken2, sample-level metrics are computed with unclassified reads (30\%) counted toward the per-sample denominator (1000 reads) but contributing zero to predicted abundance---i.e., they are treated as ``lost signal''.}
     \label{tab:sample-species-comparison}
     \begin{tabular}{lcccccc}
         \toprule
