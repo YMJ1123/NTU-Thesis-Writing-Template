@@ -1268,7 +1268,8 @@ On the same test set under exactly the same reference inventory, Kraken2 reaches
 On most sample-level metrics this exceeds the best neural model: read accuracy +15~pp over MT 13-mer hier., Pearson $r$ $+0.25$, and Bray-Curtis $-0.15$.
 The $k$-mer approach succeeds here because simulated 150~bp reads are drawn directly from the reference genomes, so exact 35-mer matches are abundant and discriminative.
 Kraken2's commitment rate is 70\%: 30\% of reads either yield no $k$-mer hit (sequencing errors plus shared minimisers) or resolve to the LCA root.
-On the 70\% it does commit to, accuracy is 94.6\%---higher than any neural model.
+On the 70\% it does commit to, species-level accuracy is 94.6\% and genus-level accuracy is 99.3\%---both higher than any neural model.
+At the genus level, Kraken2's overall read accuracy is 69.5\% (lifting +3.3~pp from species level, since some species-level errors are within-genus), with sample-level Pearson $r = 0.844$, Bray-Curtis $0.178$, and ROC AUC $0.895$ under the same 100K test set / 1K reads-per-sample evaluation as the species comparison; these numbers are not directly comparable to the 120-class genus reference rows in Table~\ref{tab:sample-species-comparison}, which use a 5M pool with 50K reads per sample.
 
 The one metric on which MT 13-mer hierarchical still wins is ROC AUC for species detection (0.967 vs.\ 0.925).
 This is consistent with Kraken2's binary nature: the 30\% of reads it abstains on produce no detection signal, capping its operating-point sensitivity.
