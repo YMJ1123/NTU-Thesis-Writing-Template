@@ -1265,6 +1265,14 @@ The MT 6-mer flat model achieves only 9.2\% per-read accuracy and Pearson $r = 0
 All three 6-mer-based models---NT-Species flat, NT-Species hier., and both MT 6-mer variants---fall far below the practical utility threshold for abundance profiling.
 On binary detection, NT-Species flat (ROC AUC 0.794) and NT-Species hier. (0.796) both outperform the MT 6-mer models (0.667--0.690), consistent with their higher per-read accuracy (17.8\%/15.8\% versus 6--9\%); all four models fall far below the MT 13-mer ceiling (0.966--0.967).
 
+\paragraph{NT-v2 per-genus pipeline at the sample level: predicted underperforms flat, oracle establishes the 6-mer ceiling.}
+The two-stage NT-v2 pipeline---NT-Genus router selecting one of 120 per-genus species classifiers---exhibits the same router-quality sensitivity at the sample level as observed for hierarchical masking.
+With the 66.0\% NT-Genus router (predicted routing), the per-genus pipeline degrades on every sample-level metric relative to flat NT-Species: read accuracy 15.6\% (vs.\ 17.8\%), Pearson $r$ 0.083 (vs.\ 0.135), Bray-Curtis 0.625 (vs.\ 0.589), ROC AUC 0.789 (vs.\ 0.794).
+Routing errors compound: a wrongly-routed read is restricted to a candidate set that does not contain its true species, guaranteeing a misclassification.
+Under oracle genus routing, in contrast, the per-genus pipeline achieves 29.5\% read accuracy with Pearson $r = 0.159$, ROC AUC = 0.842, and sensitivity at 95\% specificity = 65.2\%---the highest values of any NT-v2 configuration on every sample-level metric.
+This 13.9~pp read-accuracy gap (15.6\% predicted vs.\ 29.5\% oracle) directly quantifies the cost of imperfect genus routing in the per-genus design and confirms that, even with a perfect router, the 6-mer NT-v2 pipeline's ceiling (29.5\%) remains 21.4~pp below the MT 13-mer flat baseline (50.9\%).
+The tokenisation gap, not the routing architecture, is the fundamental limit.
+
 \paragraph{Kraken2 baseline: $k$-mer matching is highly effective on in-database simulated reads.}
 To anchor the neural-network results against a representative non-learning baseline, we built a custom Kraken2 database ($k$=35, minimizer $l$=31) from the same 2{,}505 UMGS+HGR reference genomes used to train all neural models, then classified the same 100K independent test set.
 On the same test set under exactly the same reference inventory, Kraken2 reaches 66.2\% per-read accuracy with Pearson $r = 0.727$, Bray-Curtis $0.218$, and ROC AUC $0.925$ at the sample level (Table~\ref{tab:sample-species-comparison}).
