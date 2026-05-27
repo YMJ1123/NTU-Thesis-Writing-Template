@@ -725,6 +725,41 @@ All three learning curves were still improving at epoch 30 (gain $<0.1$~pp per e
 The comparison is therefore epoch-based---each model has seen the training data 30 times---rather than step-based or compute-matched.
 This is standard practice in fine-tuning comparisons, and the observed ranking (NT-v2 $>$ DNABERT $>$ DNABERT-2) is unlikely to be reversed by additional training: DNABERT, despite receiving 3.9$\times$ fewer gradient updates than NT-v2, lags by only $1.27$~pp, while DNABERT-2's gap of $4.17$~pp is consistent across all training stages and attributable primarily to its BPE tokenization.
 
+\paragraph{Sample-level evaluation of the three GFM backbones (5M scale).}
+Read-level accuracy alone does not capture how a backbone choice propagates to the sample-level abundance and detection metrics that matter in practice.
+We therefore apply the sample-level evaluation protocol (5M validation pool, 50K reads per sample, 100 partition samples; Section~\ref{sec:sample-eval-method}) to the RC-TTA predictions of all three pre-trained backbones at 5M scale.
+Table~\ref{tab:backbone-sample-5M} reports the results.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Sample-level genus evaluation of the three pre-trained GFM backbones at 5M balanced reads (RC TTA predictions, 5M validation pool, 50K reads/sample).}
+    \label{tab:backbone-sample-5M}
+    \small
+    \setlength{\tabcolsep}{5pt}
+    \begin{tabular}{lccccc}
+        \toprule
+        \textbf{Model} & \textbf{Read Acc} & \textbf{Pearson $r$} & \textbf{Bray-Curtis} & \textbf{ROC AUC} & \textbf{Sens @ 95\% Spec} \\
+        \midrule
+        NT-Genus-5M       & \textbf{63.05\%} & \textbf{0.9928} & \textbf{0.112} & 0.666 & \textbf{14.5\%} \\
+        DNABERT + LoRA    & 61.78\%          & 0.9906          & 0.113          & \textbf{0.672} & 14.2\% \\
+        DNABERT-2 + LoRA  & 58.88\%          & 0.9915          & 0.141          & 0.640 & 11.6\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Two patterns emerge.
+First, abundance estimation (Pearson $r$) saturates at $\sim$0.99 for all three backbones, consistent with the genus-level finding that relative-abundance correlation is forgiving at low task granularity (Section~\ref{sec:sample-mt-comparison})---the read-accuracy ranking (NT-Genus $>$ DNABERT $>$ DNABERT-2) does not separate the backbones on Pearson $r$.
+Second, the discriminating metrics are Bray-Curtis dissimilarity and binary detection: DNABERT-2 is clearly worst on both (Bray-Curtis 0.141 vs.\ 0.112--0.113; ROC AUC 0.640 vs.\ 0.666--0.672; sensitivity at 95\% specificity 11.6\% vs.\ 14.2--14.5\%), mirroring its lower read accuracy and reinforcing that BPE tokenisation is the weakest of the three for this task.
+NT-Genus and DNABERT are nearly indistinguishable at the sample level, with NT-Genus marginally ahead on Bray-Curtis and sensitivity and DNABERT marginally ahead on ROC AUC.
+
+\paragraph{Scaling the backbone comparison to 50M (in progress).}
+The 5M comparison above is the controlled, compute-matched baseline that motivated selecting NT-v2.
+To verify that the ranking holds at thesis scale, DNABERT and DNABERT-2 are being trained on the full 50M dataset under the same protocol used for NT-Genus v9.
+DNABERT-2 (BPE, $\sim$34 tokens/read, batch~256) trains at $\sim$2.8~h/epoch and is expected to complete within $\sim$3.5~days.
+DNABERT (overlapping 6-mer, 145~tokens/read, batch~128) is substantially more expensive at $\sim$11.7~h/epoch---approximately $4$--$5\times$ the per-epoch cost of NT-v2---owing to its $5\times$ longer token sequences; full 30-epoch training requires $\sim$14.6~days of GPU time across multiple SLURM resumes.
+This training-cost asymmetry is itself a practical consideration in backbone selection: overlapping-$k$-mer models incur a sequence-length penalty that compounds with data scale.
+The 50M RC-TTA and sample-level results will be incorporated upon completion; the 5M ranking is not expected to reverse, as the per-epoch validation curves at 50M already track the 5M ordering through the early epochs.
+
 \paragraph{Implication for NT-v2.}
 NT-v2 is constrained to 6-mer tokenization by its pre-training design. The ablation results show that this constraint is the primary limitation of our approach: switching to overlapping 13-mer tokenization on the same architecture and data yields a $+20.35$~pp improvement without any pre-training. A genomic foundation model pre-trained with overlapping large-$k$ tokenization on diverse microbial genomes would combine the discriminative power of longer k-mers with the representational quality of large-scale pre-training. No such model currently exists publicly.
 
