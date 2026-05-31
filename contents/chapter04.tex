@@ -1301,7 +1301,7 @@ The tokenisation gap, not the routing architecture, is the fundamental limit.
 \paragraph{Kraken2 baseline: $k$-mer matching is highly effective on in-database simulated reads.}
 To anchor the neural-network results against a representative non-learning baseline, we built a custom Kraken2 database ($k$=35, minimizer $l$=31) from the same 2{,}505 UMGS+HGR reference genomes used to train all neural models, then classified the same 100K independent test set.
 On the same test set under exactly the same reference inventory, Kraken2 reaches 66.2\% per-read accuracy with Pearson $r = 0.727$, Bray-Curtis $0.218$, and ROC AUC $0.925$ at the sample level (Table~\ref{tab:sample-species-comparison}).
-On most sample-level metrics this exceeds the best neural model: read accuracy +15~pp over MT 13-mer hier., Pearson $r$ $+0.25$, and Bray-Curtis $-0.15$.
+On most sample-level metrics this exceeds the best neural species model: read accuracy +12~pp over MT 13-mer flat (53.7\%), Pearson $r$ $+0.22$, and Bray-Curtis $-0.13$.
 The $k$-mer approach succeeds here because simulated 150~bp reads are drawn directly from the reference genomes, so exact 35-mer matches are abundant and discriminative.
 Kraken2's commitment rate is 70\%: 30\% of reads either yield no $k$-mer hit (sequencing errors plus shared minimisers) or resolve to the LCA root.
 On the 70\% it does commit to, species-level accuracy is 94.6\% and genus-level accuracy is 99.3\%---both higher than any neural model.
