@@ -1295,7 +1295,7 @@ The two-stage NT-v2 pipeline---NT-Genus router selecting one of 120 per-genus sp
 With the 66.0\% NT-Genus router (predicted routing), the per-genus pipeline degrades on every sample-level metric relative to flat NT-Species: read accuracy 15.6\% (vs.\ 17.8\%), Pearson $r$ 0.083 (vs.\ 0.135), Bray-Curtis 0.625 (vs.\ 0.589), ROC AUC 0.789 (vs.\ 0.794).
 Routing errors compound: a wrongly-routed read is restricted to a candidate set that does not contain its true species, guaranteeing a misclassification.
 Under oracle genus routing, in contrast, the per-genus pipeline achieves 29.5\% read accuracy with Pearson $r = 0.159$, ROC AUC = 0.842, and sensitivity at 95\% specificity = 65.2\%---the highest values of any NT-v2 configuration on every sample-level metric.
-This 13.9~pp read-accuracy gap (15.6\% predicted vs.\ 29.5\% oracle) directly quantifies the cost of imperfect genus routing in the per-genus design and confirms that, even with a perfect router, the 6-mer NT-v2 pipeline's ceiling (29.5\%) remains 21.4~pp below the MT 13-mer flat baseline (50.9\%).
+This 13.9~pp read-accuracy gap (15.6\% predicted vs.\ 29.5\% oracle) directly quantifies the cost of imperfect genus routing in the per-genus design and confirms that, even with a perfect router, the 6-mer NT-v2 pipeline's ceiling (29.5\%) remains 24.2~pp below the MT 13-mer flat baseline (53.7\%).
 The tokenisation gap, not the routing architecture, is the fundamental limit.
 
 \paragraph{Kraken2 baseline: $k$-mer matching is highly effective on in-database simulated reads.}
