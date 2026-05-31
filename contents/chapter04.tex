@@ -1262,16 +1262,16 @@ Five models are evaluated: the NT-Species flat classifier (Section~\ref{sec:spv4
 
 \paragraph{A practical utility threshold.}
 Table~\ref{tab:sample-species-comparison} reveals a large performance gap between models with read accuracy below $\sim$20\% and those above $\sim$50\%.
-The NT-Species flat classifier achieves 17.8\% per-read accuracy with Pearson $r = 0.135$ and Spearman $\rho = 0.144$---low but non-zero abundance correlation---while the MT 13-mer flat classifier achieves 49.7\%, Pearson $r = 0.466$, and Spearman $\rho = 0.471$.
-The 3.4$\times$ gap in Pearson $r$ despite a 32~pp gap in read accuracy reflects highly non-linear signal-to-noise behaviour at the species level.
+The NT-Species flat classifier achieves 17.8\% per-read accuracy with Pearson $r = 0.135$ and Spearman $\rho = 0.144$---low but non-zero abundance correlation---while the MT 13-mer flat classifier achieves 53.7\%, Pearson $r = 0.503$, and Spearman $\rho = 0.508$.
+The 3.7$\times$ gap in Pearson $r$ despite a 36~pp gap in read accuracy reflects highly non-linear signal-to-noise behaviour at the species level.
 With 1,535 species and 1,000 reads per sample, each species contributes on average only $\sim$0.65 reads to a sample.
 At 17.8\% accuracy, 82.2\% of reads are misclassified; these generate approximately $1{,}000 \times 0.822 / 1{,}534 \approx 0.54$ spurious predicted reads per species---a noise floor comparable to the expected signal.
 This near-unit signal-to-noise ratio constrains Pearson $r$ to $\approx 0.14$, well below the useful range for abundance profiling.
-At 49.7\% accuracy, approximately half the reads are correctly assigned; the reduced noise allows Pearson $r$ to rise to 0.466, crossing the practical utility threshold.
+At 53.7\% accuracy, approximately half the reads are correctly assigned; the reduced noise allows Pearson $r$ to rise to 0.503, crossing the practical utility threshold.
 
 This observation establishes a practical threshold for metagenomic utility at the species level: approximately 40--50\% per-read accuracy is required before sample-level abundance profiles become meaningful.
 Within the NT-v2 framework (maximum 15.9\% species Top-1 with 6-mer tokenisation), this threshold cannot be reached without a fundamental change to the tokenisation scheme.
-The MT 13-mer result (49.7\%) crosses this threshold, demonstrating that overlapping long-$k$ tokenisation is not merely a read-accuracy optimisation but a prerequisite for species-level abundance estimation.
+The MT 13-mer result (53.7\%) crosses this threshold, demonstrating that overlapping long-$k$ tokenisation is not merely a read-accuracy optimisation but a prerequisite for species-level abundance estimation.
 
 \paragraph{Hierarchical masking at the species level.}
 Table~\ref{tab:sample-species-comparison} includes per-genus logit masking results for all three router--model combinations evaluated, revealing that the direction of the masking effect depends entirely on router accuracy.
