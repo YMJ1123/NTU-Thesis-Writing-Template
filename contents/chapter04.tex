@@ -1274,27 +1274,16 @@ Within the NT-v2 framework (maximum 15.9\% species Top-1 with 6-mer tokenisation
 The MT 13-mer result (53.7\%) crosses this threshold, demonstrating that overlapping long-$k$ tokenisation is not merely a read-accuracy optimisation but a prerequisite for species-level abundance estimation.
 
 \paragraph{Hierarchical masking at the species level.}
-Table~\ref{tab:sample-species-comparison} includes per-genus logit masking results for all three router--model combinations evaluated, revealing that the direction of the masking effect depends entirely on router accuracy.
+Two router--model combinations could be evaluated at the sample level on the 100K test set: the 66.1\% NT-Genus router applied to NT-Species, and the 48.9\% MT 6-mer genus router applied to MT 6-mer species. The MT 13-mer hierarchical species checkpoint on Taiwana-2 was found to be corrupted (training halted at batch 10\,000 with val\_loss $= 9.29$, never converged); reading-level numbers from earlier Section~\ref{sec:spv4-hierarchical-prelim} remain valid but sample-level metrics aligned with this test set are not available.
 
-Applying per-genus logit masking to the MT 13-mer predictions (Section~\ref{sec:spv4-hierarchical-prelim}) produces consistent improvements across all four sample-level metrics: Pearson $r$ increases from 0.466 to 0.478 (+0.012), Bray-Curtis dissimilarity decreases from 0.378 to 0.369 ($-$0.009), ROC AUC increases from 0.96563 to 0.96711 (+0.0015), and sensitivity at 95\% specificity increases from 82.6\% to 83.1\%.
-The reliability of this improvement is attributable to the 87.5\% MT 13-mer genus router: only 12.5\% of reads are assigned to the wrong genus, so masking removes far more false-positive candidate species than it accidentally excludes correct ones.
-
-By contrast, applying the same topk=1 masking with the 66.1\% NT-Genus router to the NT-Species model degrades all five metrics: read accuracy falls from 17.8\% to 15.8\% ($-$2.0~pp), Pearson $r$ decreases from 0.135 to 0.106 ($-$0.029), Bray-Curtis dissimilarity worsens from 0.589 to 0.608 (+0.019), and sensitivity at 95\% specificity drops from 55.2\% to 53.0\%.
+Applying topk=1 masking with the 66.1\% NT-Genus router to the NT-Species model degrades all five metrics: read accuracy falls from 17.8\% to 15.8\% ($-$2.0~pp), Pearson $r$ decreases from 0.135 to 0.106 ($-$0.029), Bray-Curtis dissimilarity worsens from 0.589 to 0.608 (+0.019), and sensitivity at 95\% specificity drops from 55.2\% to 53.0\%.
 Only ROC AUC shows a marginal improvement (+0.002), insufficient to offset the degradation elsewhere.
 When 34\% of reads are routed to the wrong genus, masking excludes the correct species for those reads entirely, producing more structured (within-genus) but systematically incorrect predictions that distort the abundance profile.
 
-The three masking experiments thus form a clear monotonic pattern: 87.5\% router (MT 13-mer) yields consistent sample-level gains; 66.1\% router (NT-Genus) causes degradation on most metrics; 48.9\% router (MT 6-mer) causes the largest degradation.
-This confirms at the sample level what the read-level analysis in Section~\ref{sec:spv4-hierarchical-prelim} showed at the read level: hierarchical logit masking is beneficial if and only if the genus router accuracy is sufficient to ensure that masking removes more wrong candidates than it excludes correct ones.
+Applying the same masking with the 48.9\% MT 6-mer genus router to the MT 6-mer species model causes the largest degradation: read accuracy from 9.0\% to 6.4\% ($-$2.6~pp), Pearson $r$ from 0.066 to 0.041, and ROC AUC from 0.692 to 0.639.
 
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.90\textwidth]{figures/mt13_flat_vs_hier_detection.png}
-    \caption{MT 13-mer flat versus hierarchical species detection as a function of predicted abundance threshold (100K test set, 1,535 species).
-    \textbf{Left}: sensitivity (true positive rate).
-    \textbf{Right}: specificity (true negative rate).
-    Hierarchical masking consistently improves sensitivity at every abundance threshold while maintaining equivalent specificity, confirming a reliable benefit when the genus router accuracy is sufficient.}
-    \label{fig:mt13-flat-vs-hier}
-\end{figure}
+The two available data points are consistent with the read-level analysis of Section~\ref{sec:spv4-hierarchical-prelim}, which had a third measurement on the MT 13-mer router (87.5\%) showing $+$1.12~pp---together forming a monotonic pattern in router quality: hierarchical masking benefits only when router accuracy is high enough that masking removes more wrong candidates than it accidentally excludes correct ones.
+The crossover region implied by these three read-level points lies in the 80--85\% router-accuracy range.
 
 \paragraph{6-mer models at the species level.}
 The MT 6-mer flat model achieves only 9.2\% per-read accuracy and Pearson $r = 0.065$; applying hierarchical masking with the 48.9\% MT 6-mer genus router further \emph{reduces} read accuracy to 6.4\% and Pearson $r$ to 0.034.
