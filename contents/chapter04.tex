@@ -1286,9 +1286,9 @@ The two available data points are consistent with the read-level analysis of Sec
 The crossover region implied by these three read-level points lies in the 80--85\% router-accuracy range.
 
 \paragraph{6-mer models at the species level.}
-The MT 6-mer flat model achieves only 9.2\% per-read accuracy and Pearson $r = 0.065$; applying hierarchical masking with the 48.9\% MT 6-mer genus router further \emph{reduces} read accuracy to 6.4\% and Pearson $r$ to 0.034.
+The MT 6-mer flat model achieves only 9.0\% per-read accuracy and Pearson $r = 0.066$; applying hierarchical masking with the 48.9\% MT 6-mer genus router further \emph{reduces} read accuracy to 6.4\% and Pearson $r$ to 0.041.
 All three 6-mer-based models---NT-Species flat, NT-Species hier., and both MT 6-mer variants---fall far below the practical utility threshold for abundance profiling.
-On binary detection, NT-Species flat (ROC AUC 0.794) and NT-Species hier. (0.796) both outperform the MT 6-mer models (0.667--0.690), consistent with their higher per-read accuracy (17.8\%/15.8\% versus 6--9\%); all four models fall far below the MT 13-mer ceiling (0.966--0.967).
+On binary detection, NT-Species flat (ROC AUC 0.794) and NT-Species hier. (0.796) both outperform the MT 6-mer models (0.639--0.692), consistent with their higher per-read accuracy (17.8\%/15.8\% versus 6--9\%); all four 6-mer-based models fall far below the MT 13-mer flat ceiling (0.973).
 
 \paragraph{NT-v2 per-genus pipeline at the sample level: predicted underperforms flat, oracle establishes the 6-mer ceiling.}
 The two-stage NT-v2 pipeline---NT-Genus router selecting one of 120 per-genus species classifiers---exhibits the same router-quality sensitivity at the sample level as observed for hierarchical masking.
