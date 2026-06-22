@@ -178,7 +178,7 @@ def fig_data_scaling():
     ax.set_xscale("log")
     ax.set_xlabel("Training reads (log scale)")
     ax.set_ylabel("Genus RC TTA Accuracy (%)")
-    ax.set_title("Data Scaling: Genus-Level Classification Accuracy vs.\ Training Volume")
+    ax.set_title("Data Scaling: Genus-Level Classification Accuracy vs. Training Volume")
     ax.set_ylim(45, 102)
     ax.set_xlim(2e5, 2e9)
     ax.legend(loc="upper left", framealpha=0.9)
@@ -197,10 +197,13 @@ def fig_data_scaling():
     # projection (~71% at 250M), demonstrating saturation beyond 50M.
     ax.scatter([250_000_000], [67.29], color=COLORS["v9"], s=90,
                zorder=5)
-    ax.annotate("v15 250M (67.3%)\nsaturates: +0.22 pp, not +4 pp",
-                xy=(2.5e8, 67.29), xytext=(2.5e8, 59.0),
-                fontsize=8, ha="center", color="gray",
-                arrowprops=dict(arrowstyle="->", color="gray", lw=1))
+    # Point label: same black style / size as the v4/v8/v9 data labels
+    ax.annotate("v15\n250M\n(67.3%)", xy=(2.5e8, 67.29),
+                xytext=(2.5e8, 59.5), fontsize=8.5, ha="center",
+                arrowprops=dict(arrowstyle="-", color="gray", lw=0.8))
+    # Saturation note: same gray editorial style as the "+X pp" gain labels
+    ax.text(6.2e8, 64.0, "saturates:\n+0.22 pp,\nnot +4 pp",
+            fontsize=8, ha="center", color="gray")
 
     plt.savefig(OUT / "data_scaling.pdf", bbox_inches="tight")
     plt.savefig(OUT / "data_scaling.png", bbox_inches="tight")
@@ -249,7 +252,7 @@ def fig_backbone_ablation():
     ax.set_xticklabels(metrics)
     ax.set_ylabel("Score (%)")
     ax.set_ylim(0, 105)
-    ax.set_title("Backbone Ablation: Pre-trained NT-v2 vs.\\ Shallow Transformer (50M balanced reads)")
+    ax.set_title("Backbone Ablation: Pre-trained NT-v2 vs. Shallow Transformer (50M balanced reads)")
     ax.legend(loc="upper left", framealpha=0.9)
 
     plt.savefig(OUT / "backbone_ablation.pdf", bbox_inches="tight")
