@@ -355,6 +355,9 @@ The comparison with MetaTransformer further reinforces this finding: despite usi
     \label{fig:data-scaling}
 \end{figure}
 
+\paragraph{Beyond 50M: empirical refutation of the log-linear projection.}
+The projection above tentatively attributes the residual gap to insufficient data. To test this directly, we scaled the balanced subsample by a further $5\times$ to 250M reads and trained two variants on a $64\times$H200 DDP cluster: a warm-started model initialised from the 50M NT-Genus checkpoint (mirroring the $5\text{M}\to 50\text{M}$ transfer) and a from-scratch model. Evaluated on an independent, read-disjoint test set under the identical RC-TTA protocol---on which the 50M NT-Genus model reproduces its $67.07\%$ to within $0.05$~pp---the 250M warm-started model attains only \textbf{67.29\%} genus Top-1 (RC~TTA), a $+0.22$~pp change over 50M despite the $5\times$ data increase, while the from-scratch 250M model is in fact lower at $64.84\%$. Data scaling therefore \emph{saturates} beyond 50M rather than continuing along the log-linear trend. This is expected given that the reference comprises a single genome per species: beyond $\sim$50M reads, additional reads provide only redundant coverage of the same 1{,}535 sequences rather than new discriminative signal. We conclude that the remaining gap to MetaTransformer is \emph{not} closable by additional training data within the NT-v2 6-mer framework, reinforcing tokenization (Section~\ref{sec:exp-tokenization}) rather than data volume as the operative ceiling.
+
 \section{Species-Level Classification}
 \label{sec:exp-species}
 
