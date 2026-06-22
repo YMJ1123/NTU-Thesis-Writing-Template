@@ -192,6 +192,16 @@ def fig_data_scaling():
                 arrowprops=dict(arrowstyle="<->", color="gray", lw=1.2))
     ax.text(1.5e7, 65.5, "+4.02 pp\n(10×)", fontsize=8, ha="center", color="gray")
 
+    # Empirical 250M point (warm-started) — falls well below the log-linear
+    # projection (~71% at 250M), demonstrating saturation beyond 50M.
+    ax.scatter([250_000_000], [67.29], color="#C44E52", s=120, marker="D",
+               zorder=6, edgecolor="white", linewidth=0.8,
+               label="250M (empirical, warm-start)")
+    ax.annotate("v15 250M\n(67.29%)\nsaturates,\nnot +4 pp",
+                xy=(2.5e8, 67.29), xytext=(2.6e8, 58.0),
+                fontsize=8, ha="center", color="#C44E52",
+                arrowprops=dict(arrowstyle="->", color="#C44E52", lw=1))
+
     plt.savefig(OUT / "data_scaling.pdf", bbox_inches="tight")
     plt.savefig(OUT / "data_scaling.png", bbox_inches="tight")
     plt.close()
