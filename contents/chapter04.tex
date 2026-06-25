@@ -164,6 +164,8 @@ We explore several techniques to improve performance on the 500K dataset. \tbref
     \centering
     \caption{Advanced training technique experiments (500K dataset, genus classification). RC TTA results are shown where available.}
     \label{tab:v4-v7}
+    \small
+    \setlength{\tabcolsep}{4pt}
     \begin{tabular}{llccccc}
         \toprule
         \textbf{Ver.} & \textbf{Description} & \textbf{Fwd Acc} & \textbf{RC TTA} & \textbf{F1-macro} & \textbf{F1$=$0} & \textbf{Gap} \\
@@ -330,7 +332,7 @@ NT-Genus training completed at epoch~30 (April~2026), reaching a forward validat
 
 \begin{table}[htbp]
     \centering
-    \caption{Data scaling analysis: genus classification performance across data volumes.}
+    \caption{Data scaling analysis: genus classification performance across data volumes. The 250M entry is the warm-started model (initialised from the 50M checkpoint and held out of the log-linear fit); the from-scratch 250M variant instead reaches 64.84\%. Only accuracy is reported for the 250M saturation experiment.}
     \label{tab:scaling}
     \begin{tabular}{rcccc}
         \toprule
@@ -339,6 +341,7 @@ NT-Genus training completed at epoch~30 (April~2026), reaching a forward validat
         500K (imbalanced) & 55.29\% & 25.70\% & 9 & 6.25\% \\
         5M (balanced) & 63.05\% & 37.97\% & 2 & 1.30\% \\
         50M (balanced) & \textbf{67.07\%} & \textbf{44.82\%} & \textbf{0} & $\sim$0.7\% \\
+        250M (balanced, warm-start) & 67.29\% & --- & --- & --- \\
         MetaTransformer (HGR-UMGS full) & $\sim$98\% & --- & --- & --- \\
         \bottomrule
     \end{tabular}
@@ -413,6 +416,7 @@ Using top-10 genus routing, species accuracy reaches 8.06\%, slightly below the 
         v7 (500K, RC consist.) & 54.10\% & 55.18\% & $+1.08$~pp \\
         NT-Genus-5M (5M genus) & 62.02\% & 63.05\% & $+1.03$~pp \\
         NT-Genus (50M genus) & 66.29\% & 67.07\% & $+0.78$~pp \\
+        NT-Genus (250M genus, warm-start) & 66.61\% & 67.29\% & $+0.68$~pp \\
         Shallow-Genus (50M genus, shallow) & 53.80\% & 53.88\% & $+0.08$~pp \\
         \bottomrule
     \end{tabular}
@@ -427,7 +431,7 @@ RC TTA provides a consistent $+1.0$ to $+1.5$~pp accuracy improvement across all
     
     \item \textbf{Diminishing returns with RC consistency training}: v7 (RC consistency, $+1.08$~pp) shows less benefit than vanilla models, because RC consistency training already encourages $f(s) \approx f(\bar{s})$ during training, leaving less residual strand asymmetry for RC TTA to correct.
 
-    \item \textbf{Scale-dependent diminishing returns}: The RC TTA benefit decreases slightly with data scale: $+1.44$~pp at 500K, $+1.03$~pp at 5M, and $+0.78$~pp at 50M (NT-Genus). Larger training sets expose the model to both strands of each locus more often, gradually reducing systematic strand-directional errors---though a non-trivial asymmetry persists even at 50M reads.
+    \item \textbf{Scale-dependent diminishing returns}: The RC TTA benefit decreases slightly with data scale: $+1.44$~pp at 500K, $+1.03$~pp at 5M, $+0.78$~pp at 50M, and $+0.68$~pp at 250M (NT-Genus). Larger training sets expose the model to both strands of each locus more often, gradually reducing systematic strand-directional errors---though a non-trivial asymmetry persists even at 50M reads.
 
     \item \textbf{Near-zero benefit for randomly initialized models}: Shallow-Genus (shallow Transformer, random initialization) shows only $+0.08$~pp from RC TTA. Without pre-training on a large genomic corpus, the model does not develop systematic strand-direction preferences, leaving little strand asymmetry for RC TTA to correct. This further supports the view that RC TTA primarily corrects pre-training-induced strand biases rather than stochastic inference noise.
 \end{enumerate}
@@ -918,6 +922,8 @@ All NT-Species results use the epoch~30 final checkpoint; the NT-Genus model ach
     MT hierarchical uses a single MT genus model for routing and a single MT species model with per-genus logit masking; it is not a per-genus classifier ensemble.
     Top-5, Top-10, and macro F1 are not reported for MT (Top-1 only).}
     \label{tab:hierarchical-prelim}
+    \small
+    \setlength{\tabcolsep}{4pt}
     \begin{tabular}{llcccc}
         \toprule
         \textbf{Model} & \textbf{Mode} & \textbf{Top-1} & \textbf{Top-5} & \textbf{Top-10} & \textbf{F1 (macro)} \\
