@@ -164,7 +164,7 @@ We explore several techniques to improve performance on the 500K dataset. \tbref
     \centering
     \caption{Advanced training technique experiments (500K dataset, genus classification). RC TTA results are shown where available.}
     \label{tab:v4-v7}
-    \begin{tabular}{llcccccc}
+    \begin{tabular}{llccccc}
         \toprule
         \textbf{Ver.} & \textbf{Description} & \textbf{Fwd Acc} & \textbf{RC TTA} & \textbf{F1-macro} & \textbf{F1$=$0} & \textbf{Gap} \\
         \midrule
@@ -205,6 +205,8 @@ Due to the 48-hour SLURM time limit, training required two jobs: the initial run
     \centering
     \caption{Genus classification results across data scales: v4 (500K), NT-Genus-5M (5M balanced), and NT-Genus (50M balanced).}
     \label{tab:v8-results}
+    \small
+    \setlength{\tabcolsep}{4pt}
     \begin{tabular}{lccccc}
         \toprule
         \textbf{Metric} & \textbf{v4 (500K)} & \textbf{NT-Genus-5M} & \textbf{$\Delta$\textsubscript{v4$\to$5M}} & \textbf{NT-Genus (50M)$^\dagger$} & \textbf{$\Delta$\textsubscript{5M$\to$50M}} \\
