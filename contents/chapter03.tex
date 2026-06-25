@@ -68,14 +68,14 @@ This chapter describes the proposed token-level genomic foundation model classif
   \node[grpbox, fit=(enc)(lora)] (backbone_box) {};
 \end{scope}
 \node[label, below=0.05cm of backbone_box]
-    {\textit{Backbone: 498M total, 2.87M LoRA trainable}};
+    {\textit{Backbone: 498M total, 2.85M LoRA trainable}};
 
 %% Group: trainable head
 \begin{scope}[on background layer]
   \node[grpbox, fit=(pool)(clf)] (head_box) {};
 \end{scope}
 \node[label, below=0.05cm of head_box]
-    {\textit{Head: 2.67M trainable}};
+    {\textit{Head: 2.69M trainable}};
 
 \end{tikzpicture}%
 }
@@ -174,8 +174,8 @@ We apply LoRA~\cite{Hu2022} to the query ($W_Q$), key ($W_K$), and value ($W_V$)
         Dropout & 0.05 \\
         Target modules & $W_Q$, $W_K$, $W_V$ \\
         \midrule
-        Trainable LoRA params & 2,867,200 \\
-        Classification head params & 2,672,248 \\
+        Trainable LoRA params & 2,850,816 \\
+        Classification head params & 2,688,632 \\
         Total trainable params & 5,539,448 (1.11\%) \\
         Total model params & 498,623,561 \\
         \bottomrule
@@ -229,23 +229,24 @@ The classification head aggregates the variable-length token sequence into a fix
 The attention pooling head consists of:
 
 \begin{enumerate}
-    \item \textbf{Learnable query tokens}: $M = 4$ learnable query vectors $Q \in \mathbb{R}^{M \times d}$, where $d = 1024$.
-    
-    \item \textbf{Cross-attention}: Standard scaled dot-product attention where the queries attend to the backbone's token embeddings:
+    \item \textbf{Learnable queries}: $h = 4$ attention heads, each with head dimension $d_k = d / h = 256$, where $d = 1024$ is the backbone hidden size. A single learnable query vector per head is stored as $Q \in \mathbb{R}^{h \times d_k}$.
+
+    \item \textbf{Cross-attention}: The backbone token embeddings $H \in \mathbb{R}^{T \times d}$ are projected to keys and values with $W_K, W_V \in \mathbb{R}^{d \times d}$ (no down-projection) and split across heads. Each head $i$ performs scaled dot-product attention between its query and the per-head key/value slices $K_i, V_i \in \mathbb{R}^{T \times d_k}$:
     \begin{align}
         K &= H W_K, \quad V = H W_V \\
-        \text{Attention}(Q, K, V) &= \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right) V
+        \text{head}_i &= \text{softmax}\!\left(\frac{Q_i K_i^\top}{\sqrt{d_k}}\right) V_i, \quad i = 1, \ldots, h
     \end{align}
-    where $H \in \mathbb{R}^{T \times d}$ is the backbone output and $W_K, W_V \in \mathbb{R}^{d \times d_k}$ are learnable projections.
-    
-    \item \textbf{Aggregation}: The $M$ attended vectors are concatenated, yielding a representation of dimension $M \times d_k$.
-    
+
+    \item \textbf{Aggregation}: The $h$ single-vector head outputs are concatenated, yielding a representation of dimension $h \cdot d_k = d = 1024$.
+
     \item \textbf{Feed-forward classifier}:
     \begin{equation}
-        \text{LayerNorm} \to \text{Linear}(M \cdot d_k, 512) \to \text{GELU} \to \text{Dropout}(p) \to \text{Linear}(512, K)
+        \text{LayerNorm}(d) \to \text{Linear}(d, 512) \to \text{GELU} \to \text{Dropout}(p) \to \text{Linear}(512, K)
     \end{equation}
     where $K$ is the number of classes.
 \end{enumerate}
+
+With $d = 1024$, $h = 4$, and $K = 120$ genera, the head comprises the query ($1{,}024$), the key/value projections $W_K, W_V$ ($2 \times 1{,}049{,}600$), the LayerNorm ($2{,}048$), and the two classifier layers ($524{,}800 + 61{,}560$), totalling $2{,}688{,}632$ trainable parameters (Table~\ref{tab:lora-config}); the species head ($K = 1{,}535$) correspondingly comprises $3{,}414{,}527$.
 
 The attention pooling mechanism enables the model to selectively focus on the most taxonomically informative tokens in the sequence, analogous to how a biologist might focus on specific conserved marker regions within a read to determine its taxonomic origin.
 
