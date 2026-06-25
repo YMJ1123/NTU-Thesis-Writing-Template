@@ -75,7 +75,7 @@ The model produces contextual embeddings for each token in the input sequence, y
 
 \textbf{Caduceus}~\cite{Schiff2024caduceus} is the first RC-equivariant bidirectional DNA language model. By constructing BiMamba layers with hard-coded reverse-complement weight sharing, Caduceus enforces strand symmetry at the architectural level rather than relying on augmentation or post-hoc inference tricks. This is directly relevant to the RC consistency analysis in Section~\ref{sec:bg-rc-symmetry}; unlike Caduceus, the NT-v2 backbone does not natively enforce RC equivariance, motivating our use of RC training augmentation and RC TTA.
 
-\textbf{Evo}~\cite{Nguyen2024} is a 7B-parameter model based on the StripedHyena architecture~\cite{Poli2024}, capable of modeling DNA sequences up to 131K nucleotides. While powerful for long-range genomic modeling, its large size makes it challenging to deploy for metagenomic classification tasks involving hundreds of millions of short reads.
+\textbf{Evo}~\cite{Nguyen2024} is a 7B-parameter model based on the StripedHyena architecture~\cite{Poli2024}, capable of modeling DNA sequences up to 131K nucleotides. Its successor, \textbf{Evo~2}~\cite{Brixi2025}, scales this approach to 7B and 40B parameters trained on 9.3~trillion bases spanning all domains of life, with a context window of up to 1M tokens at single-nucleotide resolution. We adopt the 7B Evo~2 variant as a frozen-embedding baseline (Section~\ref{sec:exp-frozen}). While powerful for long-range genomic modeling, the large size of both models makes them challenging to deploy for metagenomic classification tasks involving hundreds of millions of short reads.
 
 Across these models, a consistent theme emerges: tokenization strategy is a critical design axis. \textcite{Lindsey2025tokenizer} systematically evaluate character, BPE, $k$-mer, Unigram, and WordPiece tokenizers across 44 genomic classification tasks and find accuracy differences of up to 5 percentage points depending on tokenizer choice, corroborating our own ablation results in Chapter~\ref{ch:experiments}.
 
@@ -139,12 +139,12 @@ Mean pooling is computationally trivial but weights all tokens equally, potentia
 
 \subsection{Attention Pooling}
 
-Attention pooling uses learnable query vectors to compute a weighted combination of token embeddings. Given $M$ learnable query vectors $\{q_1, \ldots, q_M\} \in \mathbb{R}^{M \times d_q}$ and linear projections $W_K, W_V \in \mathbb{R}^{d \times d_q}$:
+Attention pooling uses learnable query vectors to compute a weighted combination of token embeddings. Given $M$ learnable query vectors $\{q_1, \ldots, q_M\} \in \mathbb{R}^{M \times d_k}$ and linear projections $W_K, W_V \in \mathbb{R}^{d \times d_k}$:
 \begin{align}
     K &= H W_K, \quad V = H W_V \\
-    \alpha_{m,t} &= \frac{\exp(q_m \cdot k_t / \sqrt{d_q})}{\sum_{t'} \exp(q_m \cdot k_{t'} / \sqrt{d_q})} \\
+    \alpha_{m,t} &= \frac{\exp(q_m \cdot k_t / \sqrt{d_k})}{\sum_{t'} \exp(q_m \cdot k_{t'} / \sqrt{d_k})} \\
     z_m &= \sum_{t=1}^{T} \alpha_{m,t} v_t \\
-    z &= \text{Concat}(z_1, \ldots, z_M) \in \mathbb{R}^{M \cdot d_q}
+    z &= \text{Concat}(z_1, \ldots, z_M) \in \mathbb{R}^{M \cdot d_k}
 \end{align}
 This mechanism enables the model to learn which positions in the DNA sequence are most informative for classification, automatically focusing on discriminative $k$-mers while down-weighting uninformative regions.
 
@@ -176,7 +176,7 @@ Three complementary strategies have been proposed to address the strand symmetry
 
     \item \textbf{RC test-time augmentation (RC TTA)}: At inference, both the forward read $s$ and its reverse complement $\bar{s}$ are processed independently, and their output logits are averaged before taking the argmax prediction:
     \begin{equation}
-        \hat{y} = \arg\max_k \bigl[ f_\theta(s) + f_\theta(\bar{s}) \bigr]
+        \hat{y} = \arg\max_k \tfrac{1}{2}\bigl[ f_\theta(s) + f_\theta(\bar{s}) \bigr]
         \label{eq:rc-tta-bg}
     \end{equation}
     This ``post-hoc conjoined'' approach~\cite{Zhou2022rc} enforces strand symmetry at inference time without modifying the trained model. It can be understood as a two-view ensemble where both views observe the same biological entity from different strand orientations. By the standard ensemble argument, averaging two correlated but noisy estimates of the same ground-truth label reduces prediction variance and cancels orientation-dependent errors. Zhou et al.~\cite{Zhou2022rc} find that this approach consistently performs well across diverse genomic tasks.

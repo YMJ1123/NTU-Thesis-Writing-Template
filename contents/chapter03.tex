@@ -89,7 +89,7 @@ This chapter describes the proposed token-level genomic foundation model classif
 We employ the \texttt{nucleotide-transformer-v2-500m-multi-species} model as the backbone encoder. This model is based on the ESM-2 architecture~\cite{Lin2023}, a protein language model architecture adapted for nucleotide sequences. The selection of NT-v2 over other genomic foundation models is motivated by four considerations:
 
 \begin{enumerate}
-    \item \textbf{Empirical performance on metagenomic reads}: A direct comparison of frozen-backbone baselines (Section~\ref{sec:exp-frozen}) shows that NT-v2 achieves 51.70\% genus-level accuracy, outperforming the 7B-parameter Evo-2 model (46.95\%) despite having 14$\times$ fewer parameters. This result provides direct empirical evidence that NT-v2's representations are better suited to metagenomic read classification.
+    \item \textbf{Empirical performance on metagenomic reads}: A direct comparison of frozen-backbone baselines (Section~\ref{sec:exp-frozen}) shows that NT-v2 achieves 51.70\% genus-level accuracy, outperforming the 7B-parameter Evo-2 model~\cite{Brixi2025} (46.95\%) despite having 14$\times$ fewer parameters. This result provides direct empirical evidence that NT-v2's representations are better suited to metagenomic read classification.
 
     \item \textbf{Multi-species pre-training}: NT-v2's \texttt{multi-species} variant is pre-trained on 850 genomes spanning 174 species~\cite{DallaTorre2023}, making its pre-training distribution the closest among available GFMs to the multi-organism nature of metagenomic data. By contrast, DNABERT~\cite{Ji2021} is pre-trained exclusively on the human genome, which is taxonomically far from gut microbial sequences.
 
@@ -401,7 +401,7 @@ We evaluate classification performance using the following metrics:
 
 At inference, we employ RC TTA: each read is classified twice (forward and reverse complement), and the logits are averaged before applying softmax:
 \begin{equation}
-    \hat{y} = \arg\max_k \left[ f_\theta(r) + f_\theta(\bar{r}) \right]
+    \hat{y} = \arg\max_k \tfrac{1}{2}\left[ f_\theta(r) + f_\theta(\bar{r}) \right]
     \label{eq:rc-tta}
 \end{equation}
 where $f_\theta(r)$ and $f_\theta(\bar{r})$ are the logit vectors for the forward and reverse-complement reads, respectively. This ensembling exploits the biological strand symmetry of DNA and consistently improves accuracy.

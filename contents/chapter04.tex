@@ -41,7 +41,7 @@ Before developing the token-level approach, we establish baseline performance us
 
 Embeddings are extracted once from each of several pre-trained GFMs. A two-layer MLP classifier is trained on the resulting fixed-dimensional vectors. We evaluate models from two families:
 \begin{itemize}
-    \item \textbf{Evo-2 (7B params)}: A large-scale model based on the StripedHyena architecture. We extract embeddings from layer 2.
+    \item \textbf{Evo-2 (7B params)}~\cite{Brixi2025}: A large-scale model based on the StripedHyena architecture. We extract embeddings from layer 2.
     \item \textbf{Nucleotide Transformer v2 (500M params)}: ESM-2-based model. We extract embeddings from the last hidden layer.
 \end{itemize}
 
