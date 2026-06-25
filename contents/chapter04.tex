@@ -605,7 +605,7 @@ Several additional observations are noteworthy:
 
     \item \textbf{Efficiency trade-off}: Shallow-Genus is $\sim$145$\times$ faster at inference (750K vs.\ 5,170 reads/sec) and uses $\sim$70$\times$ less VRAM during training. For latency-sensitive applications where 54\% accuracy is acceptable, Shallow-Genus represents a viable lightweight alternative.
 
-    \item \textbf{Pre-training vs.\ tokenization}: This experiment isolates pre-training while holding tokenization constant (6-mer), yielding a +13.19~pp pre-training advantage. Section~\ref{sec:exp-tokenization} further shows that switching to overlapping 12-mer tokenization within the MetaTransformer architecture yields +31.83~pp---nearly $2.5\times$ larger than the pre-training effect. The remaining gap between Shallow-Genus (54\%) and MetaTransformer on the full dataset is therefore attributable primarily to tokenization design, with training data volume as a secondary factor.
+    \item \textbf{Pre-training vs.\ tokenization}: This controlled experiment isolates pre-training against a shallow randomly initialized baseline, yielding a $+13.19$~pp advantage (RC TTA). A complementary cross-architecture comparison (Section~\ref{sec:exp-tokenization}), anchored on a common from-scratch MetaTransformer 6-mer baseline (47.00\% forward), places the pre-training effect at $+19.29$~pp and the overlapping-12-mer tokenization effect at $+31.83$~pp---roughly $1.65\times$ larger (Table~\ref{tab:pretraining-tokenization-decomp}). Either way, tokenization design dominates: the remaining gap between Shallow-Genus (54\%) and MetaTransformer on the full dataset is attributable primarily to tokenization, with training data volume as a secondary factor.
 \end{enumerate}
 
 \figref{fig:backbone-ablation} presents a direct visual comparison of NT-Genus and Shallow-Genus across five evaluation metrics, quantifying the benefit of the pre-trained backbone across all dimensions.
@@ -667,7 +667,7 @@ The backbone ablation (Section~\ref{sec:exp-shallow}) isolates the contribution 
 Three independent effects can be read from Tables~\ref{tab:tokenization-ablation}--\ref{tab:tokenization-ablation-species}:
 
 \paragraph{Effect of pre-training (6-mer tokenization held constant).}
-NT-Genus (66.29\% forward) outperforms MetaTransformer with the same non-overlapping 6-mer tokenization (47.00\%) by \textbf{+19.29~pp}. Holding architecture and tokenization fixed, this isolates the contribution of large-scale genomic pre-training: the NT-v2 backbone, adapted via only 5.54M LoRA parameters, provides substantially more discriminative representations than a 5M-parameter model trained from scratch on identical data.
+NT-Genus (66.29\% forward) outperforms MetaTransformer with the same non-overlapping 6-mer tokenization (47.00\%) by \textbf{+19.29~pp}. Holding tokenization fixed (non-overlapping 6-mer) and training on the same 50M reads, this isolates the contribution of large-scale genomic pre-training: the NT-v2 backbone, adapted via only 5.54M LoRA parameters, provides substantially more discriminative representations than a 5M-parameter model trained from scratch on identical data. This cross-architecture estimate ($+19.29$~pp, forward) and the controlled shallow-baseline estimate ($+13.19$~pp, RC TTA; Section~\ref{sec:exp-shallow}) bracket the pre-training advantage under fixed 6-mer tokenization; they differ because they use different random baselines (a 5M-parameter MetaTransformer vs.\ a single-layer Transformer) and metrics (forward vs.\ RC TTA).
 
 \paragraph{Effect of tokenization (MetaTransformer architecture held constant).}
 Tokenization design has a far larger effect than pre-training. Two sub-effects compound:
@@ -677,7 +677,26 @@ Tokenization design has a far larger effect than pre-training. Two sub-effects c
 \end{enumerate}
 
 \paragraph{Tokenization surpasses pre-training: MetaTransformer 13-mer vs.\ NT-v2.}
-MetaTransformer with overlapping 13-mer tokenization, trained \emph{from scratch} on 45M reads, achieves \textbf{87.42\%} genus Top-1 accuracy---\textbf{+20.35~pp} above NT-Genus with RC TTA (67.07\%), despite having ${\sim}100\times$ fewer parameters and no pre-training. At species level, MT 13-mer stride$=$1 reaches \textbf{49.62\%} (1,535 classes) on the 5M validation set and \textbf{49.74\%} on the independent 100K test set (Section~\ref{sec:spv4-hierarchical-prelim}), without any hierarchical routing. This result demonstrates that task-specific tokenization design is a more decisive factor than pre-trained prior knowledge for metagenomic read classification.
+MetaTransformer with overlapping 13-mer tokenization, trained \emph{from scratch} on the 50M dataset (45M training reads), achieves \textbf{87.42\%} genus Top-1 accuracy---\textbf{+20.35~pp} above NT-Genus with RC TTA (67.07\%), despite having ${\sim}100\times$ fewer parameters and no pre-training. At species level, MT 13-mer stride$=$1 reaches \textbf{49.62\%} (1,535 classes) on the 5M validation set and \textbf{49.74\%} on the independent 100K test set (Section~\ref{sec:spv4-hierarchical-prelim}), without any hierarchical routing. This result demonstrates that task-specific tokenization design is a more decisive factor than pre-trained prior knowledge for metagenomic read classification.
+
+\paragraph{Decomposition from a common baseline.}
+Because reverse-complement TTA is unavailable for MetaTransformer, the pre-training and tokenization effects are most cleanly compared forward-only against a single reference point: the from-scratch MetaTransformer with non-overlapping 6-mer tokenization (47.00\% genus Top-1). Table~\ref{tab:pretraining-tokenization-decomp} changes one factor at a time from this baseline. On this common footing the overlapping-12-mer tokenization effect ($+31.83$~pp) is $1.65\times$ the pre-training effect ($+19.29$~pp), and the 13-mer effect ($+40.42$~pp) is $2.1\times$; tokenization is the single most decisive factor, corroborating the controlled backbone ablation (Section~\ref{sec:exp-shallow}).
+
+\begin{table}[htbp]
+    \centering
+    \caption{Single-factor decomposition of the NT-Genus vs.\ MetaTransformer gap, anchored on a common from-scratch MetaTransformer 6-mer (non-overlapping) baseline at 50M reads (47.00\% forward genus Top-1). Each row changes exactly one factor; all values are forward-only for comparability, as RC TTA is unavailable for MetaTransformer.}
+    \label{tab:pretraining-tokenization-decomp}
+    \small
+    \begin{tabular}{lcc}
+        \toprule
+        \textbf{Single-factor change from MT 6-mer scratch (47.00\%)} & \textbf{Genus Top-1 (fwd)} & \textbf{$\Delta$} \\
+        \midrule
+        $+$ pre-training (NT-v2 backbone; 6-mer held)  & 66.29\% & $+19.29$~pp \\
+        $+$ overlapping 12-mer tokenization (MT held)  & 78.83\% & $+31.83$~pp \\
+        $+$ overlapping 13-mer tokenization (MT held)  & 87.42\% & $+40.42$~pp \\
+        \bottomrule
+    \end{tabular}
+\end{table}
 
 \paragraph{Convergence and capacity ceiling (12-mer).}
 To determine whether 78.83\% is the true ceiling for the 12-mer model, training was extended into a second epoch. Train loss dropped sharply from 0.764 to 0.119, while validation loss \emph{worsened} from 1.203 to 2.288---immediate overfitting. The 50M-read dataset saturates the 5M-parameter single-encoder MetaTransformer within one epoch.
