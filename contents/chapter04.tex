@@ -490,7 +490,7 @@ The hardware is substantially over-provisioned for this workload: the H100 80~GB
 
 \subsection{Scaling Projections}
 
-For the full 258M dataset training:
+We subsequently completed balanced training up to 250M reads on a multi-GPU H200 cluster (Section~\ref{sec:exp-scaling}), which settled the accuracy question (saturation at 67.29\%); the projections below therefore describe \emph{compute cost} only. For the full 258M dataset training:
 \begin{itemize}
     \item \textbf{Memory}: 258M reads require $\sim$52~GB RAM when loaded in-memory, which fits within the 128~GB system memory. Alternatively, a streaming data loader can reduce memory requirements to $O(\text{batch size})$.
     \item \textbf{Training time}: At the NT-Genus-5M throughput of $\sim$417 reads/sec (batch size 32), one epoch over 232M training reads would take $\sim$155 hours. With batch size 256 and improved GPU utilization, this could potentially be reduced to $\sim$20--30 hours per epoch, requiring 2--3 SLURM jobs for 10 epochs.

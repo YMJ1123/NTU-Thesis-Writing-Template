@@ -32,9 +32,9 @@ This work has several limitations that should be acknowledged:
     
     \item \textbf{Single read length}: All experiments use 150~bp reads. Performance at other read lengths (e.g., 250~bp for Illumina MiSeq, or long reads from Oxford Nanopore / PacBio) has not been evaluated.
     
-    \item \textbf{Incomplete data scaling}: Training on the full 258M dataset was not completed at the time of writing, leaving the upper bound of the scaling trajectory unconfirmed. The NT-Genus (50M) experiment is complete, achieving 67.07\% RC TTA accuracy.
-    
-    \item \textbf{No streaming data loader}: Current implementation loads all training reads into memory, limiting scalability beyond $\sim$50M reads without substantial RAM ($>$50~GB).
+    \item \textbf{Data scaling saturates beyond 50M}: We trained balanced subsets up to 250M reads (Section~\ref{sec:exp-scaling}); the warm-started 250M model reaches only 67.29\% RC TTA ($+0.22$~pp over the 50M 67.07\%), confirming that accuracy saturates rather than following the log-linear projection. Because the reference provides a single genome per species, reads beyond $\sim$50M redundantly re-cover the same sequences; the gap to overlapping-$k$-mer methods is therefore not closable by additional training data within the NT-v2 6-mer framework.
+
+    \item \textbf{Memory-bound loader in the primary pipeline}: The single-GPU TWCC pipeline loads training reads into memory; the 250M-scale experiments above were instead run on a multi-GPU H200 cluster with a lazy, index-based loader. Unifying the two (a streaming loader in the main codebase) remains future engineering work.
     
     \item \textbf{Architectural capacity ceiling}: MetaTransformer's 5M-parameter, single-encoder design saturates within one training epoch on 50M reads; a second epoch produces overfitting rather than further generalisation. A larger model would likely improve beyond 78.83\% but was not evaluated due to infrastructure constraints.
 \end{enumerate}
@@ -48,9 +48,9 @@ The findings above point to four primary future directions:
 The tokenization ablation (Section~\ref{sec:exp-tokenization}) identifies overlapping long-$k$ tokenization as the dominant performance driver, yet no publicly available genomic foundation model currently combines this property with large-scale pre-training on diverse microbial genomes. The most promising direction is therefore to pre-train a transformer on the GTDB database~\cite{Parks2022} ($>$400,000 microbial genomes) with overlapping 12-mer or 13-mer tokenization, which would combine the discriminative power of long $k$-mers established here with the representational quality of pre-training.
 Open empirical questions include (i)~whether RC TTA provides an equivalent benefit ($\sim+1$~pp) at $k = 12$/13, (ii)~whether $k > 13$ continues to improve accuracy, and (iii)~whether learned (e.g., BPE) variable-length tokenization can match or exceed fixed long-$k$ schemes. A complementary, lower-cost direction is to fine-tune NT-v2 with a learned 12-mer projection layer; this is bounded above by the model's pre-trained 6-mer positional encodings and is therefore expected to be a partial mitigation rather than a full solution.
 
-\subsection{Full-Scale and Streaming Training}
+\subsection{Streaming Infrastructure for Species-Level Scaling}
 
-Our data scaling analysis predicts that completing training on the full 258M-read HGR-UMGS dataset could lift NT-v2 + LoRA genus accuracy into the 82--90\% range. Realising this requires (a)~a streaming data loader that reads from disk to remove the current in-memory ceiling, and (b)~a multi-job training orchestration system or extended SLURM time allocations to cover the longer training horizon. The same infrastructure would enable per-species 50M and full-scale species-level training, which is currently bottlenecked by the same memory constraint.
+The genus-level data-scaling question is now settled: scaling balanced reads from 50M to 250M yields only $+0.22$~pp (Section~\ref{sec:exp-scaling}), so additional \emph{genus} training data is not a productive direction within the 6-mer framework---the earlier log-linear projection into the 82--90\% range is empirically refuted. The streaming/DDP infrastructure built for the 250M runs nonetheless remains valuable for the \emph{species}-level task (1{,}535 classes), where per-species 50M and full-scale species training are still bottlenecked by the memory-bound primary pipeline. Folding the lazy, index-based loader and multi-GPU orchestration used here into the main codebase would enable those species-level experiments without re-introducing the in-memory ceiling.
 
 \subsection{Hierarchical Routing Improvements for Species Classification}
 
