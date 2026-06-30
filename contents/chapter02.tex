@@ -82,7 +82,7 @@ Across these models, a consistent theme emerges: tokenization strategy is a crit
 \subsection{GFMs for Metagenomic Classification}
 \label{sec:bg-gfm-metagenomics}
 
-While GFMs have been evaluated extensively on promoter, enhancer, splice-site, TF-binding, and other molecular phenotype prediction tasks, their behavior in high-cardinality metagenomic short-read taxonomic classification remains poorly characterized. A naïve approach extracts mean-pooled embeddings from a frozen pre-trained model and trains a downstream classifier (e.g., MLP or SVM) on these fixed representations. While simple, this approach discards the token-level structure of the representation.
+GFMs have demonstrated strong performance on a range of molecular phenotype benchmarks, yet their systematic evaluation under high-cardinality multi-class taxonomy---spanning hundreds of genera or thousands of species from short metagenomic reads---remains absent from the literature. A naïve approach extracts mean-pooled embeddings from a frozen pre-trained model and trains a downstream classifier (e.g., MLP or SVM) on these fixed representations. While simple, this approach discards the token-level structure of the representation.
 
 Several recent works have begun to close this gap, though none performs systematic benchmarking across tokenization strategies at the scale of 120-genus or 1,535-species classification.
 \textbf{ViraLM}~\cite{Peng2024viralm} fine-tunes DNABERT-2 for binary virus/non-virus classification of metagenomic contigs, reporting a 22\% F1 improvement on short fragments — demonstrating that GFM fine-tuning is beneficial even on compositionally diverse metagenomic sequences.
