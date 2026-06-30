@@ -1,107 +1,22 @@
 % !TeX root = ../main.tex
 
-\chapter{Experiment Configuration Details}
-\label{app:configs}
+\chapter{Code and Data Availability}
+\label{app:availability}
 
-This appendix provides the full configuration files used for the key experiments described in Chapter~\ref{ch:experiments}.
+\section{Code Availability}
+\label{sec:code-availability}
 
-\section{v8 Genus Configuration (5M Balanced)}
+All source code, model definitions, training and evaluation scripts, and the complete set of experiment configuration files are publicly available at:
 
-\begin{lstlisting}[caption={YAML configuration for v8 genus experiment.}, label={lst:v8-config}]
-model:
-  backbone: InstaDeepAI/nucleotide-transformer-v2-500m-multi-species
-  head_type: attention_pool
-  num_query_tokens: 4
-  hidden_dim: 512
-  dropout: 0.15
+\begin{center}
+\url{https://github.com/m2lab-ntu/gfm-classifier}
+\end{center}
 
-lora:
-  r: 16
-  alpha: 32
-  dropout: 0.05
-  target_modules: [query, key, value]
+The repository contains, in addition to the training and inference pipeline, the full YAML configuration for every experiment reported in Chapter~\ref{ch:experiments} (the \texttt{v8}--\texttt{v15} runs spanning the 5M--250M read scales, the from-scratch and warm-start NT-v2 variants, and the MetaTransformer 13-mer baseline), under \texttt{configs/}. Each configuration records the backbone, the attention-pooling head dimensions, the LoRA settings ($r{=}16$, $\alpha{=}32$, applied to the query/key/value projections), the optimisation schedule, and the reverse-complement test-time augmentation flag, so that any reported result can be reproduced from the corresponding config and checkpoint. The headline hyperparameters are summarised in Tables~\ref{tab:lora-config} and~\ref{tab:training-config} of Chapter~\ref{ch:methodology}.
 
-data:
-  fasta_path: /path/to/balanced_5M/reads.fa
-  labels_path: /path/to/balanced_5M/labels.tsv
-  classification_level: genus
-  max_length: 32
-  val_ratio: 0.1
+The repository also provides the distributed-training launch scripts used for the large-scale (250M-read) runs, which employ multi-GPU \texttt{DistributedDataParallel} rather than the single-device setting used for the smaller experiments.
 
-training:
-  batch_size: 32
-  gradient_accumulation_steps: 2
-  num_epochs: 20
-  phase1_epochs: 5
-  backbone_lr: 3.0e-5
-  head_lr: 5.0e-4
-  weight_decay: 0.02
-  warmup_ratio: 0.1
-  early_stopping_patience: 7
-  rc_augmentation: true
-\end{lstlisting}
+\section{Data Availability}
+\label{sec:data-availability}
 
-\section{v9 Genus Configuration (50M Balanced)}
-
-\begin{lstlisting}[caption={YAML configuration for v9 genus experiment.}, label={lst:v9-config}]
-model:
-  backbone: InstaDeepAI/nucleotide-transformer-v2-500m-multi-species
-  head_type: attention_pool
-  num_query_tokens: 4
-  hidden_dim: 512
-  dropout: 0.15
-
-lora:
-  r: 16
-  alpha: 32
-  dropout: 0.05
-  target_modules: [query, key, value]
-
-data:
-  fasta_path: /path/to/balanced_50M/reads.fa
-  labels_path: /path/to/balanced_50M/labels.tsv
-  classification_level: genus
-  max_length: 32
-  val_ratio: 0.1
-
-training:
-  batch_size: 256
-  gradient_accumulation_steps: 1
-  num_epochs: 30
-  phase1_epochs: 0
-  backbone_lr: 3.0e-5
-  head_lr: 5.0e-4
-  weight_decay: 0.02
-  warmup_ratio: 0.1
-  early_stopping_patience: 7
-  rc_augmentation: true
-\end{lstlisting}
-
-\section{SLURM Job Script Example}
-
-\begin{lstlisting}[language=bash, caption={SLURM script for training on TWCC cluster.}, label={lst:slurm}]
-#!/bin/bash
-#SBATCH --job-name=gfm-genus-v9
-#SBATCH --partition=gpu
-#SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=128G
-#SBATCH --time=48:00:00
-#SBATCH --output=slurm-%j.out
-
-module load cuda/12.1
-source activate gfm
-
-python scripts/train.py \
-  --config configs/nt_token_genus_v9_50M.yaml \
-  --init_from results/nt_token_genus_lora_v8_5M/best.pt
-
-python scripts/evaluate.py \
-  --config configs/nt_token_genus_v9_50M.yaml \
-  --checkpoint results/nt_token_genus_lora_v9_50M/best.pt
-
-python scripts/evaluate.py \
-  --config configs/nt_token_genus_v9_50M.yaml \
-  --checkpoint results/nt_token_genus_lora_v9_50M/best.pt \
-  --rc_tta
-\end{lstlisting}
+The reference genome set (1{,}535 microbial genomes) is drawn from publicly available assemblies; the accession list, the read-simulation procedure, and the scripts used to construct the balanced and natural-abundance read sets (including the unique-read accounting for the 50M and 250M training pools) are included in the repository above under \texttt{data/}. Processed read sets and trained checkpoints are available from the author on reasonable request.
