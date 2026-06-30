@@ -24,6 +24,8 @@ We conduct experiments at three data scales by subsampling from the full dataset
     \item \textbf{50M} (balanced): Species-balanced subsample. Each species contributes $\sim$32,573 reads. Train: 45M, validation: 5M.
 \end{itemize}
 
+\paragraph{Reads versus unique reads.} The read counts above (and the data-scaling axis in Figure~\ref{fig:data-scaling}) refer to \emph{training reads including duplicates}, which is the quantity the optimiser actually sees per epoch. The underlying source is heavily duplicated at the sequence level: the full read set contains 258.67M reads but only 42.64M \emph{unique} sequences ($6.07\times$ redundancy), a property of the source simulation rather than of our balancing. Consequently the larger balanced pools contain fewer distinct reads than their nominal size: the 50M pool comprises 17.76M unique reads and the 250M pool 41.94M unique reads---the latter already approaching the 42.64M source ceiling. This duplication structure is one reason data scaling saturates: beyond $\sim$50M reads, additional ``reads'' are increasingly repeats the model has already seen.
+
 \subsection{Evaluation Protocol}
 
 All models are evaluated on a held-out validation set using the metrics described in Section~\ref{sec:method-eval}. Unless otherwise noted, results are reported with RC TTA (Eq.~\ref{eq:rc-tta}).
@@ -356,7 +358,7 @@ The comparison with MetaTransformer further reinforces this finding: despite usi
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.80\textwidth]{figures/data_scaling.pdf}
-    \caption{Genus RC TTA accuracy versus training data volume (log scale). Green circles mark our results at three data scales; the red star marks MetaTransformer's reported genus recall. The blue dashed line is a log-linear fit to our three data points. Per-$10\times$ accuracy gains diminish from $+7.76$~pp (500K$\to$5M) to $+4.02$~pp (5M$\to$50M). The fourth green circle (v15, 250M) continues the same warm-started series but is held out of the fit; at 67.29\% it falls well below the $\sim$71\% the log-linear fit would project at that scale---the trajectory flattens off its own projection, directly demonstrating that accuracy saturates beyond 50M rather than continuing along the trend. The MetaTransformer star marks reported genus recall (98.3\%); its x-position is based on training throughput (300K steps $\times$ batch~2,048) and is not directly comparable to our dataset-size axis.}
+    \caption{Genus RC TTA accuracy versus training data volume (log scale). The horizontal axis counts \emph{training reads including duplicates} (the per-epoch sample count); the corresponding \emph{unique}-read counts are smaller (50M$\to$17.8M, 250M$\to$41.9M unique, against a 42.6M source ceiling). Green circles mark our results at three data scales; the red star marks MetaTransformer's reported genus recall. The blue dashed line is a log-linear fit to our three data points. Per-$10\times$ accuracy gains diminish from $+7.76$~pp (500K$\to$5M) to $+4.02$~pp (5M$\to$50M). The fourth green circle (v15, 250M) continues the same warm-started series but is held out of the fit; at 67.29\% it falls well below the $\sim$71\% the log-linear fit would project at that scale---the trajectory flattens off its own projection, directly demonstrating that accuracy saturates beyond 50M rather than continuing along the trend. The MetaTransformer star marks reported genus recall (98.3\%); its x-position is based on training throughput (300K steps $\times$ batch~2,048) and is not directly comparable to our dataset-size axis.}
     \label{fig:data-scaling}
 \end{figure}
 
@@ -366,6 +368,28 @@ The projection above tentatively attributes the residual gap to insufficient dat
 Crucially, this saturation is a property of the \emph{tokenization}, not of the data or the single-genome-per-species reference. Trained on the \emph{same} reads, MetaTransformer with overlapping 13-mer tokenization continues to improve sharply with scale: on a common clean held-out pool its genus Top-1 rises from 87.5\% at 50M (the 87.42\% of Section~\ref{sec:exp-tokenization}) to \textbf{98.7\%} at 250M---and from 83.0\% to 98.5\% on a stricter ``leftover'' pool constructed to be sequence-ID-disjoint from both training sets, which rules out leakage. The identical $5\times$ data increase that moves the 6-mer model by $+0.22$~pp moves the 13-mer model by ${\sim}+11$~pp. The additional reads are therefore not redundant in any absolute sense: they carry discriminative signal that a non-overlapping 6-mer representation cannot resolve but an overlapping 13-mer one can. What saturates at 50M is the \emph{information ceiling of the 6-mer tokenizer}, not the data.
 
 We therefore conclude that whether additional training data helps is governed by tokenization: the remaining gap to MetaTransformer is \emph{not} closable by additional data within the NT-v2 6-mer framework, whereas an overlapping long-$k$ tokenizer converts the same reads into near-perfect genus assignment. We caution, however, that the 98.7\% figure reflects \emph{near-complete closed-set coverage of the 1{,}535 reference genomes' 13-mer content}---at 250M reads the overlapping 13-mer model approaches a lookup over the known genomes---and does \emph{not} measure generalisation to novel, unseen genomes. The operative ceiling for our setting is thus tokenization (Section~\ref{sec:exp-tokenization}) rather than data volume.
+
+\subsection{Balancing Axis: Species-Balanced vs.\ Genus-Balanced Training}
+\label{sec:exp-genus-balance}
+
+The scaling experiments above are species-balanced (each of the 1{,}535 species contributes equally). A natural alternative is to balance at the \emph{genus} level (each of the 120 genera contributes equally), which up-weights species-poor genera. To isolate the effect of the balancing axis alone, we trained two NT-v2 6-mer models on the \emph{same} 17.6M-read budget, differing only in this choice, and evaluated both on a common natural-abundance read pool. Table~\ref{tab:genus-balance} reports the result across three complementary metrics: per-read micro accuracy (the rate a randomly drawn read is classified correctly, the operationally relevant quantity for real samples), per-genus flat accuracy (macro-averaged over the 120 genera, treating each genus equally), and the Pearson correlation of estimated versus true relative abundance on real samples.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Effect of the training balancing axis at a fixed 17.6M-read budget (same reads, balancing differs only in whether species or genera are equalised). Genus-balancing trades a $+10$~pp gain in macro/flat accuracy for a $-23$~pp loss in per-read accuracy and a sharp drop in real-sample abundance fidelity.}
+    \label{tab:genus-balance}
+    \small
+    \begin{tabular}{lccc}
+        \toprule
+        \textbf{Balancing} & \textbf{Per-read acc.} & \textbf{Per-genus flat acc.} & \textbf{Sample-level $r$} \\
+        \midrule
+        Species-balanced (sbal) & \textbf{60.4\%} & 33.1\% & \textbf{0.993} \\
+        Genus-balanced (gbal)   & 37.2\% & \textbf{43.5\%} & 0.862 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Two findings follow. First, genus-balancing is \emph{counterproductive for real metagenomics}: although it lifts the macro/flat accuracy that weights rare genera equally ($33.1\% \to 43.5\%$, $+10.4$~pp), it does so by sacrificing exactly the reads that dominate real samples---per-read accuracy collapses from $60.4\%$ to $37.2\%$ ($-23.2$~pp) and the relative-abundance correlation degrades from $r=0.993$ to $r=0.862$. Because real samples are dominated by abundant genera, the per-read and abundance metrics are the ones that matter operationally, and on both the species-balanced model is decisively better. Second, the per-genus flat accuracy plateaus at $\sim$42--43\% \emph{even when the training distribution is explicitly genus-balanced}. This ceiling is therefore not a fixable artefact of class imbalance; it reflects the intrinsic difficulty of resolving 120 genera from 150~bp reads under 6-mer tokenization---consistent with the train-fit ceiling of Section~\ref{sec:exp-tokenization}.
 
 \section{Species-Level Classification}
 \label{sec:exp-species}
