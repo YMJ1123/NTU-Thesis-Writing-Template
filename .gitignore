@@ -18,3 +18,9 @@
 
 __pycache__/
 *.pyc
+
+overleaf-upload/
+overleaf-upload.zip
+main.xdv
+main.pdf
+.claude/
