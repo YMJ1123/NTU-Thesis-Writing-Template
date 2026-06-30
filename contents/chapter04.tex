@@ -1255,7 +1255,7 @@ Five models are evaluated: the NT-Species flat classifier (Section~\ref{sec:spv4
     \small
     \caption{Species-level sample evaluation on the independent 100K test set (1,535 species, 1K reads/sample, 100 partition samples).
     Genus-level results (120 classes, 5M pool, 50K reads/sample) are included as a reference row.
-    Per-genus (predicted) uses the NT-Genus router (65.97\% Top-1 on this test set) to select per-genus NT-v2 species classifiers; per-genus (oracle) uses the ground-truth genus label and represents the upper bound of the two-stage NT-v2 pipeline.
+    Per-genus (predicted) uses the NT-Genus router (66.1\% Top-1 on this test set) to select per-genus NT-v2 species classifiers; per-genus (oracle) uses the ground-truth genus label and represents the upper bound of the two-stage NT-v2 pipeline.
     All MT species predictions are run with reads ordered as in the canonical \texttt{reads\_100K.fa}; the MT 13-mer hierarchical species model on Taiwana-2 has a corrupted checkpoint (training halted at batch 10\,000 with val\_loss $= 9.29$) and could not produce usable predictions, so this row is omitted.
     The bottom block reports Kraken2 ($k$=35) on the same test set, with a custom database built from the same 2{,}505 UMGS+HGR genomes used to train the neural models.
     For Kraken2, sample-level metrics are computed with unclassified reads (30\%) counted toward the per-sample denominator (1000 reads) but contributing zero to predicted abundance---i.e., they are treated as ``lost signal''.}
