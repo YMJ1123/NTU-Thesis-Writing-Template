@@ -54,7 +54,7 @@ The genus-level data-scaling question is now settled: scaling balanced reads fro
 
 \subsection{Hierarchical Routing Improvements for Species Classification}
 
-Per-genus 50M classifiers under oracle-genus routing reach 27.8\% species Top-1 (Section~\ref{sec:spv4-hierarchical-prelim}), exceeding the flat sp\_v4 oracle (27.4\%) and validating per-genus specialisation. Predicted routing through the 66\%--67\% genus model, however, lowers Top-1 to 14.7\%---below the flat baseline (15.9\%)---because per-genus specialists do not recognise reads from genera they were not trained on.
+Per-genus 50M classifiers under oracle-genus routing reach 29.5\% species Top-1 (Section~\ref{sec:spv4-hierarchical-prelim}), exceeding the flat sp\_v4 oracle (27.4\%) and validating per-genus specialisation. Predicted routing through the 66\%--67\% genus model, however, lowers Top-1 to 15.6\%---marginally below the flat baseline (15.9\%)---because per-genus specialists do not recognise reads from genera they were not trained on.
 
 A subgenus routing tier was investigated as a direct approach to reducing intra-classifier confusion for the five largest genera (Section~\ref{sec:subgenus-routing}). Species-level $K$-means partitioning on NT-v2 embeddings was used to define subgroups of $\sim$25--30 species. Silhouette analysis (Collinsella: 0.03) and UMAP visualisation confirm that NT-v2's 6-mer representations do not separate species within a genus, and both hard and soft subgenus routing decreased oracle Top-1 from 27.8\% to 25.6--26.1\%, indicating that adding a routing tier without better representations is counterproductive.
 
