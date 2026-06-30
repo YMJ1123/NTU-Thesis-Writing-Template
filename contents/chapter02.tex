@@ -82,14 +82,14 @@ Across these models, a consistent theme emerges: tokenization strategy is a crit
 \subsection{GFMs for Metagenomic Classification}
 \label{sec:bg-gfm-metagenomics}
 
-Despite their success on single-genome tasks, GFMs have seen limited application to metagenomic read-level classification. A naïve approach extracts mean-pooled embeddings from a frozen pre-trained model and trains a downstream classifier (e.g., MLP or SVM) on these fixed representations. While simple, this approach discards the token-level structure of the representation.
+While GFMs have been evaluated extensively on promoter, enhancer, splice-site, TF-binding, and other molecular phenotype prediction tasks, their behavior in high-cardinality metagenomic short-read taxonomic classification remains poorly characterized. A naïve approach extracts mean-pooled embeddings from a frozen pre-trained model and trains a downstream classifier (e.g., MLP or SVM) on these fixed representations. While simple, this approach discards the token-level structure of the representation.
 
-Several recent works have begun to close this gap, though none directly addresses genus-level taxonomic classification of short metagenomic reads at scale.
+Several recent works have begun to close this gap, though none performs systematic benchmarking across tokenization strategies at the scale of 120-genus or 1,535-species classification.
 \textbf{ViraLM}~\cite{Peng2024viralm} fine-tunes DNABERT-2 for binary virus/non-virus classification of metagenomic contigs, reporting a 22\% F1 improvement on short fragments — demonstrating that GFM fine-tuning is beneficial even on compositionally diverse metagenomic sequences.
 \textbf{DNABERT-S}~\cite{Zhou2025dnaberts} adapts DNABERT-2 with contrastive learning to produce species-discriminative embeddings, achieving improvements on metagenomic binning and species clustering tasks; however, it operates at the embedding level rather than performing direct read classification.
 Both works fine-tune pre-existing GFMs and treat metagenomics as a secondary application; neither performs systematic tokenization ablation nor evaluates at the genus-level multi-class classification scale (120 genera, 50M reads) addressed in this thesis.
 
-This thesis addresses the gap by proposing a token-level classification approach that preserves the full embedding sequence, fine-tunes the backbone with LoRA, and provides the first systematic comparison of pre-trained GFM fine-tuning against from-scratch MetaTransformer training across tokenization strategies on the same large-scale dataset.
+This thesis addresses that gap by systematically fine-tuning and benchmarking GFMs for 120-class genus and 1,535-class species classification, and by disentangling the roles of data scale, pre-training, and tokenization---providing the first systematic comparison of pre-trained GFM fine-tuning against from-scratch MetaTransformer training across tokenization strategies on the same large-scale dataset.
 
 \section{Parameter-Efficient Fine-Tuning}
 \label{sec:bg-peft}
