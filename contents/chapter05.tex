@@ -36,7 +36,7 @@ This work has several limitations that should be acknowledged:
 
     \item \textbf{Memory-bound loader in the primary pipeline}: The single-GPU TWCC pipeline loads training reads into memory; the 250M-scale experiments above were instead run on a multi-GPU H200 cluster with a lazy, index-based loader. Unifying the two (a streaming loader in the main codebase) remains future engineering work.
     
-    \item \textbf{Architectural capacity ceiling}: MetaTransformer's 5M-parameter, single-encoder design saturates within one training epoch on 50M reads; a second epoch produces overfitting rather than further generalisation. A larger model would likely improve beyond 78.83\% but was not evaluated due to infrastructure constraints.
+    \item \textbf{Architectural capacity ceiling}: MetaTransformer's single-encoder-block design (${\sim}$5M encoder parameters, excluding the embedding table) saturates within one training epoch on 50M reads; a second epoch produces overfitting rather than further generalisation. A larger model would likely improve beyond 78.83\% but was not evaluated due to infrastructure constraints.
 \end{enumerate}
 
 \section{Future Work}
