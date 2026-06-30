@@ -246,7 +246,7 @@ The attention pooling head consists of:
     where $K$ is the number of classes.
 \end{enumerate}
 
-With $d = 1024$, $h = 4$, and $K = 120$ genera, the head comprises the query ($1{,}024$), the key/value projections $W_K, W_V$ ($2 \times 1{,}049{,}600$), the LayerNorm ($2{,}048$), and the two classifier layers ($524{,}800 + 61{,}560$), totalling $2{,}688{,}632$ trainable parameters (Table~\ref{tab:lora-config}); the species head ($K = 1{,}535$) correspondingly comprises $3{,}414{,}527$.
+With $d = 1024$, $h = 4$, and $K = 120$ genera, the head comprises the query ($1{,}024$), the key/value projections $W_K, W_V$ with their biases ($2 \times (1{,}048{,}576 + 1{,}024)$), the LayerNorm ($2{,}048$), and the two classifier layers ($524{,}800 + 61{,}560$), totalling $2{,}688{,}632$ trainable parameters (Table~\ref{tab:lora-config}); the species head ($K = 1{,}535$) correspondingly comprises $3{,}414{,}527$.
 
 The attention pooling mechanism enables the model to selectively focus on the most taxonomically informative tokens in the sequence, analogous to how a biologist might focus on specific conserved marker regions within a read to determine its taxonomic origin.
 
