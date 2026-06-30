@@ -1,0 +1,32 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git pull",
+            "shell": "powershell",
+            "statusMessage": "Pulling latest changes...",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$json = [Console]::In.ReadToEnd() | ConvertFrom-Json; $f = $json.tool_input.file_path; if ($f -match '\\.tex$') { $env:PATH += ';C:\\Program Files\\Inkscape\\bin'; & 'C:\\Users\\User\\AppData\\Local\\Programs\\MiKTeX\\miktex\\bin\\x64\\latexmk.exe' -xelatex -shell-escape -interaction=nonstopmode -cd 'd:\\NTU-Thesis-Writing-Template\\main.tex' }",
+            "shell": "powershell",
+            "statusMessage": "Compiling thesis...",
+            "timeout": 300,
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}

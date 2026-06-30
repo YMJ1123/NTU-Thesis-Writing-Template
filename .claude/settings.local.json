@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git pull *)",
+      "Bash(echo \"Exit: $?\")",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\User\\\\AppData\\\\Local\" -Directory | Where-Object { $_.Name -match \"tex|latex|miktex\" } | Select-Object Name)",
+      "Bash(docker --version)",
+      "Bash(wsl which *)",
+      "Bash(winget install *)",
+      "Bash(/c/Users/User/AppData/Local/Programs/MiKTeX/miktex/bin/x64/latexmk.exe -xelatex -shell-escape -interaction=nonstopmode -cd main.tex)",
+      "Bash(/c/Users/User/AppData/Local/Programs/MiKTeX/miktex/bin/x64/miktex.exe packages *)",
+      "Bash(/c/Users/User/AppData/Local/Programs/MiKTeX/miktex/bin/x64/initexmf.exe --set-config-value '[MPM]AutoInstall=1')",
+      "Bash(/c/Users/User/AppData/Local/Programs/MiKTeX/miktex/bin/x64/latexmk.exe -xelatex -shell-escape -interaction=nonstopmode -cd -g main.tex)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/Inkscape/bin\")"
+    ]
+  }
+}
