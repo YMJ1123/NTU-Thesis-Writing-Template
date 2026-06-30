@@ -708,6 +708,27 @@ Because reverse-complement TTA is unavailable for MetaTransformer, the pre-train
     \end{tabular}
 \end{table}
 
+\paragraph{The bottleneck is representational: a train-fit ceiling.}
+The decomposition above measures held-out accuracy, which conflates representational capacity with generalisation. A sharper test asks whether each model can fit its \emph{own training data}: a model that cannot separate the training set is limited by its input representation, not by capacity, data volume, optimisation, or overfitting. Table~\ref{tab:train-fit} reports training and validation accuracy at the largest (250M-read) scale. The NT-v2 6-mer models plateau at $63$--$66\%$ \emph{on the training set itself}, essentially equal to their validation accuracy (train--val gap ${\le}1$~pp)---they are not overfitting, they simply cannot fit. By contrast, MetaTransformer with overlapping 13-mer tokenisation fits the same task to $98.9\%$ training accuracy ($97.5\%$ validation).
+
+The implication is decisive: with non-overlapping 6-mer tokenisation, reads from different genera are mapped to token sequences too similar to be separated, so no amount of additional capacity, data, or training can raise accuracy---the ceiling is imposed before learning begins, by the tokenizer. Overlapping 13-mers preserve enough sequence detail that the \emph{same model family} fits the data almost perfectly. This train-fit ceiling is the strongest single piece of evidence that tokenization, rather than backbone capacity or data volume, is the operative bottleneck for 6-mer GFMs on this task.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Train-fit ceiling at 250M reads: the 6-mer models cannot fit the training set beyond ${\sim}66\%$, whereas an overlapping 13-mer model fits it to ${\sim}99\%$. Training and validation accuracy are essentially equal for the 6-mer models, ruling out overfitting and isolating the input representation as the bottleneck. NT-v2 figures are forward micro-accuracy; the MetaTransformer training figure is micro-precision.}
+    \label{tab:train-fit}
+    \small
+    \begin{tabular}{lccc}
+        \toprule
+        \textbf{Model (250M reads)} & \textbf{Train acc} & \textbf{Val acc} & \textbf{Train--val gap} \\
+        \midrule
+        NT-v2 6-mer, from scratch        & 63.2\% & 64.1\% & $-0.9$~pp \\
+        NT-v2 6-mer, warm-start          & 65.8\% & 66.6\% & $-0.8$~pp \\
+        MetaTransformer 13-mer (overlap) & \textbf{98.9\%} & \textbf{97.5\%} & $+1.4$~pp \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
 \paragraph{Convergence and capacity ceiling (12-mer).}
 To determine whether 78.83\% is the true ceiling for the 12-mer model, training was extended into a second epoch. Train loss dropped sharply from 0.764 to 0.119, while validation loss \emph{worsened} from 1.203 to 2.288---immediate overfitting. The 50M-read dataset saturates the 5M-parameter single-encoder MetaTransformer within one epoch.
 
