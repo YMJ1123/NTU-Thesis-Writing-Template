@@ -22,3 +22,5 @@ __pycache__/
 overleaf-upload/
 overleaf-upload.zip
 main.xdv
+main.pdf
+.claude/
