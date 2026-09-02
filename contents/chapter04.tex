@@ -80,26 +80,6 @@ We now present the token-level approach, progressing from initial architecture v
 
 \begin{table}[htbp]
     \centering
-    \caption{Hyperparameter configurations for initial architecture experiments (500K dataset). Bold values indicate the setting that changed relative to v1.}
-    \label{tab:v1-v3-configs}
-    \begin{tabular}{lccc}
-        \toprule
-        \textbf{Hyperparameter} & \textbf{v1} & \textbf{v2} & \textbf{v3 (best)} \\
-        \midrule
-        Backbone LR & $5 \times 10^{-5}$ & $2 \times 10^{-5}$ & $3 \times 10^{-5}$ \\
-        Head LR & $5 \times 10^{-4}$ & $3 \times 10^{-4}$ & $5 \times 10^{-4}$ \\
-        RC augmentation & No & \textbf{Yes} & \textbf{Yes} \\
-        Class weights & No & \textbf{Yes (capped@10)} & No \\
-        Label smoothing & 0.0 & \textbf{0.1} & 0.0 \\
-        Weight decay & 0.01 & 0.05 & 0.02 \\
-        Head dropout & 0.1 & 0.2 & 0.15 \\
-        LoRA dropout & 0.05 & 0.1 & 0.05 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\begin{table}[htbp]
-    \centering
     \caption{Results for architecture experiments (500K dataset, genus classification).}
     \label{tab:v1-v3-results}
     \begin{tabular}{lcccl}
@@ -123,30 +103,7 @@ We now present the token-level approach, progressing from initial architecture v
 \subsection{Training Dynamics and Overfitting}
 \label{sec:exp-overfit}
 
-\begin{table}[htbp]
-    \centering
-    \caption{Training dynamics for v3 (500K dataset). The train-validation gap grows steadily, reaching 7\% at the best epoch and 9\% by epoch 35.}
-    \label{tab:v3-dynamics}
-    \begin{tabular}{ccccc}
-        \toprule
-        \textbf{Epoch} & \textbf{Train Acc} & \textbf{Val Acc} & \textbf{Train-Val Gap} & \textbf{Val Loss} \\
-        \midrule
-        1 & 45.25\% & 46.29\% & $-1.0$\% & 2.044 \\
-        5 & 51.34\% & 51.27\% & $+0.1$\% & 1.809 \\
-        10 & 54.25\% & 52.39\% & $+1.9$\% & 1.755 \\
-        15 & 56.25\% & 53.26\% & $+3.0$\% & 1.735 \\
-        20 & 58.08\% & 53.88\% & $+4.2$\% & 1.721 \\
-        28$^\star$ & 60.88\% & 53.92\% & $+7.0$\% & 1.748 \\
-        35 & 62.69\% & 53.71\% & $+9.0$\% & 1.762 \\
-        \bottomrule
-    \end{tabular}
-    \begin{tablenotes}
-        \small
-        \item[$^\star$] Best validation accuracy epoch.
-    \end{tablenotes}
-\end{table}
-
-The training dynamics reveal severe overfitting: while training accuracy continues to increase to 62.7\%, validation accuracy saturates at $\sim$54\%. The growing train-validation gap (0\% $\to$ 9\%) indicates that the model has sufficient capacity to memorize the training data but fails to generalize, suggesting that 500K reads is insufficient to train a 498M-parameter model, even with only 1.1\% of parameters unfrozen.
+The training dynamics reveal severe overfitting (Figure~\ref{fig:training-dynamics}, left): training accuracy climbs to 62.7\% by epoch 35 while validation accuracy saturates near 54\%, and the train--validation gap widens from 0\% to 9\%. That gap indicates the model has sufficient capacity to memorize the training data but fails to generalize, suggesting that 500K reads is insufficient to train a 498M-parameter model, even with only 1.1\% of parameters unfrozen.
 
 \figref{fig:training-dynamics} visualises the training trajectories across all three data scales, illustrating this transition from severe overfitting (v3, 500K) to well-generalised training (NT-Genus, 50M).
 
@@ -207,30 +164,25 @@ Due to the 48-hour SLURM time limit, training required two jobs: the initial run
 
 \begin{table}[htbp]
     \centering
-    \caption{Genus classification results across data scales: v4 (500K), NT-Genus-5M (5M balanced), and NT-Genus (50M balanced).}
-    \label{tab:v8-results}
+    \caption{Genus classification across the full data-scale series (120 classes). Every metric is measured on the same held-out pool; the 250M column is the warm-started model initialised from the 50M checkpoint, and only accuracy was scored for it. A from-scratch 250M variant instead reaches 64.84\%.}
+    \label{tab:scaling}
     \small
-    \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{lccccc}
+    \begin{tabular}{lcccc}
         \toprule
-        \textbf{Metric} & \textbf{v4 (500K)} & \textbf{NT-Genus-5M} & \textbf{$\Delta$\textsubscript{v4$\to$5M}} & \textbf{NT-Genus (50M)$^\dagger$} & \textbf{$\Delta$\textsubscript{5M$\to$50M}} \\
+        \textbf{Metric} & \textbf{500K} & \textbf{5M} & \textbf{50M} & \textbf{250M} \\
         \midrule
-        Micro Accuracy (fwd)    & 53.75\% & 62.02\% & $+8.27$~pp & 66.29\%           & $+4.27$~pp \\
-        Micro Accuracy (RC TTA) & 55.29\% & 63.05\% & $+7.76$~pp & \textbf{67.07\%}  & $+4.02$~pp \\
-        Balanced Accuracy       & 25.23\% & 33.35\% & $+8.12$~pp & 39.91\%           & $+6.56$~pp \\
-        F1 (weighted)           & 52.51\% & 61.06\% & $+8.55$~pp & 65.61\%           & $+4.55$~pp \\
-        F1 (macro)              & 25.70\% & 37.97\% & $+12.27$~pp & \textbf{44.82\%} & $+6.85$~pp \\
-        Top-3 Accuracy          & ---     & 81.70\% & ---        & 84.40\%           & $+2.70$~pp \\
-        Top-5 Accuracy          & 82.91\% & 88.08\% & $+5.17$~pp & 90.03\%           & $+1.95$~pp \\
-        Top-10 Accuracy         & 91.29\% & 94.23\% & $+2.94$~pp & 95.25\%           & $+1.02$~pp \\
-        F1$=$0 classes          & 9       & 2       & $-7$       & \textbf{0}        & $-2$ \\
-        Train-Val Gap           & 6.25\%  & 1.30\%  & $-4.95$~pp & $<$1\%            & --- \\
+        Micro accuracy (fwd)    & 53.75\% & 62.02\% & 66.29\%          & --- \\
+        Micro accuracy (RC TTA) & 55.29\% & 63.05\% & \textbf{67.07\%} & 67.29\% \\
+        Balanced accuracy       & 25.23\% & 33.35\% & 39.91\%          & --- \\
+        F1 (weighted)           & 52.51\% & 61.06\% & 65.61\%          & --- \\
+        F1 (macro)              & 25.70\% & 37.97\% & \textbf{44.82\%} & --- \\
+        Top-3 accuracy          & ---     & 81.70\% & 84.40\%          & --- \\
+        Top-5 accuracy          & 82.91\% & 88.08\% & 90.03\%          & --- \\
+        Top-10 accuracy         & 91.29\% & 94.23\% & 95.25\%          & --- \\
+        F1$=$0 classes          & 9       & 2       & \textbf{0}       & --- \\
+        Train--validation gap   & 6.25\%  & 1.30\%  & $<$1\%           & --- \\
         \bottomrule
     \end{tabular}
-    \begin{tablenotes}
-        \small
-        \item $\dagger$ NT-Genus final metrics (epoch~30, converged).
-    \end{tablenotes}
 \end{table}
 
 The results reveal clear log-linear scaling behaviour:
@@ -243,83 +195,26 @@ The results reveal clear log-linear scaling behaviour:
 
 \subsubsection{Training Dynamics}
 
-\begin{table}[htbp]
-    \centering
-    \caption{Training dynamics for NT-Genus-5M (5M balanced, 30 epochs). The gap between training and validation accuracy remains small throughout, in sharp contrast to the 500K experiments.}
-    \label{tab:v8-dynamics}
-    \begin{tabular}{ccccc}
-        \toprule
-        \textbf{Epoch} & \textbf{Train Acc} & \textbf{Val Acc} & \textbf{Train-Val Gap} & \textbf{Notes} \\
-        \midrule
-        1 & 49.96\% & 51.80\% & $-1.8$\% & \\
-        5 & 55.97\% & 57.04\% & $-1.1$\% & \\
-        10 & 58.93\% & 59.42\% & $-0.5$\% & \\
-        14 & 60.60\% & 60.56\% & $+0.04$\% & 48h limit \\
-        15 & 58.80\% & 59.18\% & $-0.4$\% & Resumed (LR reset) \\
-        20 & 61.82\% & 60.59\% & $+1.2$\% & \\
-        25 & 62.89\% & 61.77\% & $+1.1$\% & \\
-        29$^\star$ & 63.32\% & 62.02\% & $+1.3$\% & Best epoch \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-The temporary accuracy drop at epoch 15 is caused by the learning rate scheduler resetting to its warmup phase after resumption. The model recovers within 3--4 epochs and eventually surpasses the pre-interruption performance.
+At 5M reads the train--validation gap stays within $\pm1.3$~pp for all 30 epochs (Figure~\ref{fig:training-dynamics}, centre), in sharp contrast to the 500K runs. The temporary drop at epoch 15 is the learning-rate scheduler resetting to its warmup phase after the job resumed at the 48-hour limit; the model recovers within 3--4 epochs and surpasses its pre-interruption accuracy.
 
 \subsection{NT-Genus Model: 50M Balanced Reads}
 \label{sec:exp-v9}
 
 Building on NT-Genus-5M, we scale training data by another $10\times$ to 50M balanced reads. The batch size is increased from 32 to 256 (with gradient accumulation reduced from 2 to 1, yielding an effective batch size of 256) to improve GPU utilization. The model is initialized from NT-Genus-5M's best checkpoint using \texttt{--init\_from} (transfer learning mode).
 
-\begin{table}[htbp]
-    \centering
-    \caption{Configuration comparison between NT-Genus-5M and NT-Genus.}
-    \label{tab:v9-config}
-    \begin{tabular}{lcc}
-        \toprule
-        \textbf{Parameter} & \textbf{NT-Genus-5M} & \textbf{NT-Genus} \\
-        \midrule
-        Training reads & 4.5M & 45M \\
-        Reads per species & $\sim$3,257 & $\sim$32,573 \\
-        Batch size & 32 & 256 \\
-        Gradient accumulation & 2 & 1 \\
-        Effective batch size & 64 & 256 \\
-        Epochs & 30 & 30 (converged) \\
-        Weight initialization & Random & v8 best.pt \\
-        Est.\ time per epoch & $\sim$3h & $\sim$5--6h \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
 \subsubsection{Results}
-
-\begin{table}[htbp]
-    \centering
-    \caption{Comparison between NT-Genus-5M and NT-Genus (50M) for genus classification (120 classes).}
-    \label{tab:v9-results}
-    \begin{tabular}{lccr}
-        \toprule
-        \textbf{Metric} & \textbf{NT-Genus-5M} & \textbf{NT-Genus} & \textbf{$\Delta$} \\
-        \midrule
-        Micro Accuracy (fwd) & 62.02\% & \textbf{66.29\%} & $+4.27$~pp \\
-        Micro Accuracy (RC TTA) & 63.05\% & \textbf{67.07\%} & $+4.02$~pp \\
-        Balanced Accuracy & 33.35\% & 39.91\% & $+6.56$~pp \\
-        F1 (weighted) & 61.06\% & 65.61\% & $+4.55$~pp \\
-        F1 (macro) & 37.97\% & \textbf{44.82\%} & $+6.85$~pp \\
-        Top-3 Accuracy & 81.70\% & 84.40\% & $+2.70$~pp \\
-        Top-5 Accuracy & 88.08\% & 90.03\% & $+1.95$~pp \\
-        Top-10 Accuracy & 94.23\% & 95.25\% & $+1.02$~pp \\
-        F1$=$0 classes & 2 & \textbf{0} & $-2$ \\
-        Best epoch & 29 & 30 (converged) & --- \\
-        \bottomrule
-    \end{tabular}
-\end{table}
 
 Scaling from 5M to 50M balanced reads yields a further $+4.02$~pp improvement in RC TTA accuracy (63.05\% $\to$ 67.07\%). Critically, the number of F1$=$0 classes drops to \textbf{zero}, indicating that all 120 genera are now correctly classified in at least some reads.
 
 The marginal return diminishes relative to the previous $10\times$ scaling step: 500K$\to$5M yielded $+7.76$~pp while 5M$\to$50M yields $+4.02$~pp for the same multiplicative data increase, consistent with a logarithmic scaling relationship. This sub-linear trend is expected under log-linear scaling laws and suggests that continued data scaling alone will not close the remaining gap with MetaTransformer.
 
 \paragraph{Training progress and LR restart incidents.}
-NT-Genus training required multiple SLURM jobs due to the 48-hour time limit. Before a bug fix was applied to the checkpoint-resume logic, two job restarts inadvertently reset the cosine learning-rate scheduler to its initial warmup phase, causing temporary accuracy dips: $-0.54$~pp at epoch~7 and $-1.39$~pp at epoch~11. In both cases the model recovered within 3--5 epochs and surpassed the pre-dip performance level. The underlying issue---\texttt{EarlyStopping.best} being silently set to \texttt{None} from an incomplete checkpoint key---was corrected in the resume logic; from epoch~17 onward the scheduler state is correctly restored and the learning rate continues its cosine decay without interruption.
+Training spanned several SLURM jobs because of the 48-hour limit, and before the
+checkpoint-resume logic was fixed two restarts reset the cosine scheduler to its
+warmup phase, costing 0.54~pp at epoch~7 and 1.39~pp at epoch~11; the model recovered
+within 3--5 epochs each time. The cause was \texttt{EarlyStopping.best} being silently
+restored as \texttt{None} from an incomplete checkpoint key. From epoch~17 the
+scheduler state is restored correctly and the decay continues uninterrupted.
 
 NT-Genus training completed at epoch~30 (April~2026), reaching a forward validation accuracy of \textbf{66.29\%} and RC~TTA accuracy of \textbf{67.07\%} (Figure~\ref{fig:learning-curves}). The learning curve plateaued between epochs~26 and~30 as the cosine schedule reached its minimum, indicating convergence.
 
@@ -331,23 +226,6 @@ NT-Genus training completed at epoch~30 (April~2026), reaching a forward validat
 \end{figure}
 
 \subsection{Data Scaling Analysis}
-
-\begin{table}[htbp]
-    \centering
-    \caption{Data scaling analysis: genus classification performance across data volumes. The 250M entry is the warm-started model (initialised from the 50M checkpoint and held out of the log-linear fit); the from-scratch 250M variant instead reaches 64.84\%. Only accuracy is reported for the 250M saturation experiment.}
-    \label{tab:scaling}
-    \begin{tabular}{rcccc}
-        \toprule
-        \textbf{Data Volume} & \textbf{RC TTA Acc} & \textbf{F1-macro} & \textbf{F1$=$0} & \textbf{Gap} \\
-        \midrule
-        500K (imbalanced) & 55.29\% & 25.70\% & 9 & 6.25\% \\
-        5M (balanced) & 63.05\% & 37.97\% & 2 & 1.30\% \\
-        50M (balanced) & \textbf{67.07\%} & \textbf{44.82\%} & \textbf{0} & $\sim$0.7\% \\
-        250M (balanced, warm-start) & 67.29\% & --- & --- & --- \\
-        MetaTransformer (HGR-UMGS full) & $\sim$98\% & --- & --- & --- \\
-        \bottomrule
-    \end{tabular}
-\end{table}
 
 The data scaling analysis reveals a clear relationship between training data volume and classification performance. The transition from 500K to 5M reads ($10\times$ increase) yields $+7.76$~pp in accuracy and $+12.27$~pp in macro F1. Meanwhile, all training technique ablations on the 500K dataset (v3--v7) produced at most $\pm0.5$~pp variation. This strongly supports the conclusion that \textbf{data volume, not model architecture or training techniques, is the primary determinant of classification accuracy} in this setting.
 
@@ -445,7 +323,7 @@ Using top-10 genus routing, species accuracy reaches 8.06\%, slightly below the 
         NT-Genus-5M (5M genus) & 62.02\% & 63.05\% & $+1.03$~pp \\
         NT-Genus (50M genus) & 66.29\% & 67.07\% & $+0.78$~pp \\
         NT-Genus (250M genus, warm-start) & 66.61\% & 67.29\% & $+0.68$~pp \\
-        Shallow-Genus (50M genus, shallow) & 53.80\% & 53.88\% & $+0.08$~pp \\
+        KmerFormer (50M genus, 1 layer)   & 53.80\% & 53.88\% & $+0.08$~pp \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -461,17 +339,17 @@ RC TTA provides a consistent $+1.0$ to $+1.5$~pp accuracy improvement across all
 
     \item \textbf{Scale-dependent diminishing returns}: The RC TTA benefit decreases slightly with data scale: $+1.44$~pp at 500K, $+1.03$~pp at 5M, $+0.78$~pp at 50M, and $+0.68$~pp at 250M (NT-Genus). Larger training sets expose the model to both strands of each locus more often, gradually reducing systematic strand-directional errors---though a non-trivial asymmetry persists even at 50M reads.
 
-    \item \textbf{Near-zero benefit for randomly initialized models}: Shallow-Genus (shallow Transformer, random initialization) shows only $+0.08$~pp from RC TTA. Without pre-training on a large genomic corpus, the model does not develop systematic strand-direction preferences, leaving little strand asymmetry for RC TTA to correct. This further supports the view that RC TTA primarily corrects pre-training-induced strand biases rather than stochastic inference noise.
+    \item \textbf{Near-zero benefit for from-scratch models}: KmerFormer at one layer shows only $+0.08$~pp from RC TTA. Section~\ref{sec:exp-shallow} shows that this holds at every depth, so it is not a capacity effect, and Section~\ref{sec:exp-thirteenmer} locates the mechanism in the vocabulary: a canonical vocabulary makes the augmentation arithmetically a no-op, a non-canonical one does not. RC TTA corrects a strand asymmetry a model has been allowed to acquire, and a model trained from scratch with reverse-complement augmentation does not acquire one.
 \end{enumerate}
 
 The $2\times$ inference cost is the primary trade-off. For offline evaluation this is acceptable; for latency-sensitive deployment, RC-equivariant architectures~\cite{Brown2021rc} or RC consistency regularization~\cite{Ma2025rc} may be preferred alternatives.
 
-\figref{fig:rc-tta} summarises RC TTA gains across all experiments, highlighting the near-zero benefit for the randomly initialized Shallow-Genus model.
+\figref{fig:rc-tta} summarises RC TTA gains across all experiments, highlighting the near-zero benefit for the from-scratch KmerFormer arm.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{figures/rc_tta_benefit.pdf}
-    \caption{RC TTA benefit across experiments. Top: forward-only vs.\ RC TTA accuracy (blue: NT-v2 backbone; green: DNABERT family; right of second dashed line: random init). Bottom: absolute gain in percentage points. NT-v2-based models gain $+0.77$--$+1.54$~pp consistently. DNABERT gains only $+0.58$~pp, likely because its overlapping 6-mer tokenization is inherently more RC-symmetric than NT-v2's non-overlapping 6-mer. DNABERT-2 (BPE tokenization) gains $+1.53$~pp, similar to early NT-v2 experiments. The randomly initialized Shallow-Genus gains only $+0.08$~pp, confirming that the benefit primarily corrects pre-training-induced strand biases.}
+    \caption{RC TTA benefit across experiments. Top: forward-only vs.\ RC TTA accuracy (blue: NT-v2 backbone; green: DNABERT family; right of second dashed line: random init). Bottom: absolute gain in percentage points. NT-v2-based models gain $+0.77$--$+1.54$~pp consistently. DNABERT gains only $+0.58$~pp, likely because its overlapping 6-mer tokenization is inherently more RC-symmetric than NT-v2's non-overlapping 6-mer. DNABERT-2 (BPE tokenization) gains $+1.53$~pp, similar to early NT-v2 experiments. The from-scratch KmerFormer gains only $+0.08$~pp; Sections~\ref{sec:exp-shallow} and~\ref{sec:exp-thirteenmer} trace that to the tokenization rather than to the absence of pre-training.}
     \label{fig:rc-tta}
 \end{figure}
 
@@ -502,23 +380,6 @@ The $2\times$ inference cost is the primary trade-off. For offline evaluation th
 \end{table}
 
 \subsection{Bottleneck Analysis}
-
-\begin{table}[htbp]
-    \centering
-    \caption{Resource bottleneck assessment on TWCC H100 nodes.}
-    \label{tab:bottleneck}
-    \begin{tabular}{lll}
-        \toprule
-        \textbf{Resource} & \textbf{Status} & \textbf{Assessment} \\
-        \midrule
-        GPU VRAM (80 GB) & $<$50\% utilized & No upgrade needed \\
-        GPU compute (H100) & Adequate & No upgrade needed \\
-        System RAM (128 GB) & $<$50\% utilized & No upgrade needed \\
-        Storage & $<$10 GB per experiment & No upgrade needed \\
-        \textbf{SLURM time (48h)} & \textbf{Primary bottleneck} & \textbf{Requires resume or longer limits} \\
-        \bottomrule
-    \end{tabular}
-\end{table}
 
 The hardware is substantially over-provisioned for this workload: the H100 80~GB GPU runs at $<$50\% VRAM utilization even with batch size 256, and system RAM usage is well within limits. The primary operational bottleneck is the 48-hour SLURM wall time limit, which necessitates multiple job submissions with checkpoint resumption for large-scale experiments.
 
@@ -566,97 +427,128 @@ Despite using a foundation model $100\times$ larger than MetaTransformer, our mo
     \item \textbf{Tokenization}: MetaTransformer uses 12-mer tokenization (capturing longer sequence patterns per token), while NT-v2 uses 6-mers. The coarser 12-mer tokenization may be advantageous for species discrimination, as it directly captures longer characteristic motifs.
 \end{enumerate}
 
-This comparison is confounded by three simultaneous differences: backbone depth (29 vs.\ 1 layer), pre-training (yes vs.\ no), and tokenization (6-mer vs.\ 12-mer overlapping). Sections~\ref{sec:exp-shallow} and~\ref{sec:exp-tokenization} disentangle these factors through controlled ablations. The key finding is that tokenization---specifically, overlapping 12-mer---accounts for the larger share of the performance gap, with pre-training providing a secondary but still substantial benefit under matched tokenization.
+This comparison is confounded by three simultaneous differences: backbone depth (29 vs.\ 1 layer), pre-training (yes vs.\ no), and tokenization (6-mer vs.\ 12-mer overlapping). Sections~\ref{sec:exp-shallow} and~\ref{sec:exp-tokenization} disentangle them through controlled ablations, each moving one factor inside one codebase. The key findings are that tokenization accounts for the larger share of the gap, that encoder depth accounts for most of the remainder, and that pre-training's own net contribution at this data scale is approximately zero---large only when labelled reads are scarce (Section~\ref{sec:exp-lowdata}).
 
 \paragraph{The ``$\sim$5M parameters'' figure counts only the encoder.}
 The $\sim$5M parameter count attributed to MetaTransformer throughout this comparison refers to its \emph{transformer encoder} alone; it omits the token-embedding table, which for large-$k$ tokenization dominates the parameter budget. A learned $k$-mer embedding assigns a distinct vector to every $k$-mer observed in training, so the embedding matrix grows with the realized vocabulary. For the overlapping 13-mer (stride~1) configuration that attains 87.42\% at 50M and 98.7\% at 250M, the realized vocabulary reaches ${\sim}33.5$M distinct $k$-mers; at the embedding width $d_{\text{model}}{=}64$, the embedding matrix alone is ${\sim}33.5\text{M}\times 64 \approx 2.1$ billion parameters---roughly $4\times$ the size of the entire 498M-parameter NT-v2 backbone. The 13-mer model is therefore parameter-light only in \emph{compute} (a single shallow encoder block over short token sequences), while being parameter-\emph{heavy} in \emph{storage} (a multi-billion-entry lookup table). This is intrinsic to the approach: its discriminative power comes precisely from giving each long $k$-mer its own vector, which is also what inflates the table. A fair efficiency comparison must therefore weigh MetaTransformer's small compute footprint against this large embedding-memory cost, rather than citing the ${\sim}5$M encoder figure as the model's total size.
 
-\section{Backbone Ablation: Shallow Transformer}
+\section{Depth-Controlled Backbone Ablation}
 \label{sec:exp-shallow}
 
-To isolate the contribution of the pre-trained 29-layer NT-v2 backbone from the effect of tokenization, we replace the backbone with a single-layer Transformer trained from scratch while keeping the 6-mer tokenizer and attention pooling head identical (see Section~\ref{sec:method-shallow}).
+Section~\ref{sec:exp-comparison} left three factors entangled: pre-training, encoder depth, and tokenization. This section removes the first two by fixing the tokenizer at NT-v2's non-overlapping 6-mer and varying only the encoder that sits on top of it.
 
-\subsection{Experimental Design}
+The from-scratch arms are all instances of \textbf{KmerFormer} (Section~\ref{sec:method-shallow}), the $k$-mer transformer in which the tokenizer, the stride, the vocabulary and the depth are free parameters rather than inherited from a pre-training run. The single-layer arm reported in earlier sections is KmerFormer at one layer; the deeper arms introduced below are the same code and the same training recipe with only the depth changed.
+
+\subsection{Why the Single-Layer Control Is Not Sufficient}
+
+Our first version of this ablation compared the 29-layer pre-trained NT-v2 backbone against a \emph{single-layer} KmerFormer trained from scratch, holding the tokenizer, the training reads, the label space and the classification head identical (Table~\ref{tab:shallow-design}). At 50M balanced reads that comparison gives 67.07\% against 53.88\% under RC TTA---a gap of 13.19~pp---and it is tempting to read the gap as the value of pre-training.
+
+It cannot be read that way, because the two arms also differ in depth: 29 layers against one. Depth is a free parameter of KmerFormer and a fixed one of NT-v2, so an ablation that moves it alongside pre-training cannot attribute the outcome to either. The rest of this section resolves the confound by sweeping depth with everything else held constant. The attribution changes, and so does the conclusion drawn from it.
 
 \begin{table}[htbp]
     \centering
-    \caption{Controlled ablation: NT-v2 backbone (NT-Genus) vs.\ shallow Transformer (Shallow-Genus). All other components are held constant.}
+    \caption{Controlled ablation design: pre-trained NT-v2 (NT-Genus) against KmerFormer trained from scratch. Every component other than the encoder is held constant; depth is the variable swept in Table~\ref{tab:v11-results}.}
     \label{tab:shallow-design}
     \begin{tabular}{lcc}
         \toprule
-        \textbf{Component} & \textbf{NT-Genus} & \textbf{Shallow-Genus} \\
+        \textbf{Component} & \textbf{NT-Genus} & \textbf{KmerFormer} \\
         \midrule
         Tokenizer & 6-mer (NT-v2) & 6-mer (NT-v2) \\
-        Encoder & 29-layer, $d{=}1024$ & 1-layer, $d{=}128$ \\
+        Encoder & 29-layer, $d{=}1024$ & 1/8/16/29-layer, $d{=}128$ \\
         Pre-training & MLM on 850 genomes & None \\
-        Trainable params & 5.54M (LoRA) & $\sim$200K (all) \\
+        Trainable params & 5.54M (LoRA, ${\sim}1\%$) & all (100\%) \\
         Classification head & Attention pool (4 heads) & Attention pool (4 heads) \\
         Training data & 50M balanced & 50M balanced \\
-        Batch size & 256 & 512 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-This controlled comparison isolates two factors:
-\begin{enumerate}
-    \item \textbf{Pre-trained representations}: Does pre-training on 850 genomes via masked language modeling provide an advantage for metagenomic classification?
-    \item \textbf{Model capacity}: Does a 29-layer encoder with 1,024 hidden dimensions capture more discriminative features than a single-layer encoder with 128 dimensions?
-\end{enumerate}
+\subsection{Results: Sweeping Depth at a Fixed Tokenizer}
 
-If the shallow variant substantially underperforms, it validates the value of the large pre-trained backbone. If performance is comparable, it suggests that the pre-trained representations provide limited benefit for this task under the 6-mer tokenization constraint, and that a lightweight task-specific model may be sufficient.
-
-\subsection{Expected Outcomes}
-
-Based on MetaTransformer's success with a similarly shallow architecture (albeit with 12-mer tokenization and a much larger training set), we hypothesize:
-\begin{itemize}
-    \item The shallow variant will underperform NT-Genus at the same data scale (50M), because the 6-mer tokenizer produces shorter token sequences than 12-mers, requiring more encoder capacity to capture equivalent patterns.
-    \item The performance gap will quantify the ``value of pre-training'' under fixed tokenization, informing whether future work should invest in larger backbones or better tokenizers.
-\end{itemize}
-
-\subsection{Results}
+We trained KmerFormer at 1, 8, 16 and 29 encoder layers on the same 50M balanced pool, with the same 6-mer tokenizer, the same attention-pooling head, 15 epochs, and evaluation on the same held-out 100K test set under the same RC-TTA protocol. Table~\ref{tab:v11-results} reports the series alongside NT-Genus.
 
 \begin{table}[htbp]
     \centering
-    \caption{Backbone ablation results: pre-trained NT-v2 (NT-Genus) vs.\ shallow Transformer (Shallow-Genus), both trained on 50M balanced reads.}
+    \caption{Depth sweep at a fixed 6-mer tokenizer, all arms trained on 50M balanced reads and scored on the same held-out 100K test set with RC TTA. Parameter counts are totals and include the token-embedding table. The single-layer row is the arm reported in earlier sections as the shallow from-scratch baseline; its 53.92\% here and the 53.88\% of the internal validation split agree to within 0.04~pp, so the two pools are interchangeable at this resolution.}
     \label{tab:v11-results}
+    \resizebox{\linewidth}{!}{%
+    \begin{tabular}{lccc}
+        \toprule
+        \textbf{Model} & \textbf{Params} & \textbf{Top-1 (RC TTA)} & \textbf{Balanced Acc} \\
+        \midrule
+        KmerFormer, 1 layer   & 0.90M & 53.92\% & 22.0\% \\
+        KmerFormer, 8 layers  & 2.29M & 65.44\% & 38.8\% \\
+        KmerFormer, 16 layers & 3.88M & 67.94\% & 43.5\% \\
+        KmerFormer, 29 layers & 6.45M & \textbf{69.52\%} & \textbf{46.2\%} \\
+        \midrule
+        NT-Genus (NT-v2 500M, 29 layers, LoRA) & 500M & 67.08\% & 39.8\% \\
+        \bottomrule
+    \end{tabular}%
+    }
+\end{table}
+
+Three things follow immediately.
+
+\textbf{Depth alone accounts for 15.60~pp.} Going from 1 to 29 layers moves accuracy from 53.92\% to 69.52\% with no pre-training anywhere in the picture. That is larger than the 13.19~pp originally attributed to pre-training, and it is obtained by changing the one factor the original ablation failed to hold fixed. Returns diminish but never turn negative: $+11.52$, $+2.50$ and $+1.58$~pp at each step.
+
+\textbf{At comparable depth, pre-training's net contribution at 50M is approximately zero.} A 3.88M-parameter 16-layer KmerFormer reaches 67.94\%, already $+0.86$~pp above NT-Genus; at NT-v2's own depth of 29 layers, a 6.45M-parameter model reaches 69.52\%, $+2.44$~pp above it with $77\times$ fewer parameters and no pre-training run. The correct statement is therefore not that pre-training is worth $+13.19$~pp under fixed tokenization, but that \emph{at 50M labelled reads and matched depth its net contribution is slightly negative}. The earlier figure conflated pre-training with a 1-versus-29-layer depth difference.
+
+\textbf{The macro-averaged metrics move the same way.} Balanced accuracy rises from 22.0\% to 46.2\% across the depth series and NT-Genus sits at 39.8\%, below both the 16- and 29-layer arms. The rare-genus deficit previously attributed to the shallow model's limited capacity is likewise a depth effect: it disappears once depth is supplied.
+
+A LoRA asymmetry remains and is worth stating. NT-v2 is adapted through 5.54M LoRA parameters, roughly 1\% of its weights, whereas every KmerFormer arm is trained end to end. A full fine-tune of NT-v2 might score higher than 67.08\%. What the sweep rules out is the reading that a randomly initialised model \emph{cannot} reach the pre-trained backbone's accuracy under this tokenizer: three from-scratch arms do, and the deepest exceeds it.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/depth_sweep_6mer.pdf}
+    \caption{Three architectures at a shared 6-mer tokenizer, all trained on the same 50M reads and the same label space. (a)~Genus Top-1 for MetaTransformer's single-layer design, NT-v2 adapted with LoRA, and a 29-layer KmerFormer. (b)~KmerFormer as encoder depth grows from 1 to 29 layers; the from-scratch curve crosses the 500M pre-trained model between 8 and 16 layers and flattens after 16.}
+    \label{fig:depth-sweep}
+\end{figure}
+
+\subsection{Where Pre-training Does Pay: the Low-Data Regime}
+\label{sec:exp-lowdata}
+
+The 50M result is not the whole answer, because it is measured at one labelled-data budget---and it is the budget most favourable to training from scratch. Repeating the depth-matched comparison across budgets shows that pre-training's advantage is real, large, and a function of how much labelled data is available (Table~\ref{tab:lowdata-crossover}).
+
+\begin{table}[htbp]
+    \centering
+    \caption{Depth-matched comparison across labelled-data budgets on the gut catalogue. The KmerFormer column is the 16-layer arm; at 5M reads the 8- and 29-layer arms give 53.62\% and 54.19\%, so the comparison is not sensitive to which depth is chosen. Genus Top-1, RC TTA.}
+    \label{tab:lowdata-crossover}
     \begin{tabular}{lccr}
         \toprule
-        \textbf{Metric} & \textbf{NT-Genus} & \textbf{Shallow-Genus} & \textbf{$\Delta$} \\
+        \textbf{Training reads} & \textbf{NT-Genus} & \textbf{KmerFormer} & \textbf{Pre-training} \\
         \midrule
-        Micro Accuracy (fwd) & 66.29\% & 53.80\% & $-12.49$~pp \\
-        Micro Accuracy (RC TTA) & \textbf{67.07\%} & 53.88\% & $-13.19$~pp \\
-        Balanced Accuracy & 39.91\% & 22.28\% & $-17.63$~pp \\
-        F1 (macro) & 44.82\% & 25.78\% & $-19.04$~pp \\
-        F1$=$0 classes & 0 & 3 & $+3$ \\
-        RC TTA gain & $+0.78$~pp & $+0.08$~pp & --- \\
-        Best epoch & 30 / 30 & 15 / 15 & --- \\
-        Inference throughput & $\sim$5,170 r/s & $\sim$750,000 r/s & $\approx$145$\times$ \\
-        VRAM (training) & $\sim$5 GB & $\sim$0.07 GB & --- \\
+        0.5M & 54.72\% & 41.35\% & $+13.4$~pp \\
+        1M   & 57.34\% & 44.29\% & $+13.1$~pp \\
+        5M   & 63.05\% & 54.11\% & $+8.9$~pp \\
+        50M  & 67.08\% & \textbf{67.94\%} & $-0.9$~pp \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-The pre-trained 29-layer NT-v2 backbone outperforms the single-layer randomly initialized Transformer by \textbf{13.19~pp} in RC TTA accuracy (67.07\% vs.\ 53.88\%). This gap confirms that the pre-trained representations, despite being fine-tuned via only 5.54M LoRA parameters, provide substantial discriminative value that a shallow randomly initialized model cannot replicate even with 50M training reads.
+Across four budgets the advantage shrinks monotonically and changes sign---$+13.4$, $+13.1$, $+8.9$, $-0.9$~pp---so this is a curve with a crossing rather than two endpoints that happen to differ. The pre-trained line is nearly flat over the same range: a $100\times$ increase in labelled reads buys NT-Genus $+12.4$~pp while it buys KmerFormer $+26.6$~pp. Pre-training supplies a head start, not a higher ceiling.
 
-Several additional observations are noteworthy:
-\begin{enumerate}
-    \item \textbf{F1 gap is larger than accuracy gap}: The macro F1 gap ($-19.04$~pp) substantially exceeds the accuracy gap ($-13.19$~pp), indicating that Shallow-Genus disproportionately fails on rare genera. This is consistent with Shallow-Genus's lower capacity for learning subtle sequence features distinguishing rare taxa.
+Depth behaves accordingly. At 5M reads, going from 8 to 16 layers is worth $+0.49$~pp and from 16 to 29 a further $+0.08$~pp---inside run-to-run variation---whereas at 50M the 8-to-16 step is worth $+2.50$~pp. Depth needs data to pay off, which also means the low-data gap is not something more depth would close.
 
-    \item \textbf{RC TTA nearly ineffective for Shallow-Genus}: The shallow, randomly initialized model shows only $+0.08$~pp from RC TTA (vs.\ $+0.77$~pp for NT-Genus), supporting the interpretation that RC TTA primarily corrects systematic strand biases acquired during pre-training rather than stochastic inference noise.
-
-    \item \textbf{Efficiency trade-off}: Shallow-Genus is $\sim$145$\times$ faster at inference (750K vs.\ 5,170 reads/sec) and uses $\sim$70$\times$ less VRAM during training. For latency-sensitive applications where 54\% accuracy is acceptable, Shallow-Genus represents a viable lightweight alternative.
-
-    \item \textbf{Pre-training vs.\ tokenization}: This controlled experiment isolates pre-training against a shallow randomly initialized baseline, yielding a $+13.19$~pp advantage (RC TTA). A complementary cross-architecture comparison (Section~\ref{sec:exp-tokenization}), anchored on a common from-scratch MetaTransformer 6-mer baseline (47.00\% forward), places the pre-training effect at $+19.29$~pp and the overlapping-12-mer tokenization effect at $+31.83$~pp---roughly $1.65\times$ larger (Table~\ref{tab:pretraining-tokenization-decomp}). Either way, tokenization design dominates: the remaining gap between Shallow-Genus (54\%) and MetaTransformer on the full dataset is attributable primarily to tokenization, with training data volume as a secondary factor.
-\end{enumerate}
-
-\figref{fig:backbone-ablation} presents a direct visual comparison of NT-Genus and Shallow-Genus across five evaluation metrics, quantifying the benefit of the pre-trained backbone across all dimensions.
+\paragraph{The crossover replicates on a second catalogue.} A result obtained on one reference set may be a property of that set. We therefore repeated the comparison on a soil catalogue built from RefSoil~\cite{Choi2017refsoil}, which spans 309 genera---$2.6\times$ the gut label space---with a different taxonomic composition and no shared provenance, simulating reads identically and building balanced pools at the same 5M and 50M budgets. NT-v2 leads by $+4.6$~pp at 5M (31.98\% against 27.42\%) and is overtaken by 3.8~pp at 50M (43.68\% for KmerFormer against 39.84\%). The direction, the crossing and the budget at which it occurs all reproduce, so the interaction between pre-training and labelled-data volume is a property of the data budget rather than of one reference catalogue.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.90\textwidth]{figures/backbone_ablation.pdf}
-    \caption{Backbone ablation: pre-trained NT-v2 + LoRA (NT-Genus, green) vs.\ single-layer randomly initialized Transformer (Shallow-Genus, purple), both trained on 50M balanced reads. Numbers above bars indicate the absolute gain of NT-Genus over Shallow-Genus. The pre-trained backbone consistently outperforms the shallow variant across all metrics, with the largest gap in F1 (macro) ($+19.0$~pp) and Balanced Accuracy ($+17.6$~pp), reflecting NT-Genus's superior discrimination of rare genera.}
-    \label{fig:backbone-ablation}
+    \includegraphics[width=0.95\textwidth]{figures/soil_data_scale.pdf}
+    \caption{Pre-trained against from-scratch training as the labelled budget grows, on the soil catalogue (309 genera, RefSoil). The pre-trained backbone leads at 5M reads and is overtaken by 50M, reproducing the gut crossover on a catalogue with $2.6\times$ the genera and no shared provenance.}
+    \label{fig:soil-scale}
 \end{figure}
+
+\subsection{Revised Interpretation of RC Test-Time Augmentation}
+
+Section~\ref{sec:exp-rc-tta} reported that RC TTA is worth $+0.78$~pp to NT-Genus and $+0.08$~pp to the single-layer from-scratch model, and attributed the difference to strand biases acquired during pre-training. The depth sweep lets that interpretation be tested rather than assumed, and it survives only in part.
+
+RC TTA remains worth approximately zero to KmerFormer \emph{at every depth}, not only at one layer, so the near-zero gain is not a consequence of limited capacity. Two further controls locate the mechanism more precisely. Ablating reverse-complement augmentation during \emph{training} moves 5M-read accuracy by 0.13~pp, inside the run-to-run spread, so the model does not depend on the augmentation to acquire strand invariance. And at $k=13$ the size of the RC-TTA gain tracks the \emph{vocabulary} rather than the architecture: an arm with a canonical vocabulary---one in which a $k$-mer and its reverse complement share an entry---gains $+0.01$~pp, because test-time augmentation is then arithmetically a no-op, whereas a non-canonical hashed vocabulary gains $+6.71$~pp, because the two strands hash to different buckets (Section~\ref{sec:exp-thirteenmer}).
+
+The revised statement is therefore narrower than the original: RC TTA corrects a strand asymmetry that a model has been \emph{allowed to acquire}, and whether a model acquires one is governed by whether its tokenization is strand-symmetric and whether its training exposed it to both strands. NT-v2, pre-trained on single-strand genomic sequence with a non-canonical 6-mer vocabulary, has such an asymmetry; a from-scratch model trained with RC augmentation does not, at any depth.
+
+\subsection{Efficiency}
+
+The efficiency argument is strengthened rather than weakened by the corrected attribution, because the from-scratch arm is now the more accurate one as well as the cheaper one. At 29 layers KmerFormer uses 6.45M parameters against NT-v2's 500M, infers $7.6\times$ faster on the same GPU and trains $4.5\times$ faster in $11\times$ less memory; at one layer it is $84\times$ faster at inference on 27~MiB of peak memory. Full throughput and peak-memory measurements for every arm in this thesis are in Section~\ref{sec:exp-resources}.
 
 \section{Tokenization Ablation: MetaTransformer at 50M Scale}
 \label{sec:exp-tokenization}
@@ -665,50 +557,36 @@ The backbone ablation (Section~\ref{sec:exp-shallow}) isolates the contribution 
 
 \begin{table}[htbp]
     \centering
-    \caption{Tokenization ablation (genus-level, 120 classes): NT-v2 + LoRA vs.\ MetaTransformer under six tokenization configurations. All MetaTransformer models are trained from scratch on 50M balanced reads. RC TTA is unavailable for MetaTransformer.}
+    \caption{Tokenization ablation: MetaTransformer under six tokenization configurations, all trained from scratch on the same 50M balanced reads, at both taxonomic levels. NT-Genus is shown for reference; RC TTA is unavailable for MetaTransformer, so its column is forward-only.}
     \label{tab:tokenization-ablation}
-    \begin{tabular}{llccc}
+    \small
+    \begin{tabular}{llccccc}
         \toprule
-        \textbf{Model} & \textbf{Tokenization} & \textbf{Tokens/read} & \textbf{Top-1 Acc} & \textbf{Macro F1} \\
+        & & & \multicolumn{2}{c}{\textbf{Genus (120)}} & \multicolumn{2}{c}{\textbf{Species (1,535)}} \\
+        \cmidrule(lr){4-5}\cmidrule(lr){6-7}
+        \textbf{Model} & \textbf{Tokenization} & \textbf{Tok/read} & \textbf{Top-1} & \textbf{Macro F1} & \textbf{Top-1} & \textbf{Macro F1} \\
         \midrule
-        MetaTransformer & 13-mer, stride=1  & 138 & \textbf{87.42\%} & \textbf{0.7936} \\
-        MetaTransformer & 12-mer, stride=1  & 139 & 78.83\% & 0.6531 \\
-        NT-Genus & 6-mer, stride=6 & 25  & 67.07\%$^\dagger$ & --- \\
-        NT-Genus & 6-mer, stride=6 & 25  & 66.29\% & 0.4384 \\
-        MetaTransformer & 6-mer, stride=1   & 145 & 48.87\% & 0.1981 \\
-        MetaTransformer & 6-mer, stride=6   & 25  & 47.00\% & 0.1682 \\
-        MetaTransformer & 12-mer, stride=12 & 12  & 40.66\% & 0.0663 \\
-        MetaTransformer & 13-mer, stride=13 & 11  & 27.30\% & 0.0182 \\
+        MetaTransformer & 13-mer, $s{=}1$  & 138 & \textbf{87.42\%} & \textbf{0.7936} & \textbf{49.62\%} & \textbf{0.4950} \\
+        MetaTransformer & 12-mer, $s{=}1$  & 139 & 78.83\% & 0.6531 & 16.79\% & 0.1439 \\
+        NT-Genus        & 6-mer, $s{=}6$   & 25  & 66.29\%$^\dagger$ & 0.4384 & --- & --- \\
+        MetaTransformer & 6-mer, $s{=}1$   & 145 & 48.87\% & 0.1981 & 9.13\%  & 0.0719 \\
+        MetaTransformer & 6-mer, $s{=}6$   & 25  & 47.00\% & 0.1682 & 6.44\%  & 0.0470 \\
+        MetaTransformer & 12-mer, $s{=}12$ & 12  & 40.66\% & 0.0663 & 0.64\%  & 0.0023 \\
+        MetaTransformer & 13-mer, $s{=}13$ & 11  & 27.30\% & 0.0182 & 0.51\%  & 0.0026 \\
         \bottomrule
     \end{tabular}
     \begin{tablenotes}
         \small
-        \item $\dagger$ RC TTA result (+0.78~pp over forward-only 66.29\%); MetaTransformer results are forward-only.
+        \item $\dagger$ Forward-only, for comparability; NT-Genus reaches 67.07\% with RC TTA.
     \end{tablenotes}
 \end{table}
 
-\begin{table}[htbp]
-    \centering
-    \caption{Tokenization ablation (species-level, 1,535 classes): MetaTransformer under six tokenization configurations, trained on the same 50M balanced reads.}
-    \label{tab:tokenization-ablation-species}
-    \begin{tabular}{llccc}
-        \toprule
-        \textbf{Model} & \textbf{Tokenization} & \textbf{Tokens/read} & \textbf{Top-1 Acc} & \textbf{Macro F1} \\
-        \midrule
-        MetaTransformer & 13-mer, stride=1  & 138 & \textbf{49.62\%} & \textbf{0.4950} \\
-        MetaTransformer & 12-mer, stride=1  & 139 & 16.79\% & 0.1439 \\
-        MetaTransformer & 6-mer, stride=1   & 145 &  9.13\% & 0.0719 \\
-        MetaTransformer & 6-mer, stride=6   & 25  &  6.44\% & 0.0470 \\
-        MetaTransformer & 12-mer, stride=12 & 12  &  0.64\% & 0.0023 \\
-        MetaTransformer & 13-mer, stride=13 & 11  &  0.51\% & 0.0026 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-Three independent effects can be read from Tables~\ref{tab:tokenization-ablation}--\ref{tab:tokenization-ablation-species}:
+Three independent effects can be read from Table~\ref{tab:tokenization-ablation}:
 
 \paragraph{Effect of pre-training (6-mer tokenization held constant).}
-NT-Genus (66.29\% forward) outperforms MetaTransformer with the same non-overlapping 6-mer tokenization (47.00\%) by \textbf{+19.29~pp}. Holding tokenization fixed (non-overlapping 6-mer) and training on the same 50M reads, this isolates the contribution of large-scale genomic pre-training: the NT-v2 backbone, adapted via only 5.54M LoRA parameters, provides substantially more discriminative representations than a 5M-parameter model trained from scratch on identical data. This cross-architecture estimate ($+19.29$~pp, forward) and the controlled shallow-baseline estimate ($+13.19$~pp, RC TTA; Section~\ref{sec:exp-shallow}) bracket the pre-training advantage under fixed 6-mer tokenization; they differ because they use different random baselines (a 5M-parameter MetaTransformer vs.\ a single-layer Transformer) and metrics (forward vs.\ RC TTA).
+NT-Genus (66.29\% forward) is 19.29~pp above MetaTransformer at the same non-overlapping 6-mer tokenization (47.00\%). We deliberately do \emph{not} read that difference as the contribution of pre-training. The two arms differ in depth (29 layers against one), in width, in optimisation recipe and in codebase, so the comparison changes four things at once; the depth sweep of Section~\ref{sec:exp-shallow} shows that the depth term alone is worth 15.60~pp within a single codebase, which is most of the 19.29 on its own.
+
+What the 47.00\% row does support is a like-for-like reading against our own single-layer arm at the same tokenizer and the same reads: KmerFormer at one layer reaches 53.92\%, or $+6.92$~pp over MetaTransformer's non-overlapping 6-mer configuration. Both are single-layer models trained from scratch, so that residual is attributable to implementation and training recipe---pre-norm rather than post-norm, learned rather than sinusoidal positional encoding, an attention-pooling head rather than an unmasked mean---and not to pre-training, which neither model has.
 
 \paragraph{Effect of tokenization (MetaTransformer architecture held constant).}
 Tokenization design has a far larger effect than pre-training. Two sub-effects compound:
@@ -718,23 +596,25 @@ Tokenization design has a far larger effect than pre-training. Two sub-effects c
 \end{enumerate}
 
 \paragraph{Tokenization surpasses pre-training: MetaTransformer 13-mer vs.\ NT-v2.}
-MetaTransformer with overlapping 13-mer tokenization, trained \emph{from scratch} on the 50M dataset (45M training reads), achieves \textbf{87.42\%} genus Top-1 accuracy---\textbf{+20.35~pp} above NT-Genus with RC TTA (67.07\%), with a transformer encoder ${\sim}100\times$ smaller and no pre-training (though its large-$k$ embedding table makes its \emph{total} parameter count far larger than NT-v2's; see the parameter-accounting caveat in Section~\ref{sec:exp-comparison}). At species level, MT 13-mer stride$=$1 reaches \textbf{49.62\%} (1,535 classes) on the 5M validation set and \textbf{49.74\%} on the independent 100K test set (Section~\ref{sec:spv4-hierarchical-prelim}), without any hierarchical routing. This result demonstrates that task-specific tokenization design is a more decisive factor than pre-trained prior knowledge for metagenomic read classification.
+MetaTransformer with overlapping 13-mer tokenization, trained \emph{from scratch} on the 50M dataset (45M training reads), achieves \textbf{87.42\%} genus Top-1 accuracy---\textbf{+17.90~pp} above the best 6-mer arm we trained (69.52\%) and $+20.35$ above NT-Genus with RC TTA (67.07\%), with a transformer encoder ${\sim}100\times$ smaller and no pre-training (though its large-$k$ embedding table makes its \emph{total} parameter count far larger than NT-v2's; see the parameter-accounting caveat in Section~\ref{sec:exp-comparison}). At species level, MT 13-mer stride$=$1 reaches \textbf{49.62\%} (1,535 classes) on the 5M validation set and \textbf{49.74\%} on the independent 100K test set (Section~\ref{sec:spv4-hierarchical-prelim}), without any hierarchical routing. This result demonstrates that task-specific tokenization design is a more decisive factor than pre-trained prior knowledge for metagenomic read classification.
 
 \paragraph{Decomposition from a common baseline.}
-Because reverse-complement TTA is unavailable for MetaTransformer, the pre-training and tokenization effects are most cleanly compared forward-only against a single reference point: the from-scratch MetaTransformer with non-overlapping 6-mer tokenization (47.00\% genus Top-1). Table~\ref{tab:pretraining-tokenization-decomp} changes one factor at a time from this baseline. On this common footing the overlapping-12-mer tokenization effect ($+31.83$~pp) is $1.65\times$ the pre-training effect ($+19.29$~pp), and the 13-mer effect ($+40.42$~pp) is $2.1\times$; tokenization is the single most decisive factor, corroborating the controlled backbone ablation (Section~\ref{sec:exp-shallow}).
+A decomposition is only as good as the comparisons it is built from, so we restrict it to changes that move one factor inside one codebase. Two such comparisons are available and they point the same way. Within MetaTransformer's own architecture and training recipe, changing only the tokenizer is worth up to $+40.42$~pp (Table~\ref{tab:pretraining-tokenization-decomp}). Within ours, changing only the depth at a fixed 6-mer tokenizer is worth $+15.60$~pp (Section~\ref{sec:exp-shallow}). Tokenization is therefore the larger of the two factors by roughly $2.6\times$, and both are measured without crossing a codebase boundary.
+
+An earlier version of this thesis added a third row to that table---``$+$ pre-training'', reading the NT-Genus-against-MetaTransformer difference as a single-factor change---and reported the tokenization effect as $1.65\times$ the pre-training effect. That row is withdrawn. It was not a single-factor change, and the depth sweep shows that what it mostly measured was depth.
 
 \begin{table}[htbp]
     \centering
-    \caption{Single-factor decomposition of the NT-Genus vs.\ MetaTransformer gap, anchored on a common from-scratch MetaTransformer 6-mer (non-overlapping) baseline at 50M reads (47.00\% forward genus Top-1). Each row changes exactly one factor; all values are forward-only for comparability, as RC TTA is unavailable for MetaTransformer.}
+    \caption{Tokenization effects measured \emph{within} MetaTransformer's architecture, training recipe and codebase, anchored on its non-overlapping 6-mer configuration at 50M reads (47.00\% forward genus Top-1). Each row changes only the tokenizer. Values are forward-only, as RC TTA is unavailable for MetaTransformer. The corresponding single-factor depth series, measured within our codebase at a fixed tokenizer, is Table~\ref{tab:v11-results}.}
     \label{tab:pretraining-tokenization-decomp}
     \small
     \begin{tabular}{lcc}
         \toprule
-        \textbf{Single-factor change from MT 6-mer scratch (47.00\%)} & \textbf{Genus Top-1 (fwd)} & \textbf{$\Delta$} \\
+        \textbf{Tokenizer change from MT 6-mer non-overlapping (47.00\%)} & \textbf{Genus Top-1 (fwd)} & \textbf{$\Delta$} \\
         \midrule
-        $+$ pre-training (NT-v2 backbone; 6-mer held)  & 66.29\% & $+19.29$~pp \\
-        $+$ overlapping 12-mer tokenization (MT held)  & 78.83\% & $+31.83$~pp \\
-        $+$ overlapping 13-mer tokenization (MT held)  & 87.42\% & $+40.42$~pp \\
+        $+$ overlapping 6-mer (stride 1)               & 48.87\% & $+1.87$~pp \\
+        $+$ overlapping 12-mer tokenization            & 78.83\% & $+31.83$~pp \\
+        $+$ overlapping 13-mer tokenization            & 87.42\% & $+40.42$~pp \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -773,19 +653,19 @@ To isolate the effect of overlapping tokenization \emph{within the pre-trained G
 
 \begin{table}[htbp]
     \centering
-    \caption{Pre-trained GFM backbone comparison at 5M balanced reads (genus-level, 120 classes).
-    All models use LoRA $r=16$ fine-tuning and the same attention-pooling head.
-    RC TTA is applied to all models.}
+    \caption{The three pre-trained GFM backbones at 5M balanced reads (genus level, 120 classes). All use LoRA $r=16$ and the same attention-pooling head, with RC TTA applied throughout. Read-level metrics are on the held-out pool; sample-level metrics use 50K reads per sample on the 5M validation pool.}
     \label{tab:backbone-tokenization-5M}
     \small
     \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{llcccc}
+    \begin{tabular}{llccccc}
         \toprule
-        \textbf{Model} & \textbf{Tokenization} & \textbf{Tokens/read} & \textbf{Params} & \textbf{RC TTA Acc} & \textbf{Macro F1} \\
+        & & \multicolumn{3}{c}{\textbf{Read level}} & \multicolumn{2}{c}{\textbf{Sample level}} \\
+        \cmidrule(lr){3-5}\cmidrule(lr){6-7}
+        \textbf{Model} & \textbf{Tokenization} & \textbf{Params} & \textbf{RC TTA} & \textbf{Macro F1} & \textbf{Pearson $r$} & \textbf{Bray--Curtis} \\
         \midrule
-        NT-Genus-5M  & 6-mer ($s{=}6$, non-overlap) & 25       & 499M & \textbf{63.05\%} & \textbf{0.449} \\
-        DNABERT + LoRA     & 6-mer ($s{=}1$, overlap)     & 145      & 86M  & 61.78\%          & 0.384 \\
-        DNABERT-2 + LoRA   & BPE                          & $\sim$34 & 117M & 58.88\%          & 0.323 \\
+        NT-Genus-5M      & 6-mer ($s{=}6$)  & 499M & \textbf{63.05\%} & \textbf{0.449} & \textbf{0.9928} & \textbf{0.112} \\
+        DNABERT $+$ LoRA   & 6-mer ($s{=}1$)  & 86M  & 61.78\%          & 0.384          & 0.9906 & 0.113 \\
+        DNABERT-2 $+$ LoRA & BPE              & 117M & 58.88\%          & 0.323          & 0.9915 & 0.141 \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -803,49 +683,172 @@ Third, DNABERT-2's BPE tokenization (58.88\%) performs worse than either 6-mer m
 BPE segments DNA by frequency-based byte pairs rather than fixed-length k-mers, which may fragment taxonomically informative motifs; the learned vocabulary may not align well with the k-mer statistics that distinguish metagenomic reads.
 
 \paragraph{Methodological note on training equivalence.}
-The three models use the same learning rate ($5\times10^{-4}$ head/LoRA, $3\times10^{-5}$ backbone), warmup ratio (5\%), cosine decay schedule, and epoch count (30), but differ in batch size (NT-v2: 32, DNABERT: 128, DNABERT-2: 256) due to GPU memory constraints imposed by sequence length differences (25, 145, and $\sim$34 tokens per read respectively).
-Consequently, the total number of gradient updates differs: approximately 453K for NT-v2, 117K for DNABERT, and 59K for DNABERT-2.
-All three learning curves were still improving at epoch 30 (gain $<0.1$~pp per epoch), with the cosine schedule decaying the learning rate to near zero by the final epoch.
-The comparison is therefore epoch-based---each model has seen the training data 30 times---rather than step-based or compute-matched.
-This is standard practice in fine-tuning comparisons, and the observed ranking (NT-v2 $>$ DNABERT $>$ DNABERT-2) is unlikely to be reversed by additional training: DNABERT, despite receiving 3.9$\times$ fewer gradient updates than NT-v2, lags by only $1.27$~pp, while DNABERT-2's gap of $4.17$~pp is consistent across all training stages and attributable primarily to its BPE tokenization.
+The three models share the learning rate ($5\times10^{-4}$ head/LoRA,
+$3\times10^{-5}$ backbone), warmup ratio, cosine schedule and epoch count, but differ
+in batch size (32, 128, 256) because their sequence lengths differ (25, 145 and
+${\sim}34$ tokens per read). The comparison is therefore epoch-based---each model sees
+the data 30 times---rather than step-matched, so the gradient-update counts differ
+(453K, 117K, 59K). The ranking is unlikely to be an artefact of that: DNABERT lags by
+only 1.27~pp despite receiving $3.9\times$ fewer updates than NT-v2, and DNABERT-2's
+4.17~pp gap is consistent across every training stage.
 
 \paragraph{Sample-level evaluation of the three GFM backbones (5M scale).}
 Read-level accuracy alone does not capture how a backbone choice propagates to the sample-level abundance and detection metrics that matter in practice.
 We therefore apply the sample-level evaluation protocol (5M validation pool, 50K reads per sample, 100 partition samples; Section~\ref{sec:exp-sample}) to the RC-TTA predictions of all three pre-trained backbones at 5M scale.
-Table~\ref{tab:backbone-sample-5M} reports the results.
-
-\begin{table}[htbp]
-    \centering
-    \caption{Sample-level genus evaluation of the three pre-trained GFM backbones at 5M balanced reads (RC TTA predictions, 5M validation pool, 50K reads/sample).}
-    \label{tab:backbone-sample-5M}
-    \small
-    \setlength{\tabcolsep}{5pt}
-    \begin{tabular}{lccccc}
-        \toprule
-        \textbf{Model} & \textbf{Read Acc} & \textbf{Pearson $r$} & \textbf{Bray-Curtis} & \textbf{ROC AUC} & \textbf{Sens @ 95\% Spec} \\
-        \midrule
-        NT-Genus-5M       & \textbf{63.05\%} & \textbf{0.9928} & \textbf{0.112} & 0.666 & \textbf{14.5\%} \\
-        DNABERT + LoRA    & 61.78\%          & 0.9906          & 0.113          & \textbf{0.672} & 14.2\% \\
-        DNABERT-2 + LoRA  & 58.88\%          & 0.9915          & 0.141          & 0.640 & 11.6\% \\
-        \bottomrule
-    \end{tabular}
-\end{table}
+Table~\ref{tab:backbone-tokenization-5M} reports the results.
 
 Two patterns emerge.
 First, abundance estimation (Pearson $r$) saturates at $\sim$0.99 for all three backbones, consistent with the genus-level finding that relative-abundance correlation is forgiving at low task granularity (Section~\ref{sec:sample-mt-comparison})---the read-accuracy ranking (NT-Genus $>$ DNABERT $>$ DNABERT-2) does not separate the backbones on Pearson $r$.
 Second, the discriminating metrics are Bray-Curtis dissimilarity and binary detection: DNABERT-2 is clearly worst on both (Bray-Curtis 0.141 vs.\ 0.112--0.113; ROC AUC 0.640 vs.\ 0.666--0.672; sensitivity at 95\% specificity 11.6\% vs.\ 14.2--14.5\%), mirroring its lower read accuracy and reinforcing that BPE tokenisation is the weakest of the three for this task.
 NT-Genus and DNABERT are nearly indistinguishable at the sample level, with NT-Genus marginally ahead on Bray-Curtis and sensitivity and DNABERT marginally ahead on ROC AUC.
 
-\paragraph{Scaling the backbone comparison to 50M (in progress).}
-The 5M comparison above is the controlled, compute-matched baseline that motivated selecting NT-v2.
-To verify that the ranking holds at thesis scale, DNABERT and DNABERT-2 are being trained on the full 50M dataset under the same protocol used for NT-Genus v9.
-DNABERT-2 (BPE, $\sim$34 tokens/read, batch~256) trains at $\sim$2.8~h/epoch and is expected to complete within $\sim$3.5~days.
-DNABERT (overlapping 6-mer, 145~tokens/read, batch~128) is substantially more expensive at $\sim$11.7~h/epoch---approximately $4$--$5\times$ the per-epoch cost of NT-v2---owing to its $5\times$ longer token sequences; full 30-epoch training requires $\sim$14.6~days of GPU time across multiple SLURM resumes.
-This training-cost asymmetry is itself a practical consideration in backbone selection: overlapping-$k$-mer models incur a sequence-length penalty that compounds with data scale.
-The 50M RC-TTA and sample-level results will be incorporated upon completion; the 5M ranking is not expected to reverse, as the per-epoch validation curves at 50M already track the 5M ordering through the early epochs.
+\paragraph{The backbone comparison was not repeated at 50M, and why.}
+The 5M comparison above is the compute-matched baseline that selected NT-v2, and it
+is the only budget at which all three backbones were trained. Repeating it at 50M was
+started and not completed: DNABERT-2 (BPE, ${\sim}34$ tokens/read) trains at
+${\sim}2.8$~h/epoch, but DNABERT (overlapping 6-mer, 145 tokens/read) costs
+${\sim}11.7$~h/epoch---four to five times NT-v2's per-epoch cost, from its $5\times$
+longer token sequences---so a full 30-epoch run needs about 14.6 days of GPU time
+across repeated SLURM resumes, which the available allocation did not cover. The
+ranking at 5M is therefore the one this thesis reports, and the 50M comparison remains
+open. That cost asymmetry is itself a finding worth stating: an overlapping-$k$-mer
+backbone carries a sequence-length penalty that compounds with data scale, which is a
+practical consideration in backbone selection independent of accuracy.
 
 \paragraph{Implication for NT-v2.}
-NT-v2 is constrained to 6-mer tokenization by its pre-training design. The ablation results show that this constraint is the primary limitation of our approach: switching to overlapping 13-mer tokenization on the same architecture and data yields a $+20.35$~pp improvement without any pre-training. A genomic foundation model pre-trained with overlapping large-$k$ tokenization on diverse microbial genomes would combine the discriminative power of longer k-mers with the representational quality of large-scale pre-training. No such model currently exists publicly.
+NT-v2 is constrained to 6-mer tokenization by its pre-training design. The ablation results show that this constraint is the primary limitation of our approach: switching to overlapping 13-mer tokenization on the same data yields a $+17.90$~pp improvement over the best 6-mer arm without any pre-training, and Section~\ref{sec:exp-thirteenmer} reproduces the effect inside our own codebase, where an exact 13-mer vocabulary reaches 91.15\%. A genomic foundation model pre-trained with overlapping large-$k$ tokenization on diverse microbial genomes would combine the discriminative power of longer k-mers with the representational quality of large-scale pre-training. No such model currently exists publicly.
+
+\section{KmerFormer at $k=13$: Exact and Hashed Vocabularies}
+\label{sec:exp-thirteenmer}
+
+The tokenization ablation of Section~\ref{sec:exp-tokenization} establishes that a long overlapping $k$-mer is worth tens of percentage points, but it establishes it inside \emph{MetaTransformer's} codebase. That leaves an alternative reading open: perhaps what wins is not the tokenizer but the particular implementation that happens to carry it. Settling that requires training a long-$k$ arm in our own code, under our own recipe, on the same reads---which is what this section does.
+
+Doing so is not merely a matter of changing a configuration flag, and the obstacle is instructive.
+
+\subsection{The Vocabulary Is the Model}
+
+At $k=13$ the training pool realises 33{,}545{,}099 distinct canonical 13-mers. At an embedding width of $d{=}64$ that is an 8~GiB parameter table, and 24~GiB once a sparse Adam variant materialises its two dense moment buffers---beyond a 24~GiB card, and the reason this experiment could not simply be run on the primary pipeline. Two consequences follow that are properties of long-$k$ models in general rather than of ours.
+
+First, \textbf{the embedding table is the model}. For the single-layer configuration, 99.99\% of the 2.15~B parameters are the lookup table; encoder, pooling and classifier together are 187{,}704. A long-$k$ model is a very large lookup table with a very small network on top, which is the same accounting point already made for MetaTransformer in Section~\ref{sec:exp-comparison}, now confirmed from the inside.
+
+Second, \textbf{an enumerated table does not train under data parallelism}. The exact vocabulary requires sparse gradients, and torch's DDP reducer rejects them, so the exact arms are confined to a single device while the hashed arms are not.
+
+We therefore also train a \emph{hashed} variant, which maps each 13-mer through a MurmurHash3 64-bit finalizer with seed $s=42$ into $B=2^{22}=4{,}194{,}304$ buckets. At $d{=}128$ that is a 2~GiB table in place of an 8~GiB one, it trains under DDP, and---unlike the exact canonical vocabulary---it is not reverse-complement invariant, which turns out to matter for RC TTA.
+
+\subsection{Results}
+
+Table~\ref{tab:thirteenmer} reports every 13-mer arm trained in our codebase, together with the 6-mer reference points and MetaTransformer, all on the same 50M gut pool and the same held-out 100K test set.
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \caption{Tokenization arms trained in our own codebase on the same 50M balanced reads, scored on the same held-out 100K test set with RC TTA. MetaTransformer is quoted on the same pool; its 87.47\% here and the 87.42\% of Section~\ref{sec:exp-tokenization} are the same run scored on the common test set and on the 5M validation split respectively.}
+    \label{tab:thirteenmer}
+    \resizebox{\linewidth}{!}{%
+    \begin{tabular}{llccc}
+        \toprule
+        \textbf{Model} & \textbf{Tokenizer} & \textbf{Layers} & \textbf{Table} & \textbf{Top-1} \\
+        \midrule
+        KmerFormer & exact canonical 13-mer, $d64$   & 1  & 8~GiB & \textbf{91.15\%} \\
+        KmerFormer & exact canonical 13-mer, $d64$   & 16 & 8~GiB & 85.63\% \\
+        MetaTransformer & exact 13-mer, $d64$        & 1  & 8~GiB & 87.47\% \\
+        KmerFormer & hashed 13-mer, $d128$           & 1  & 2~GiB & 86.80\% \\
+        KmerFormer & hashed 13-mer, $d128$           & 16 & 2~GiB & 83.83\% \\
+        KmerFormer & hashed 13-mer, $d64$            & 16 & 1~GiB & 79.26\% \\
+        \midrule
+        KmerFormer & non-overlapping 6-mer           & 16 & --- & 67.94\% \\
+        KmerFormer & overlapping 6-mer (stride 1)    & 16 & --- & 62.75\% \\
+        NT-Genus   & non-overlapping 6-mer           & 29 & --- & 67.08\% \\
+        \bottomrule
+    \end{tabular}%
+    }
+\end{table}
+
+\paragraph{The tokenizer, not the implementation.} An exact 13-mer vocabulary in our own code reaches 91.15\%, so the long-$k$ advantage reproduces across two independent implementations. We report the 3.68-point margin over MetaTransformer without resting on it: the two arms are matched on tokenizer, vocabulary, width, depth and data, and a reconstruction of MetaTransformer inside our codebase that is parameter-identical above the embedding table still leaves 2.70 of those points unexplained. Parameter identity is not behavioural identity, and a cross-codebase margin can be bounded but not attributed.
+
+\paragraph{Depth reverses at $k=13$.} At $k=6$ depth was worth 15.60~pp (Section~\ref{sec:exp-shallow}); here it is harmful. One layer beats sixteen by 5.52 points with an exact vocabulary (91.15\% against 85.63\%) and by 2.97 with a hashed one (86.80\% against 83.83\%). Both vocabularies agree on the sign, so the reversal belongs to the tokenization rather than to one implementation of it. The interpretation is that a 13-mer table already stores the discriminative information; depth then adds capacity to memorise rather than to generalise.
+
+\paragraph{Hashing costs 6.37 points and three quarters of the memory.} At matched width and depth, hashing costs 6.37 points ($d64$ exact 85.63\% against $d64$ hashed 79.26\%). Doubling the width to $d128$ recovers most of it, reaching 83.83\% on a 2~GiB table rather than an 8~GiB one. The hashed vocabulary is therefore best read as a capability rather than an accuracy result: it makes an overlapping 13-mer model trainable on hardware that cannot hold an enumerated table, and trainable under data parallelism at all.
+
+\paragraph{It is $k$-mer length, not token count.} Switching the 6-mer tokenizer from non-overlapping to stride-1 turns 25 tokens into 146 without adding any information---the read is still 150~bp---and \emph{lowers} accuracy by 5.19 points (62.75\% against 67.94\%) at four times the training memory. Longer $k$-mers help; more tokens of the same $k$ do not.
+
+\paragraph{RC TTA follows the vocabulary.} The exact arm uses a canonical vocabulary, in which a 13-mer and its reverse complement share an entry, so test-time augmentation is arithmetically a no-op and is measured at $+0.01$~pp. The hashed arm is not canonical---the two strands land in different buckets---and gains $+6.71$~pp. This is the control referred to in Section~\ref{sec:exp-shallow}: the size of the RC-TTA benefit is set by whether the tokenization is strand-symmetric, not by whether the model was pre-trained.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/thirteenmer_arms.pdf}
+    \caption{The 13-mer arms trained in our codebase against MetaTransformer, on the same 50M reads and the same test set. Depth is harmful at this tokenization, in both the exact and the hashed vocabulary, and the hashed table reaches within 1.8 points of the exact one on a quarter of the memory.}
+    \label{fig:thirteenmer}
+\end{figure}
+
+\section{Generalization Beyond the Reference Catalogue}
+\label{sec:exp-offcat}
+
+Every number reported so far is measured on reads simulated from genomes the reference catalogue contains. That is the regime in which a 13-mer model reaches 98.7\% at 250M reads (Section~\ref{sec:exp-scaling}), and Section~\ref{sec:exp-scaling} already cautions that such a figure approaches a lookup over known genomes rather than a measure of generalization. This section replaces that caution with a measurement.
+
+\subsection{Two Off-Catalogue Pools}
+
+\textbf{Track~A} simulates reads from RefSeq genomes absent from the training reference: 595{,}000 reads reduced to 580{,}000 over 116 genera after removing three accessions that overlap the training catalogue. It guarantees unseen \emph{assemblies} but mixes strains of seen species with genuinely novel species under one number.
+
+\textbf{Track~B} is an ANI-stratified ladder built to separate those cases rather than average over them. Genomes are placed on three rungs by skani average nucleotide identity to the closest reference at the 95\% species boundary used by GTDB~\cite{Parks2022}: \textsc{strain} (a different strain of a species the reference holds), \textsc{species} (a different species of a represented genus), and \textsc{far} (no reference genome within reach). The same fourteen genera are present at every rung, so a line drawn through them measures distance and not class count, and chance is 7.1\% at all three. The label space is unchanged throughout: every read comes from a genome whose genus is one of the 120 trained on, so the task remains a 120-way decision with a correct answer available.
+
+\subsection{The Ordering Inverts With Distance}
+
+On Track~A the two tokenizations are level: 27.44\% for the 29-layer 6-mer KmerFormer against 27.05\% for the exact 13-mer arm, from closed-set figures of 69.52\% and 91.15\%. Both lose roughly two thirds of their accuracy, and the 24-point closed-set gap between them disappears entirely.
+
+Track~B shows why, by separating the distances Track~A averages (Table~\ref{tab:ladder}). On a different strain of a catalogued species the closed-set ordering still holds: MetaTransformer's 13-mer arm at 250M reads reaches 78.12\% against 45.87\% for KmerFormer at $k=6$. One rung out they are level (46.96\% against 45.77\%). At the far rung the ordering has inverted: 22.37\% against 11.07\%, an 11.3-point lead for the \emph{shorter} $k$-mer.
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \caption{The ANI ladder. Genus Top-1 at three distances from the reference, read-weighted over the fourteen genera present at every rung; chance is 7.1\% throughout. Retention $R = a_{\text{far}}/a_{\text{strain}}$. The two vocabularies occupy disjoint bands of $R$ with nothing in between.}
+    \label{tab:ladder}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Arm} & \textbf{Strain} & \textbf{Species} & \textbf{Far} & \textbf{$R$} \\
+        \midrule
+        KmerFormer 6-mer, 29 layers        & 45.87\% & 45.77\% & \textbf{22.37\%} & 49\% \\
+        KmerFormer 6-mer, 16 layers        & 43.60\% & 43.82\% & 21.27\% & 49\% \\
+        KmerFormer 6-mer, 1 layer          & 26.69\% & 27.79\% & 12.01\% & 45\% \\
+        6-mer naive Bayes                  & 22.31\% & --- & 12.00\% & 54\% \\
+        \midrule
+        MetaTransformer 13-mer (250M)      & \textbf{78.12\%} & \textbf{46.96\%} & 11.07\% & 14\% \\
+        KmerFormer exact 13-mer, 1 layer   & 64.94\% & 41.62\% & 10.08\% & 16\% \\
+        KmerFormer exact 13-mer, 16 layers & 55.89\% & 35.59\% & 8.47\% & 15\% \\
+        KmerFormer hashed 13-mer, 1 layer  & 50.03\% & 31.51\% & 6.57\% & 13\% \\
+        KmerFormer hashed 13-mer, 16 layers& 44.41\% & 29.50\% & 6.55\% & 15\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Retention separates the two vocabularies with nothing in between: across all arms measured, the long-$k$ ones keep 13--22\% of their strain-rung accuracy at the far rung and the 6-mer ones keep 49--54\%. Between those bands the architectures are as different as this thesis contains---one to twenty-nine encoder layers, exact and hashed vocabularies, 0.9M to 500M parameters, and in one case no neural network at all---and none of it moves an arm out of the band its tokenizer puts it in.
+
+Two checks guard against reading this as an artefact of the ratio. The denominator is \emph{lower} for the 6-mer arms, which would inflate their retention if it were doing the work; but retention does not track the first rung inside either band, and where the starting points cross the tokenizer is still what retention follows---the hashed single-layer arm begins above the 29-layer 6-mer arm (50.03\% against 45.87\%) and ends far below it (6.57\% against 22.37\%). And retention describes the shape of a curve, not the worth of a model: the 6-mer naive Bayes retains the most of anything here, 54\%, by starting at 22.31\%. What recommends the 29-layer 6-mer model is that it does both---the highest first rung of any 6-mer arm and a retention that leaves it highest at the last.
+
+\subsection{Depth Keeps Paying Off the Catalogue}
+
+The depth series of Section~\ref{sec:exp-shallow} rises monotonically at every distance, including the far rung: 12.01\%, 20.10\%, 21.27\% and 22.37\% at 1, 8, 16 and 29 layers. Matched to the depths the 13-mer arms were trained at, sixteen layers over one is worth 16.91, 16.03 and 9.26 points at the strain, species and far rungs. Both 13-mer vocabularies do the reverse at all three rungs, and not one of those six differences carries the sign of the three 6-mer ones.
+
+This is the sharpest form of the thesis's central claim. Depth is not a substitute for tokenization and tokenization is not a substitute for depth: which of them pays, and whether it pays at all, is decided by the tokenizer, and the answer is opposite at $k=6$ and $k=13$.
+
+\subsection{The Same Crossover Without a Classifier}
+
+The conclusion does not depend on any decision rule. For each model, take the pooled vector it hands to its own classifier and measure genus-neighbour purity---the fraction of a read's twenty nearest neighbours under cosine distance that carry its genus. With the same fourteen genera present at every rung, chance is 7.1\% in every panel.
+
+At the strain rung the ordering is the closed set's: 73.0\% for our exact 13-mer arm and 70.2\% for MetaTransformer's, against 58.1\% for the 29-layer 6-mer model and 49.3\% for NT-v2. One rung out it has already turned over---the 6-mer arms at 60.9\% and 52.8\% against 55.3\% and 57.3\% for the 13-mer arms---and at the far rung the four sit in two bands with nothing between them: 44.8\% and 39.5\% against 21.3\% and 23.4\%. Retention of purity is 77\% and 80\% for the 6-mer arms against 29\% and 33\% for the long-$k$ ones, the same split the accuracies give, computed without a classifier in the path.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/embedding_ladder.pdf}
+    \caption{Pooled embeddings along the ANI ladder. Rows are the three rungs with distance from the reference increasing downward; columns are four models. The percentage beneath each panel is genus purity measured in the model's own embedding space. The exact 13-mer arms separate the nearest rung into tight clusters and arrive at the far rung as unstructured cloud; the 6-mer arms start lower and still show family structure at the far rung.}
+    \label{fig:embedding-ladder}
+\end{figure}
+
+\subsection{What This Means for the Closed-Set Numbers}
+
+Part of what a long $k$-mer buys on held-out reads from known genomes is \emph{recognition of those genomes} rather than transferable genus signal. The 98.7\% of Section~\ref{sec:exp-scaling} is therefore best read as an upper bound attained under complete reference coverage, and the caution attached to it there is now quantified: the same family of arms falls to 11.07\% where no reference genome is within reach, while a 6-mer model with 6.45M parameters against the 13-mer arm's 2.15\,B reaches 22.37\%.
+
+Two practical consequences follow. Closed-set accuracy alone should not be used to rank methods for deployment, because the ranking does not survive the move off the reference; an ANI-graded test should accompany any headline number. And the choice of $k$ should follow the expected reference coverage of the study: long $k$-mers where the community is well catalogued, shorter ones where it is not.
 
 \section{Species-Level Classification at Scale}
 \label{sec:exp-species-scaled}
@@ -876,50 +879,9 @@ The species model is initialized from the NT-Genus model's backbone weights via 
 \subsection{NT-Species: Final Results (Epoch 30)}
 \label{sec:spv4-final}
 
-NT-Species training converged at epoch~30 (April~2026), reaching a forward validation accuracy of \textbf{17.55\%} on the full 5M held-out set (1,535 classes). Table~\ref{tab:spv4-progress} shows the progression across epochs; Table~\ref{tab:spv4-final-metrics} presents the complete metric profile at convergence.
-
-\begin{table}[htbp]
-    \centering
-    \caption{NT-Species training progress (species classification, 1,535 classes, 50M reads).}
-    \label{tab:spv4-progress}
-    \begin{tabular}{cccc}
-        \toprule
-        \textbf{Epoch} & \textbf{Val Acc (fwd)} & \textbf{Val F1 (macro)} & \textbf{Note} \\
-        \midrule
-        1  & 14.23\% & 12.43\% & Warm-up \\
-        6  & 15.91\% & 14.05\% & End of 1\textsuperscript{st} job \\
-        7  & 15.12\% & 13.36\% & LR reset (−0.79~pp) \\
-        12 & 15.51\% & 13.65\% & End of 2\textsuperscript{nd} job \\
-        13 & 15.85\% & 13.97\% & Resume fix applied \\
-        18 & 16.37\% & 14.46\% & \\
-        26 & 17.31\% & 15.28\% & \\
-        30 & \textbf{17.55\%} & \textbf{15.70\%} & Converged \\
-        \bottomrule
-    \end{tabular}
-\end{table}
+NT-Species training converged at epoch~30 (April~2026), reaching a forward validation accuracy of \textbf{17.55\%} on the full 5M held-out set (1,535 classes). Appendix~\ref{app:species-metrics} gives the epoch-by-epoch progression and the complete metric profile at convergence.
 
 The same LR restart issue that affected NT-Genus also appeared at epoch~7 of NT-Species (dip of $-0.79$~pp), and was resolved by the same resume-logic fix from epoch~13 onward. The learning curve plateaued between epochs~26 and~30 with the cosine schedule reaching its minimum, indicating convergence (Figure~\ref{fig:learning-curves}, right panel).
-
-\begin{table}[htbp]
-    \centering
-    \caption{NT-Species final forward-only evaluation on the 5M held-out set (epoch~30 checkpoint).}
-    \label{tab:spv4-final-metrics}
-    \begin{tabular}{lr}
-        \toprule
-        \textbf{Metric} & \textbf{Value} \\
-        \midrule
-        Top-1 accuracy              & \textbf{17.55\%} \\
-        Top-3 accuracy              & 31.26\% \\
-        Top-5 accuracy              & 38.19\% \\
-        Top-10 accuracy             & 47.65\% \\
-        Balanced accuracy           & 17.56\% \\
-        F1 (macro)                  & 0.157 \\
-        F1 (weighted)               & 0.157 \\
-        Classes with F1 $=$ 0       & 191 / 1,535 (12.4\%) \\
-        Inference throughput        & 5{,}171 reads/sec \\
-        \bottomrule
-    \end{tabular}
-\end{table}
 
 The species task is substantially more difficult than genus classification: 1,535 classes versus 120, with each species receiving only $\sim$29,316 balanced reads instead of $\sim$375,000. The final 17.55\% accuracy, while modest in absolute terms, represents meaningful discrimination given the large class count (random baseline: 0.065\%, a relative lift of $\sim$270$\times$). Encouragingly, only 191 of 1,535 species have F1$=$0 under forward-only evaluation on the full 5M set, indicating that the long-tail problem is substantially less severe at full-scale evaluation than small-subset analysis suggests.
 
@@ -1001,30 +963,32 @@ All NT-Species results use the epoch~30 final checkpoint; the NT-Genus model ach
     \end{tabular}
 \end{table}
 
-\paragraph{Hierarchical architecture validated: per-genus 50M oracle exceeds NT-Species oracle.}
-Under perfect genus assignment, the per-genus 50M pipeline achieves 29.5\% Top-1 and macro F1 of 0.283---\emph{above} the NT-Species oracle (27.4\%, F1 0.252).
-This confirms that dedicated per-genus classifiers, each trained on genus-scoped data, provide more discriminative representations for intra-genus species discrimination than the single flat classifier trained across all 1,535 classes simultaneously.
-The improvement is meaningful despite the per-genus models using a \emph{frozen} backbone (no LoRA), highlighting the benefit of reduced class confusion when the problem is decomposed by genus.
+\paragraph{The decomposition works; the router is what fails.}
+Under perfect genus assignment the per-genus pipeline reaches 29.5\% Top-1 and macro
+F1 0.283, above the flat NT-Species oracle (27.4\%, 0.252)---so genus-scoped
+classifiers do discriminate species within a genus better than one classifier trained
+across all 1{,}535 at once, and they do it with a \emph{frozen} backbone. Under
+predicted routing at 66.1\% genus accuracy, the same pipeline reaches 15.6\%,
+marginally \emph{below} the flat baseline (15.9\%). The asymmetry is structural: a
+wrongly routed read is restricted to a candidate set that cannot contain its true
+species, whereas the flat model's routing modes only reweight logits and move it by
+$\pm0.1$~pp. The 13.9-point gap between predicted and oracle routing is therefore the
+price of the router, and it is the quantity to improve.
 
-\paragraph{Genus routing is the primary bottleneck.}
-With predicted genus routing (NT-Genus, 66.1\% accuracy), the per-genus pipeline reaches 15.6\% Top-1---marginally \emph{below} the flat NT-Species baseline (15.9\%, $-0.3$~pp).
-The 33.9\% genus error rate is particularly damaging in the per-genus architecture: when the wrong genus model is selected, all species predictions are drawn from the incorrect candidate set, producing near-zero accuracy for those reads.
-By contrast, the flat NT-Species routing modes ($\pm$0.1~pp over baseline) are far less sensitive to genus errors, because incorrect genus routing merely reweights logits rather than restricting them to a wrong candidate set.
-Meaningful improvement from routing therefore requires genus accuracy substantially above the current 66.1\%.
+\paragraph{The oracle ceiling is set by the tokenizer, not the architecture.}
+Both oracle configurations land in the high 20s (27.4--29.5\%), while the MT 13-mer
+flat model reaches \textbf{49.74\%} on the same test set with no routing at all---
+$+20.2$~pp above the best NT-v2 result under \emph{any} routing mode. No routing
+architecture recovers that margin inside the 6-mer framework.
 
-\paragraph{Oracle ceiling quantifies the potential.}
-Masking NT-Species logits to the true genus raises Top-1 by $+11.5$~pp (15.9\%$\to$27.4\%), and the per-genus oracle reaches 29.5\% ($+13.9$~pp over its predicted-routing result), slightly exceeding the NT-Species oracle.
-Both oracle results establish a practical ceiling in the high-20s\% Top-1 (27.4--29.5\%), confirming that genus accuracy gains will translate directly into species-level improvements under either architecture.
-
-\paragraph{MetaTransformer 13-mer surpasses the NT-v2 oracle ceiling.}
-The MT 13-mer flat species model achieves \textbf{49.74\%} Top-1 on the same independent test set---\textbf{+20.2~pp} above the best NT-v2 result under any routing mode (per-genus oracle, 29.5\%).
-This margin, attained without any hierarchical routing, demonstrates that 13-mer overlapping tokenisation raises the intra-genus discriminability ceiling far beyond what routing architecture can recover within the NT-v2 framework.
-
-\paragraph{Router quality governs the direction of hierarchical masking benefit.}
-Applying per-genus logit masking with the MT 13-mer genus router (87.5\% accuracy) raises species Top-1 by \textbf{+1.12~pp} (49.74\%$\to$50.86\%).
-The same masking with the MT 6-mer genus router (48.9\% accuracy) \emph{decreases} Top-1 by \textbf{$-$2.81~pp} (9.22\%$\to$6.41\%).
-This bidirectional pattern directly parallels the NT-v2 finding---per-genus oracle $+12.9$~pp, predicted routing $-1.2$~pp---and generalises the conclusion: hierarchical masking is beneficial if and only if the genus router is accurate enough that masking removes more wrong candidates than it accidentally excludes correct ones.
-The 87.5\% MT 13-mer genus router crosses this threshold; the 66.1\% NT-Genus router does not.
+\paragraph{Masking helps only above a router-quality threshold.}
+Per-genus logit masking with the 87.5\% MT 13-mer router raises species Top-1 by
+$+1.12$~pp (49.74\% $\to$ 50.86\%); the same masking with the 48.9\% MT 6-mer router
+\emph{lowers} it by 2.81~pp (9.22\% $\to$ 6.41\%). With the NT-v2 pair the same
+bidirectional pattern appears ($+12.9$~pp under oracle routing, $-1.2$ under
+predicted). Masking is beneficial exactly when the router removes more wrong
+candidates than correct ones, and the crossover lies between the 66.1\% router that
+fails and the 87.5\% one that succeeds.
 
 \subsection{Per-Genus Model Analysis}
 \label{sec:spv4-per-genus}
@@ -1043,25 +1007,25 @@ To address this bottleneck, we investigate whether inserting a subgenus routing 
 \subsection{Subgenus Routing: A Negative Result}
 \label{sec:subgenus-routing}
 
-The four hardest genera---Collinsella (349~species), Clostridium (191), Prevotella (91), and Bacteroides (79)---each expose per-genus classifiers to hundreds of closely related species simultaneously.
-The hypothesis motivating subgenus routing is that partitioning each large genus into subgroups of $\sim$25--30 species would reduce intra-classifier confusion and improve species Top-1 under both oracle and predicted genus routing.
+The hardest genera---Collinsella (349~species), Clostridium (191), Prevotella (91)
+and Bacteroides (79)---expose each per-genus classifier to hundreds of closely
+related species at once. If those could be partitioned into subgroups of 25--30
+species, intra-classifier confusion should fall. We tested this by extracting NT-v2
+embeddings for training reads from the five largest genera, partitioning each with
+$K$-means at $K = \lceil n_g / 27 \rceil$, and training a dedicated attention-pooling
+head per subgroup on a frozen backbone, exactly as for the per-genus models.
 
-\paragraph{Subgenus partition.}
-NT-v2 embeddings are extracted for a random subsample of training reads from each of the five largest genera (adding Blautia to the four above), and $K$-means clustering with $K = \lceil n_g / 27 \rceil$ is applied to define species-to-cluster assignments.
-Each resulting subgenus group is assigned a dedicated attention-pooling head trained on that cluster's reads with a frozen backbone, mirroring the per-genus training setup.
+The partition is not supported by the representation. For Collinsella the
+species-level embedding clusters have a silhouette coefficient of $0.03$---near-random
+structure---and a UMAP projection of the 349-species space is a continuous blob with
+no visible per-species or per-cluster separation. NT-v2's non-overlapping 6-mer
+representations simply do not separate species within a genus.
 
-\paragraph{Embedding analysis.}
-Before evaluating routing performance, we examine whether NT-v2's 6-mer representations encode sufficient within-genus discriminative structure to support a $K$-means partition.
-For Collinsella (the most challenging genus at 349~species), the silhouette coefficient of the species-level embedding clusters is $0.03$, indicating near-random cluster structure.
-UMAP projection confirms this: the 349-species embedding space forms a continuous, undifferentiated blob with no visible per-species or per-cluster separation.
-This suggests that NT-v2's non-overlapping 6-mer representations do not distinguish species within a genus at the embedding level.
-
-\paragraph{Routing results.}
-Two routing strategies are evaluated on the independent 100K test set:
-\begin{itemize}
-    \item \textbf{Hard routing}: each read is assigned to the highest-scoring subgenus cluster before selecting the per-subgenus classifier.
-    \item \textbf{Soft routing}: logits from multiple subgenus classifiers are combined with confidence-weighted aggregation.
-\end{itemize}
+The routing results follow (Table~\ref{tab:subgenus-routing}). Hard routing, which
+assigns each read to its highest-scoring subgroup, lowers Top-1 from 14.7\% to 13.2\%
+under predicted genus routing and from 27.8\% to 25.6\% under oracle routing; soft
+routing, which combines subgroup logits by confidence, recovers only part of that
+(13.6\% and 26.1\%) and remains below the baseline in both conditions.
 
 \begin{table}[htbp]
     \centering
@@ -1081,15 +1045,12 @@ Two routing strategies are evaluated on the independent 100K test set:
     \end{tabular}
 \end{table}
 
-Both routing strategies \emph{decrease} Top-1 accuracy relative to the per-genus baseline.
-Hard routing reduces predicted-routing Top-1 from 14.7\% to 13.2\% ($-$1.5~pp) and oracle-routing Top-1 from 27.8\% to 25.6\% ($-$2.2~pp); soft routing recovers slightly (13.6\%/26.1\%) but still falls below the baseline under both routing conditions.
-
-\paragraph{Analysis.}
-The failure is consistent with the embedding analysis.
-Because $K$-means on NT-v2's 6-mer representations cannot identify biologically coherent species groups within a genus, the subgenus partition introduces an additional routing error source without any compensating reduction in intra-classifier confusion.
-Reads that are already difficult to discriminate at the genus level become harder when routed to the wrong subgenus group.
-The bottleneck is therefore representational quality---NT-v2's non-overlapping 6-mer tokenisation does not encode sufficient within-genus resolution to support a subgenus-level partition---rather than routing architecture depth.
-Improving within-genus species classification requires better sequence representations (e.g., overlapping long-$k$ tokenisation) rather than deeper routing hierarchies.
+The failure follows from the embedding analysis rather than from the routing design:
+a partition built on representations that do not separate species adds a second
+source of routing error while removing no confusion. The bottleneck is
+representational, so within-genus discrimination needs a better sequence
+representation---an overlapping long-$k$ tokenizer---and not a deeper routing
+hierarchy.
 
 \section{Sample-Level Application Evaluation}
 \label{sec:exp-sample}
@@ -1140,7 +1101,7 @@ Table~\ref{tab:sample-abundance} summarises the abundance estimation accuracy ac
 Despite a 33\% per-read error rate, the predicted community composition correlates with the true composition at Pearson $r = 0.993$.
 The low Bray-Curtis dissimilarity of 0.094 indicates that the aggregate abundance profile is well-preserved: misclassified reads are distributed broadly across genera, so the errors largely cancel at the sample level.
 
-Inspection of Figure~\ref{fig:abundance-scatter} reveals a subtle directional tendency: high-abundance genera show slight overestimation, visible as points drifting above the identity line at larger $x$-values.
+The residuals carry a subtle directional tendency: high-abundance genera are slightly overestimated, so the error is not symmetric about the identity line.
 This is consistent with a classification-bias mechanism: reads misclassified away from rare genera disproportionately fall into the decision regions of common genera, which have broader learned representations owing to their larger species membership.
 Although ART was run under a coverage-normalised schedule (Section~\ref{sec:method-data}) so that each genome contributes a comparable number of reads (within $\sim\!260$--$410$), species-level balanced subsampling further equalises read counts per species prior to evaluation; the resulting true abundance profile depends only on the number of species per genus, not on individual genome lengths. The overestimation is therefore attributable to classifier bias rather than a data-generation artefact.
 
@@ -1148,13 +1109,6 @@ A structural property of this evaluation warrants noting.
 Because all 100 random-partition samples are drawn from the same species-level balanced validation set, every sample shares the same \emph{expected} genus abundance profile (genus $g$ always contributes $n_g/1{,}535$ reads on average).
 The Pearson $r = 0.993$ therefore measures how well the classifier tracks this fixed profile under binomial sampling noise, not how well it would generalise to communities with genuinely varying compositions.
 The sparse-community analysis below, in which each sample is constructed from a different random subset of 60 genera, imposes genuine presence/absence variation across samples and provides a more realistic evaluation of binary detection performance.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.55\textwidth]{figures/abundance_scatter.png}
-    \caption{True vs.\ predicted relative abundance across 100 random-partition samples (all 12,000 (sample, genus) pairs shown).  Each point is one (sample, genus) pair.  The visible clusters correspond to groups of genera sharing the same species count $n_g$: because the dataset is species-level balanced, every genus with $n_g$ species has true abundance $n_g/1{,}535$ in expectation, collapsing to the same $x$-coordinate.  Pearson $r = 0.993$.  Points at larger $x$-values drift slightly above the identity line, reflecting a systematic overestimation of high-abundance genera attributable to classification bias (Section~\ref{sec:sample-abundance}).}
-    \label{fig:abundance-scatter}
-\end{figure}
 
 \subsection{Genus Detection (Binary Presence/Absence)}
 \label{sec:sample-detection}
@@ -1186,26 +1140,18 @@ Even at 0.01\%--0.1\% abundance (5--50 reads per genus per sample), sensitivity 
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.65\textwidth]{figures/sensitivity_by_abundance.png}
-    \caption{Sample-level genus detection sensitivity by true relative abundance (detection threshold: $\geq$1 predicted read), aggregated over 200 sparse-community samples.
-    Annotation shows the number of (sample, genus) instances in each bucket.}
+    \includegraphics[width=0.62\textwidth]{figures/detection_by_abundance.pdf}
+    \caption{Detection sensitivity of NT-Genus against the true relative abundance
+    of the genus, at a threshold of one predicted read. Genus-instance counts are
+    annotated on each bar. Detection is complete above 1\% abundance and falls only
+    to 93.9\% in the 0.01--0.1\% band.}
     \label{fig:sensitivity-by-abundance}
 \end{figure}
 
 To provide a threshold-invariant summary of binary detection performance, we perform a ROC analysis with \emph{fixed} binary ground truth and a \emph{swept} detection threshold.
 The ground truth is determined by the sparse-community construction: a genus is ``truly present'' in sample $i$ if and only if it was explicitly included in that sample's present set; the 60 absent genera are true negatives.
 The detection score is the predicted relative abundance of the genus in that sample (predicted count divided by 50,000 reads).
-Sweeping this score threshold from high to low yields the ROC curve shown in Figure~\ref{fig:roc-detection}.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.55\textwidth]{figures/roc_detection.png}
-    \caption{ROC curve for genus presence/absence detection.
-    Ground truth is binary (from sparse-community construction); detection score is predicted relative abundance.
-    Aggregated over 200 sparse-community samples (50K reads, 60/120 genera present each).
-    Key operating points at fixed specificity targets are marked.}
-    \label{fig:roc-detection}
-\end{figure}
+Sweeping this score threshold from high to low traces a ROC curve whose area is reported in Table~\ref{tab:sample-model-comparison}.
 
 The area under the ROC curve (AUC) is 0.705.
 At a fixed specificity of 95\%, sensitivity is 17.2\%; at 90\% specificity, sensitivity is 30.9\%; at 80\% specificity, sensitivity is 46.2\%.
@@ -1219,18 +1165,7 @@ Relative abundance estimation (Section~\ref{sec:sample-abundance}) achieves exce
 Binary detection, by contrast, requires distinguishing a truly absent genus (receiving $\sim$138 predicted reads) from a truly present but low-abundance genus (receiving only slightly more); at 67\% per-read accuracy this distinction is difficult.
 Improving binary detection performance would require either higher per-read accuracy (reducing the noise floor) or a calibrated statistical test for the presence signal above background, which is left for future work.
 
-\subsection{Summary}
-
-At 67\% per-read accuracy, the genus classifier provides:
-\begin{itemize}
-    \item Near-perfect relative abundance estimation: Pearson $r = 0.993$, Bray-Curtis 0.094.
-    \item Complete detection sensitivity (100\%) for genera at $\geq$1\% relative abundance (detection threshold: $\geq$1 predicted read).
-    \item 93.9\% detection sensitivity even at 0.01\%--0.1\% abundance.
-    \item Binary detection AUC = 0.705; sensitivity at 95\% specificity = 17.2\%.
-\end{itemize}
-These results demonstrate that per-read accuracy substantially understates the practical utility of the model for relative abundance profiling.
-The binary presence/absence detection task is more challenging: 33\% per-read misclassification introduces a $\sim$0.28\% noise floor for absent genera, limiting specificity at low detection thresholds.
-Improving this metric requires either higher per-read accuracy (reducing the noise floor) or a statistical test for presence above background noise.
+These results show that per-read accuracy substantially understates the model's utility for relative-abundance profiling. Binary presence/absence is the harder task: 33\% per-read misclassification introduces a ${\sim}0.28\%$ noise floor for absent genera, which caps specificity at low detection thresholds. Improving it requires either higher per-read accuracy or a statistical test for presence above that background.
 
 \subsection{Comparison with MetaTransformer}
 \label{sec:sample-mt-comparison}
@@ -1260,12 +1195,15 @@ This comparison serves two purposes: to isolate the contribution of the NT-v2 pr
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{figures/genus_comparison_3model.png}
-    \caption{Sample-level genus evaluation across three models under identical protocol (100 random-partition samples, 200 sparse-community samples, 50K reads each, 120 genera).
-    \textbf{Left}: Pearson $r$ for relative abundance estimation.
-    \textbf{Centre}: Bray-Curtis dissimilarity (lower is better).
-    \textbf{Right}: ROC AUC for binary genus detection.
-    Under identical 6-mer tokenisation, NT-Genus outperforms MT 6-mer on all three metrics; for abundance correlation, NT-Genus approaches the MT 13-mer ceiling (Pearson $r$: $0.993$ vs $0.999$).}
+    \includegraphics[width=\textwidth]{figures/sample_level_models.pdf}
+    \caption{Read-level accuracy against sample-level utility, for the three models
+    evaluated under one protocol (100 random-partition and 200 sparse-community
+    samples, 50K reads each). (a)~Genus Top-1 spans 39 points across the three
+    models. (b)~Relative-abundance correlation spans 0.015 over the same three:
+    per-read errors largely cancel when reads are aggregated into a profile.
+    (c)~Presence/absence detection, by contrast, tracks read accuracy closely, so
+    the choice of model matters for detecting a genus and hardly at all for
+    quantifying one that is detected.}
     \label{fig:genus-comparison-3model}
 \end{figure}
 
@@ -1274,7 +1212,7 @@ Pearson~$r$ increases from 0.984 (MT 6-mer) to 0.993 (NT-Genus), Bray-Curtis dis
 This confirms that the NT-v2 pre-trained backbone contributes discriminative signal beyond what 6-mer tokenisation alone provides.
 
 Comparing NT-Genus against the MT 13-mer baseline (87.42\%), the performance gap is task-dependent.
-For relative abundance estimation, the difference is modest: Pearson~$r = 0.993$ vs $0.999$, Bray-Curtis $0.094$ vs $0.028$---the NT-Genus abundance profile remains highly correlated with ground truth despite a 20~pp gap in per-read accuracy, demonstrating that abundance estimation at genus granularity (120 classes) is robust to per-read error (\figref{fig:genus-acc-vs-abundance}).
+For relative abundance estimation, the difference is modest: Pearson~$r = 0.993$ vs $0.999$, Bray-Curtis $0.094$ vs $0.028$---the NT-Genus abundance profile remains highly correlated with ground truth despite a 20~pp gap in per-read accuracy, demonstrating that abundance estimation at genus granularity (120 classes) is robust to per-read error (\figref{fig:genus-comparison-3model}b).
 For binary genus detection, the gap is larger: ROC AUC 0.705 vs 0.900, and sensitivity at 95\% specificity 17.2\% vs 47.7\%.
 
 This asymmetry arises from the noise-floor mechanism described in Section~\ref{sec:sample-detection}.
@@ -1282,15 +1220,6 @@ At 87\% per-read accuracy, the expected spurious predicted abundance for an abse
 This reduction in the noise floor is the direct cause of the large gain in binary detection AUC.
 
 In summary, the NT-Genus model achieves sample-level abundance profiles that approach the MT 13-mer ceiling (Pearson~$r$: $0.993$ vs $0.999$), while substantially outperforming the MT 6-mer baseline under equivalent tokenisation---demonstrating that the pre-trained backbone provides practical benefit independent of tokenisation length.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.90\textwidth]{figures/genus_acc_vs_abundance.png}
-    \caption{Read-level accuracy versus sample-level abundance estimation quality for the three genus models.
-    \textbf{Left}: Pearson $r$ saturates near 1.0 across the 48--87\% accuracy range, indicating that genus-level abundance estimation is robust to moderate per-read error.
-    \textbf{Right}: Bray-Curtis dissimilarity decreases monotonically with accuracy; the NT-Genus result (67.1\%, BC $= 0.094$) falls between the MT 6-mer (48.8\%, BC $= 0.167$) and MT 13-mer (87.4\%, BC $= 0.028$) baselines, tracking the accuracy order exactly.}
-    \label{fig:genus-acc-vs-abundance}
-\end{figure}
 
 \subsection{Species-Level Sample Evaluation}
 \label{sec:sample-species}
@@ -1302,52 +1231,8 @@ We now examine whether this robustness extends to species-level classification (
 Because the 100K test set contains only $\sim$65 reads per species on average, sample parameters are reduced relative to the genus evaluation: reads per sample = 1,000 (100 non-overlapping partition samples); sparse-community samples use 50 genera present per sample.
 Five models are evaluated: the NT-Species flat classifier (Section~\ref{sec:spv4-final}), the MT 13-mer flat and hierarchical species models, and the MT 6-mer flat and hierarchical species models (Section~\ref{sec:spv4-hierarchical-prelim}).
 
-\begin{table}[htbp]
-    \centering
-    \small
-    \caption{Species-level sample evaluation on the independent 100K test set (1,535 species, 1K reads/sample, 100 partition samples).
-    Genus-level results (120 classes, 5M pool, 50K reads/sample) are included as a reference row.
-    Per-genus (predicted) uses the NT-Genus router (66.1\% Top-1 on this test set) to select per-genus NT-v2 species classifiers; per-genus (oracle) uses the ground-truth genus label and represents the upper bound of the two-stage NT-v2 pipeline.
-    All MT species predictions are run with reads ordered as in the canonical \texttt{reads\_100K.fa}; the MT 13-mer hierarchical species model on Taiwana-2 has a corrupted checkpoint (training halted at batch 10\,000 with val\_loss $= 9.29$) and could not produce usable predictions, so this row is omitted.
-    The bottom block reports Kraken2 ($k$=35) on the same test set, with a custom database built from the same 2{,}505 UMGS+HGR genomes used to train the neural models.
-    For Kraken2, sample-level metrics are computed with unclassified reads (30\%) counted toward the per-sample denominator (1000 reads) but contributing zero to predicted abundance---i.e., they are treated as ``lost signal''.}
-    \label{tab:sample-species-comparison}
-    \begin{tabular}{lcccccc}
-        \toprule
-        \textbf{Model} & \textbf{Read Acc} & \textbf{Pearson $r$} & \textbf{Spearman $\rho$} & \textbf{Bray-Curtis} & \textbf{ROC AUC} & \textbf{Sens @ 95\% Spec} \\
-        \midrule
-        \multicolumn{7}{l}{\textit{Genus-level reference (120 classes, 5M pool)}} \\
-        MT 13-mer genus   & 87.4\% & 0.9993 & 0.978 & 0.028 & 0.900 & 47.7\% \\
-        NT-Genus    & 67.1\% & 0.9932 & 0.931 & 0.094 & 0.705 & 17.2\% \\
-        MT  6-mer genus   & 48.8\% & 0.9840 & 0.854 & 0.167 & 0.569 &  9.4\% \\
-        \midrule
-        \multicolumn{7}{l}{\textit{Species-level (1,535 classes, 1K reads/sample)}} \\
-        NT-Species flat   & 17.8\% & 0.135 & 0.144 & 0.589 & 0.794 & 55.2\% \\
-        NT-Species hier.  & 15.8\% & 0.106 & 0.136 & 0.608 & 0.796 & 53.0\% \\
-        NT-v2 per-genus (predicted) & 15.6\% & 0.083 & 0.140 & 0.625 & 0.789 & 52.5\% \\
-        NT-v2 per-genus (oracle)    & 29.5\% & 0.159 & 0.270 & 0.541 & 0.842 & 65.2\% \\
-        MT  6-mer flat    &  9.0\% & 0.066 & 0.060 & 0.652 & 0.692 & 33.2\% \\
-        MT  6-mer hier.   &  6.4\% & 0.041 & 0.041 & 0.682 & 0.639 & 24.7\% \\
-        MT 13-mer flat    & 53.7\% & \textbf{0.503} & \textbf{0.508} & \textbf{0.353} & 0.973 & \textbf{91.8\%} \\
-        MT 13-mer hier.   & \multicolumn{6}{c}{\textit{checkpoint corrupted (val\_loss=9.29 at batch 10K, never converged); not reported}} \\
-        \midrule
-        \multicolumn{7}{l}{\textit{$k$-mer baseline (Kraken2, custom DB built from same 2{,}505 UMGS+HGR genomes, $k$=35)}} \\
-        Kraken2 (in-DB)   & \textbf{66.2\%} & \textbf{0.727} & \textbf{0.711} & \textbf{0.218} & 0.925 & \textbf{85.7\%} \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=\textwidth]{figures/species_summary_4panel.png}
-    \caption{Species-level evaluation summary across six models (100K independent test set, 1,535 species).
-    From left: read-level accuracy, Pearson $r$, $1 - \text{Bray-Curtis}$ (higher is better), and ROC AUC for binary species detection.
-    The MT 13-mer models cross the practical utility threshold at $\sim$50\% read accuracy; all 6-mer-based models fall below the threshold regardless of backbone or hierarchical masking.}
-    \label{fig:species-summary-4panel}
-\end{figure}
-
 \paragraph{A practical utility threshold.}
-Table~\ref{tab:sample-species-comparison} and \figref{fig:species-summary-4panel} reveal a large performance gap between models with read accuracy below $\sim$20\% and those above $\sim$50\%.
+Table~\ref{tab:sample-species-comparison} in Appendix~\ref{app:sample-tables} reveals a large performance gap between models with read accuracy below $\sim$20\% and those above $\sim$50\%.
 The NT-Species flat classifier achieves 17.8\% per-read accuracy with Pearson $r = 0.135$ and Spearman $\rho = 0.144$---low but non-zero abundance correlation---while the MT 13-mer flat classifier achieves 53.7\%, Pearson $r = 0.503$, and Spearman $\rho = 0.508$.
 The 3.7$\times$ gap in Pearson $r$ despite a 36~pp gap in read accuracy reflects highly non-linear signal-to-noise behaviour at the species level.
 With 1,535 species and 1,000 reads per sample, each species contributes on average only $\sim$0.65 reads to a sample.
@@ -1359,124 +1244,145 @@ This observation establishes a practical threshold for metagenomic utility at th
 Within the NT-v2 framework (maximum 15.9\% species Top-1 with 6-mer tokenisation), this threshold cannot be reached without a fundamental change to the tokenisation scheme.
 The MT 13-mer result (53.7\%) crosses this threshold, demonstrating that overlapping long-$k$ tokenisation is not merely a read-accuracy optimisation but a prerequisite for species-level abundance estimation.
 
-\paragraph{Hierarchical masking at the species level.}
-Two router--model combinations could be evaluated at the sample level on the 100K test set: the 66.1\% NT-Genus router applied to NT-Species, and the 48.9\% MT 6-mer genus router applied to MT 6-mer species. The MT 13-mer hierarchical species checkpoint on Taiwana-2 was found to be corrupted (training halted at batch 10\,000 with val\_loss $= 9.29$, never converged); reading-level numbers from earlier Section~\ref{sec:spv4-hierarchical-prelim} remain valid but sample-level metrics aligned with this test set are not available.
+\paragraph{Hierarchical masking helps only above a router-quality threshold.}
+Two router--model pairs could be scored at the sample level on this test set: the
+66.1\% NT-Genus router applied to NT-Species, and the 48.9\% MT 6-mer router applied
+to the MT 6-mer species model. (The MT 13-mer hierarchical checkpoint on Taiwania-2
+was corrupted---training halted at batch 10{,}000 with validation loss 9.29 and never
+converged---so its read-level numbers in
+Section~\ref{sec:spv4-hierarchical-prelim} stand but no sample-level metrics aligned
+to this pool exist.)
 
-Applying topk=1 masking with the 66.1\% NT-Genus router to the NT-Species model degrades all five metrics: read accuracy falls from 17.8\% to 15.8\% ($-$2.0~pp), Pearson $r$ decreases from 0.135 to 0.106 ($-$0.029), Bray-Curtis dissimilarity worsens from 0.589 to 0.608 (+0.019), and sensitivity at 95\% specificity drops from 55.2\% to 53.0\%.
-Only ROC AUC shows a marginal improvement (+0.002), insufficient to offset the degradation elsewhere.
-When 34\% of reads are routed to the wrong genus, masking excludes the correct species for those reads entirely, producing more structured (within-genus) but systematically incorrect predictions that distort the abundance profile.
+Both available pairs degrade under masking, and the worse router degrades more. With
+the 66.1\% router, read accuracy falls 17.8\% $\to$ 15.8\%, Pearson $r$ 0.135 $\to$
+0.106, Bray--Curtis 0.589 $\to$ 0.608 and sensitivity at 95\% specificity 55.2\% $\to$
+53.0\%; only ROC AUC moves the other way, by $+0.002$. With the 48.9\% router the
+losses roughly double: 9.0\% $\to$ 6.4\% read accuracy, $r$ 0.066 $\to$ 0.041, AUC
+0.692 $\to$ 0.639. The mechanism is direct: when a read is routed to the wrong genus,
+masking removes its true species from the candidate set and guarantees the error.
+Together with the $+1.12$~pp that the 87.5\% router buys at read level
+(Section~\ref{sec:spv4-hierarchical-prelim}), the three points are monotonic in
+router quality and put the crossover at roughly 80--85\% genus accuracy.
 
-Applying the same masking with the 48.9\% MT 6-mer genus router to the MT 6-mer species model causes the largest degradation: read accuracy from 9.0\% to 6.4\% ($-$2.6~pp), Pearson $r$ from 0.066 to 0.041, and ROC AUC from 0.692 to 0.639.
+\paragraph{Every 6-mer model sits below the utility threshold.}
+The MT 6-mer flat model reaches 9.0\% per-read accuracy and $r = 0.066$, and all four
+6-mer-based species models---NT-Species flat and hierarchical, MT 6-mer flat and
+hierarchical---fall short of the 40--50\% accuracy that species-level abundance
+requires. Binary detection separates them in the expected order (NT-Species 0.794 and
+0.796 against MT 6-mer's 0.639--0.692) and all four sit far below the MT 13-mer flat
+ceiling of 0.973.
 
-The two available data points are consistent with the read-level analysis of Section~\ref{sec:spv4-hierarchical-prelim}, which had a third measurement on the MT 13-mer router (87.5\%) showing $+$1.12~pp---together forming a monotonic pattern in router quality: hierarchical masking benefits only when router accuracy is high enough that masking removes more wrong candidates than it accidentally excludes correct ones.
-The crossover region implied by these three read-level points lies in the 80--85\% router-accuracy range.
+\paragraph{The per-genus pipeline is router-bound, and its oracle ceiling is
+tokenizer-bound.} With predicted routing at 66.0\%, the two-stage NT-v2 pipeline is
+worse than the flat classifier on every sample-level metric (read accuracy 15.6\%
+against 17.8\%, $r$ 0.083 against 0.135, Bray--Curtis 0.625 against 0.589, AUC 0.789
+against 0.794). Under oracle routing it is the best NT-v2 configuration on every
+metric: 29.5\% read accuracy, $r = 0.159$, AUC 0.842, sensitivity at 95\% specificity
+65.2\%. The 13.9-point gap between predicted and oracle is the price of the router;
+the 24.2-point gap that remains between the oracle and MT 13-mer flat (53.7\%) is the
+price of the tokenizer, and only the first is an architectural problem.
 
-\paragraph{6-mer models at the species level.}
-The MT 6-mer flat model achieves only 9.0\% per-read accuracy and Pearson $r = 0.066$; applying hierarchical masking with the 48.9\% MT 6-mer genus router further \emph{reduces} read accuracy to 6.4\% and Pearson $r$ to 0.041.
-All three 6-mer-based models---NT-Species flat, NT-Species hier., and both MT 6-mer variants---fall far below the practical utility threshold for abundance profiling.
-On binary detection, NT-Species flat (ROC AUC 0.794) and NT-Species hier. (0.796) both outperform the MT 6-mer models (0.639--0.692), consistent with their higher per-read accuracy (17.8\%/15.8\% versus 6--9\%); all four 6-mer-based models fall far below the MT 13-mer flat ceiling (0.973).
+\paragraph{Kraken\,2 is the strongest baseline on in-database reads, and abstention is
+why.} Against a custom Kraken\,2 database ($k = 35$, minimiser $l = 31$) built from
+the same 2{,}505 UMGS$+$HGR genomes and run on the same 100K test set, Kraken\,2
+reaches 66.2\% per-read accuracy with $r = 0.727$, Bray--Curtis 0.218 and AUC 0.925---
+above the best neural species model on read accuracy ($+12$~pp), correlation
+($+0.22$) and dissimilarity ($-0.13$). Simulated 150~bp reads are exact substrings of
+the reference genomes, so exact 35-mer matching is close to the ideal method for this
+pool. It commits to 70\% of reads and is 94.6\% accurate at species level and 99.3\%
+at genus level on those; at genus level overall it reaches 69.5\%, $r = 0.844$,
+Bray--Curtis 0.178, AUC 0.895. The one metric where MT 13-mer leads is species
+detection AUC (0.973 against 0.925), which follows from the same abstention: the 30\%
+of reads Kraken\,2 declines produce no detection signal, while a neural model returns
+a posterior for every read.
 
-\paragraph{NT-v2 per-genus pipeline at the sample level: predicted underperforms flat, oracle establishes the 6-mer ceiling.}
-The two-stage NT-v2 pipeline---NT-Genus router selecting one of 120 per-genus species classifiers---exhibits the same router-quality sensitivity at the sample level as observed for hierarchical masking.
-With the 66.0\% NT-Genus router (predicted routing), the per-genus pipeline degrades on every sample-level metric relative to flat NT-Species: read accuracy 15.6\% (vs.\ 17.8\%), Pearson $r$ 0.083 (vs.\ 0.135), Bray-Curtis 0.625 (vs.\ 0.589), ROC AUC 0.789 (vs.\ 0.794).
-Routing errors compound: a wrongly-routed read is restricted to a candidate set that does not contain its true species, guaranteeing a misclassification.
-Under oracle genus routing, in contrast, the per-genus pipeline achieves 29.5\% read accuracy with Pearson $r = 0.159$, ROC AUC = 0.842, and sensitivity at 95\% specificity = 65.2\%---the highest values of any NT-v2 configuration on every sample-level metric.
-This 13.9~pp read-accuracy gap (15.6\% predicted vs.\ 29.5\% oracle) directly quantifies the cost of imperfect genus routing in the per-genus design and confirms that, even with a perfect router, the 6-mer NT-v2 pipeline's ceiling (29.5\%) remains 24.2~pp below the MT 13-mer flat baseline (53.7\%).
-The tokenisation gap, not the routing architecture, is the fundamental limit.
+\paragraph{A coverage-matched comparison, and what survives it.}
+Our database covers 1{,}316 of the 1{,}535 test species; the remaining 219 are
+GCF/RefSeq-sourced with no locally available assembly, so Kraken\,2 cannot classify
+their 14{,}181 reads by construction. That is database coverage, not generalisation:
+those species are in the neural models' training data. Restricting to the 85{,}819
+in-DB reads (Table~\ref{tab:in-db-fair}, Appendix~\ref{app:sample-tables}) inverts the
+ranking between the two taxonomic levels. At species level Kraken\,2 dominates
+everything---77.18\% read accuracy and $r = 0.847$, more than 24~pp and 0.33 above MT
+13-mer flat---on the strength of 99.33\% precision over the reads it commits to. At
+genus level both neural models pass \emph{raw} Kraken\,2 on abundance ($r = 0.9993$
+for MT 13-mer and 0.992 for NT-Genus against 0.823), and NT-Genus does so despite a
+lower read accuracy (68.9\% against 77.7\%), because a uniform 30\% abstention
+suppresses all 120 genus counts and deflates the correlation.
 
-\paragraph{Kraken2 baseline: $k$-mer matching is highly effective on in-database simulated reads.}
-To anchor the neural-network results against a representative non-learning baseline, we built a custom Kraken2 database ($k$=35, minimizer $l$=31) from the same 2{,}505 UMGS+HGR reference genomes used to train all neural models, then classified the same 100K independent test set.
-On the same test set under exactly the same reference inventory, Kraken2 reaches 66.2\% per-read accuracy with Pearson $r = 0.727$, Bray-Curtis $0.218$, and ROC AUC $0.925$ at the sample level (Table~\ref{tab:sample-species-comparison}).
-On most sample-level metrics this exceeds the best neural species model: read accuracy +12~pp over MT 13-mer flat (53.7\%), Pearson $r$ $+0.22$, and Bray-Curtis $-0.13$.
-The $k$-mer approach succeeds here because simulated 150~bp reads are drawn directly from the reference genomes, so exact 35-mer matches are abundant and discriminative.
-Kraken2's commitment rate is 70\%: 30\% of reads either yield no $k$-mer hit (sequencing errors plus shared minimisers) or resolve to the LCA root.
-On the 70\% it does commit to, species-level accuracy is 94.6\% and genus-level accuracy is 99.3\%---both higher than any neural model.
-At the genus level, Kraken2's overall read accuracy is 69.5\% (lifting +3.3~pp from species level, since some species-level errors are within-genus), with sample-level Pearson $r = 0.844$, Bray-Curtis $0.178$, and ROC AUC $0.895$ under the same 100K test set / 1K reads-per-sample evaluation as the species comparison; these numbers are not directly comparable to the 120-class genus reference rows in Table~\ref{tab:sample-species-comparison}, which use a 5M pool with 50K reads per sample.
-
-The one metric on which MT 13-mer flat slightly leads Kraken2 is ROC AUC for species detection (0.973 vs.\ 0.925).
-This is consistent with Kraken2's binary nature: the 30\% of reads it abstains on produce no detection signal, capping its operating-point sensitivity.
-Neural models, by contrast, provide a soft probability for every read, populating the detection threshold sweep more densely.
-
-\paragraph{Coverage-restricted fair comparison: in-DB 85,819 reads only.}
-The custom Kraken2 database in this work is built from 1,316 of the 1,535 species in the test inventory; the remaining 219 species (all GCF/RefSeq-sourced) had no locally available reference FASTA to incorporate into the database, and Kraken2 cannot classify the 14,181 reads from these species by construction.
-This is a property of database coverage, not out-of-distribution generalisation---the 219 species are present in the neural models' training data, so for them these reads are in-distribution.
-To remove the asymmetric penalty on Kraken2 and isolate the comparison to species both methods can attempt, we restrict the evaluation pool to the 85,819 in-DB reads.
-Table~\ref{tab:in-db-fair} reports read-level Top-1 and sample-level metrics on this restricted pool, for species and genus levels.
-
-\begin{table}[htbp]
-    \centering
-    \small
-    \caption{Fair-restricted comparison on the in-DB pool (85,819 of 100,000 reads; species covered by the Kraken2 database). Sample-level metrics use 1K reads/sample, 85 partition samples, 200 sparse-community samples. All MT predictions are aligned to the canonical \texttt{reads\_100K.fa} read order. Bold entries are best in column within each panel.}
-    \label{tab:in-db-fair}
-    \begin{tabular}{lccccc}
-        \toprule
-        \textbf{Model} & \textbf{Read Acc} & \textbf{Pearson $r$} & \textbf{Bray-Curtis} & \textbf{ROC AUC} & \textbf{Sens @ 95\% Spec} \\
-        \midrule
-        \multicolumn{6}{l}{\textit{Species level (1,535 classes)}} \\
-        NT-Species flat                     & 17.12\% & 0.142 & 0.602 & 0.776 & 52.6\% \\
-        NT-Species hier.                    & 15.20\% & 0.118 & 0.616 & 0.776 & 49.5\% \\
-        NT-v2 per-genus (predicted)         & 14.98\% & 0.088 & 0.641 & 0.767 & 49.8\% \\
-        NT-v2 per-genus (oracle)            & 27.69\% & 0.156 & 0.560 & 0.818 & 61.6\% \\
-        MT 6-mer flat                       &  8.54\% & 0.071 & 0.664 & 0.674 & 31.4\% \\
-        MT 6-mer hier.                      &  6.11\% & 0.042 & 0.696 & 0.629 & 23.6\% \\
-        MT 13-mer flat                      & 52.64\% & 0.514 & 0.358 & 0.968 & 89.2\% \\
-        Kraken2 (in-DB)                     & \textbf{77.18\%} & \textbf{0.847} & \textbf{0.129} & \textbf{0.998} & \textbf{99.6\%} \\
-        \midrule
-        \multicolumn{6}{l}{\textit{Genus level (120 classes)}} \\
-        NT-Genus v9 (dedicated, $\equiv$ NT-Species hier $\to$ genus) & 68.88\% & 0.992 & 0.116 & 0.681 & 17.5\% \\
-        NT-v2 per-genus router (predicted)  & 62.77\% & 0.989 & 0.143 & 0.699 & 22.6\% \\
-        NT-v2 per-genus router (oracle)     & 100.0\% & 1.000 & 0.000 & 0.966 & \textbf{93.6\%} \\
-        MT 6-mer genus                      & 51.49\% & 0.983 & 0.177 & 0.576 &  9.2\% \\
-        MT 13-mer genus                     & \textbf{94.89\%} & \textbf{0.9993} & \textbf{0.029} & 0.905 & 66.5\% \\
-        Kraken2 (genus, in-DB)              & 77.68\% & 0.823 & 0.126 & 0.966 & 93.5\% \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-The restricted comparison reveals a sharp inversion between species and genus levels.
-At the species level, Kraken2 dominates every metric---77.18\% read accuracy and Pearson $r = 0.847$, more than 24~pp and 0.33 above the best neural model (MT 13-mer flat).
-The advantage reflects Kraken2's near-perfect precision on the 70\% of reads it commits to (99.33\% classified-only accuracy), combined with the fact that simulated 150~bp reads are exact substrings of the reference genomes.
-
-At the genus level, both MT 13-mer flat and NT-Genus v9 surpass \emph{raw} Kraken2 report counts on relative abundance correlation: MT 13-mer achieves Pearson $r = 0.9993$ and NT-Genus v9 achieves $r = 0.992$, both substantially above raw Kraken2's $r = 0.823$ (Table~\ref{tab:in-db-fair}).
-Notably, NT-Genus v9 exceeds raw Kraken2 despite its lower overall read accuracy (68.9\% vs.\ Kraken2's 77.7\%), and also slightly outperforms raw Kraken2 on Bray-Curtis dissimilarity (0.116 vs.\ 0.126).
-This reversal of the species-level ranking reflects the differing impact of Kraken2's 30\% abstention rate at the two task granularities.
-At species level, the 30\% unclassified rate is shared with all 1,535 species' relatively low expected per-sample counts, so the lost signal is distributed broadly; Kraken2's high precision on committed reads still produces a clean abundance profile.
-At genus level, however, the 30\% unclassified rate uniformly suppresses predicted abundances across all 120 genera, producing systematic underestimation that degrades Pearson $r$; both neural models commit a prediction for every read and are unaffected by this abstention bias.
-
-This neural advantage, however, holds only against \emph{raw} Kraken2 report counts, and the abstention-induced deflation is a fixable artefact rather than a fundamental limitation. Applying Bracken~\cite{Lu2017}---the standard abundance re-estimation step in Kraken2-based pipelines---to the same Kraken2 report raises genus-level abundance to Pearson $r = 0.997$ (Bray-Curtis $0.060$; computed on the full report, where raw Kraken2 attains $r = 0.845$). Bracken thus reaches the same near-perfect range as the neural models (MT 13-mer $0.999$, NT-Genus $0.992$), so against a properly configured Kraken2$+$Bracken pipeline the neural models hold \emph{no} sample-level abundance advantage; the apparent advantage was an artefact of comparing against uncorrected counts. The genuine and durable advantages of the neural models are instead their higher per-read discriminative accuracy under a suitable tokenizer and their independence from per-species reference assemblies (discussed next).
-On binary detection, the picture reverses sharply: Kraken2 achieves ROC AUC $= 0.966$ and sensitivity at 95\% specificity of 93.5\%---well above MT 13-mer (0.905, 66.5\%) and far above NT-Genus v9 (0.681, 17.5\%).
-The detection gap for NT-Genus arises from the per-sample noise floor described in Section~\ref{sec:sample-detection}: at 67\% per-read accuracy, a truly absent genus receives $\sim$138 spurious predicted reads per sample, constraining detection sensitivity regardless of total read count.
-
-\paragraph{Kraken2 dependence on database coverage.}
-The 14,181 reads from the 219 GCF species are not OOD samples in a generalisation sense---they are in-distribution for the neural models, which trained on UMGS+HGR genomes including this entire 1,535-species inventory.
-The contrast with Kraken2 illustrates a deployment-level asymmetry: building a Kraken2 database requires reference FASTA assemblies, which were unavailable in our local environment for 14\% of the species in the test set; the resulting database covers 86\% of the inventory and Kraken2 accuracy on the uncovered 14\% is 0\%.
-Neural classifiers train directly from labelled reads and require no reference assembly per species, so all 1,535 species become available targets uniformly.
-This is the practical motivation for learning-based methods in real metagenomics: many MAGs of biological interest lack high-quality reference genomes, and any reference-based approach is structurally constrained by genome-assembly coverage.
+That advantage does not survive a correctly configured baseline. Applying
+Bracken~\cite{Lu2017}, the standard re-estimation step of a Kraken\,2 pipeline, lifts
+genus-level abundance to $r = 0.997$ and Bray--Curtis 0.060 (from $r = 0.845$ raw on
+the same full report)---the same near-perfect range as the neural models. Against
+Kraken\,2$+$Bracken the neural models hold \emph{no} sample-level abundance advantage,
+and the apparent one was an artefact of comparing against uncorrected counts. What
+does survive is detection, where Kraken\,2 leads decisively (AUC 0.966 and 93.5\%
+sensitivity at 95\% specificity, against 0.905/66.5\% for MT 13-mer and 0.681/17.5\%
+for NT-Genus, the last limited by the noise floor of
+Section~\ref{sec:sample-detection}), and coverage, where it does not: Kraken\,2 scores
+0\% on the 14\% of species without an assembly, while a neural classifier trains from
+labelled reads and needs no per-species reference at all. Many MAGs of biological
+interest have no high-quality assembly, so any reference-based method is structurally
+bounded by assembly coverage in a way a learned one is not.
 
 \section{Summary of Findings}
 
-The experimental results lead to several key conclusions:
+The experiments in this chapter separate three design factors that the literature
+usually varies together. Ordered by how much they are worth:
 
-\begin{enumerate}
-    \item \textbf{Data volume dominates}: Training data volume is the single most important factor for metagenomic classification accuracy. A $10\times$ data increase yields $+7.76$~pp, while training technique optimizations yield at most $\pm0.5$~pp.
-    
-    \item \textbf{RC TTA is universally beneficial}: Reverse-complement test-time augmentation consistently improves accuracy by $+1$--$1.5$~pp across all settings, exploiting the biological strand symmetry of DNA.
-    
-    \item \textbf{Class balance matters}: Balanced sampling across species eliminates the ``dead class'' problem (F1$=$0 classes: 9 $\to$ 2) and dramatically improves macro F1 ($+12.27$~pp).
-    
-    \item \textbf{Overfitting signals data starvation}: The transition from 6.25\% to 1.30\% train-validation gap when scaling from 500K to 5M reads confirms that the model was severely data-limited at the smaller scale.
-    
-    \item \textbf{Pre-trained backbone provides a substantial advantage}: The controlled ablation (NT-Genus vs.\ Shallow-Genus) shows a 13.19~pp accuracy gap in favor of the 29-layer pre-trained NT-v2 backbone over a single-layer randomly initialized Transformer at the same 50M data scale, confirming that pre-training on 850 reference genomes provides representations that meaningfully improve read discrimination.
+\textbf{Tokenization is the largest factor.} Within MetaTransformer's own
+architecture, changing only the tokenizer moves genus Top-1 by up to $+40.42$~pp,
+and the effect reproduces in our codebase, where an exact canonical 13-mer
+vocabulary reaches 91.15\% (Sections~\ref{sec:exp-tokenization}
+and~\ref{sec:exp-thirteenmer}). It also sets the ceiling on data: the 6-mer model
+saturates beyond 50M reads ($+0.22$~pp for a further $5\times$) while a 13-mer
+model trained on the same reads keeps improving, and at 250M the 6-mer arms cannot
+fit even their own training set beyond ${\sim}66\%$.
 
-    \item \textbf{Hardware is sufficient}: Current NVIDIA H100 hardware is adequately provisioned; the operational bottleneck is the SLURM time limit rather than computational resources.
+\textbf{Encoder depth is the second, and its sign depends on the tokenizer.} At
+$k=6$ depth is worth $+15.60$~pp from 1 to 29 layers; at $k=13$ one layer beats
+sixteen, in both the exact and the hashed vocabulary
+(Sections~\ref{sec:exp-shallow} and~\ref{sec:exp-thirteenmer}).
 
-    \item \textbf{Per-genus classifiers at 50M scale exceed the flat oracle}: Dedicated per-genus NT-v2 classifiers, each trained on the full 50M dataset with a frozen backbone, achieve 29.5\% Top-1 under oracle genus routing---surpassing the flat NT-Species oracle (27.4\%), confirming that genus-scoped decomposition provides more discriminative representations for intra-genus species discrimination.  However, with predicted genus routing (66.1\%), the per-genus pipeline remains marginally below the flat baseline (15.6\% vs.\ 15.9\%), so improving genus accuracy is the prerequisite for realising this hierarchical advantage in practice.  Subgenus routing via $K$-means on NT-v2 embeddings was investigated as a means of reducing per-genus class counts, but both hard and soft routing \emph{decreased} oracle Top-1 to 25.6--26.1\% (Section~\ref{sec:subgenus-routing}), identifying the representational bottleneck of 6-mer tokenisation as the root cause.
+\textbf{Pre-training is worth what the labelled-data budget makes it worth.} At
+matched depth its net contribution at 50M reads is approximately zero---a
+6.45M-parameter KmerFormer exceeds the 500M backbone by 2.44~pp---while at 5M it is
+worth $+8.9$~pp, on both the gut and the soil catalogue
+(Section~\ref{sec:exp-lowdata}). The 18.25~pp by which NT-Genus leads
+MetaTransformer's 6-mer arm is not a measurement of pre-training either: those two
+differ in depth, width, recipe and codebase, and our own single-layer arm at the
+same tokenizer reaches 53.92\%.
 
-    \item \textbf{MT 13-mer surpasses the NT-v2 oracle ceiling; hierarchical masking benefit is router-dependent}: The MT 13-mer flat species model achieves 49.74\% Top-1 on the independent test set---+20.2~pp above the best NT-v2 result under any routing mode (per-genus oracle, 29.5\%)---establishing that 13-mer overlapping tokenisation provides a higher discriminability ceiling than routing architecture can recover within the NT-v2 framework.  Applying per-genus logit masking with the MT 13-mer genus router (87.5\%) yields a further +1.12~pp (50.86\%), while the same masking with the MT 6-mer genus router (48.9\%) \emph{decreases} accuracy by $-$2.81~pp, directly confirming that hierarchical masking is beneficial if and only if the genus router accuracy is sufficient (Section~\ref{sec:spv4-hierarchical-prelim}).  At the sample level, this pattern extends consistently across all three router qualities: the 87.5\% MT 13-mer router produces gains on all four sample metrics (Pearson $r$: 0.466~$\to$~0.478), the 66.1\% NT-Genus router causes degradation on most metrics (Pearson $r$: 0.135~$\to$~0.106), and the 48.9\% MT 6-mer router causes the largest degradation (Pearson $r$: 0.065~$\to$~0.034), confirming that a router accuracy above $\sim$80\% is required for hierarchical masking to improve abundance estimation (Section~\ref{sec:sample-species}).
+\textbf{Within a fixed architecture, data volume dominates training technique.} A
+$10\times$ data increase is worth $+7.76$~pp where architectural and
+training-technique ablations are worth at most $\pm0.5$~pp, and balanced sampling
+removes the dead-class problem entirely (F1$=$0 classes $9 \to 0$). RC TTA is free
+and worth $+0.78$--$1.54$~pp to pre-trained backbones, but its size is set by
+whether the vocabulary is strand-symmetric rather than by pre-training
+(Section~\ref{sec:exp-rc-tta}).
 
-    \item \textbf{NT-Genus outperforms MetaTransformer under identical 6-mer tokenisation}: At genus level with the same 6-mer non-overlapping tokenisation, NT-Genus achieves 67.07\% per-read accuracy versus 48.82\% for the MT 6-mer model---an 18.25~pp advantage attributable to the pre-trained backbone representations.  This advantage propagates to sample-level evaluation: Pearson~$r$ (0.993 vs 0.984), Bray-Curtis dissimilarity (0.094 vs 0.167), and binary detection AUC (0.705 vs 0.569) all favour NT-Genus.  For relative abundance estimation, NT-Genus approaches the MT 13-mer ceiling ($r = 0.999$) despite a 20~pp read-accuracy gap, confirming that the pre-trained backbone provides practical utility independent of tokenisation length (Section~\ref{sec:sample-mt-comparison}).
+\textbf{Closed-set accuracy measures recognition of catalogued genomes.} Off the
+reference the ranking inverts with distance: a 13-mer arm leads by 32 points on a
+new strain of a catalogued species and trails by 11.3 where no reference genome is
+within reach, and retention separates the two vocabularies into disjoint bands that
+no difference of depth, capacity or pre-training crosses
+(Section~\ref{sec:exp-offcat}).
 
-    \item \textbf{Per-read accuracy understates sample-level utility for abundance profiling, but a practical threshold exists at the species level}: At genus level, even 48.8\% per-read accuracy (MT 6-mer) yields Pearson $r = 0.984$, while 67\% (NT-Genus) and 87\% (MT 13-mer) yield 0.993 and 0.999 respectively---abundance estimation is forgiving at low task granularity.  At species level (1,535 classes), the picture is starkly different: models below $\sim$20\% per-read accuracy produce low abundance correlation constrained by the noise floor (NT-Species: 17.8\% $\to$ Pearson $r = 0.135$), while the MT 13-mer flat model at 49.7\% achieves Pearson $r = 0.466$ and ROC AUC = 0.966 (Section~\ref{sec:sample-species}).  This establishes a practical utility threshold of approximately 40--50\% per-read accuracy for species-level abundance estimation---a threshold that 6-mer tokenisation cannot reach within the NT-v2 framework, but that overlapping 13-mer tokenisation crosses.  Hierarchical logit masking further improves the MT 13-mer species result consistently across all four sample-level metrics (Pearson $r$: 0.466 $\to$ 0.478; ROC AUC: 0.96563 $\to$ 0.96711).
+\textbf{At the species level the bottleneck is the router, and at the sample level
+it is a read-accuracy threshold.} Per-genus specialists under oracle routing reach
+29.5\% Top-1 against the flat oracle's 27.4\%, but predicted routing through a
+66.1\% genus model leaves the pipeline marginally below the flat baseline, and
+subgenus routing on 6-mer embeddings makes it worse
+(Section~\ref{sec:subgenus-routing}). Hierarchical logit masking helps if and only
+if the router is good enough: $+1.12$~pp with an 87.5\% router, $-2.81$ with a
+48.9\% one. Abundance estimation is forgiving at genus level---even 48.8\% per-read
+accuracy gives Pearson $r = 0.984$---but at species level it needs roughly
+40--50\% per-read accuracy, which 6-mer tokenization does not reach and 13-mer does
+(Section~\ref{sec:sample-species}).
 
-    \item \textbf{Kraken2 wins on in-database simulated reads, but at the cost of OOD robustness}: Under a strictly matched comparison---same 100K test set, custom Kraken2 database built from the same 2{,}505 UMGS+HGR reference genomes---Kraken2 achieves 66.2\% per-read accuracy and Pearson $r = 0.727$, surpassing the best neural model (MT 13-mer hier., 50.9\% / Pearson $r = 0.478$) on most sample-level metrics.  This advantage reflects the structural fit of $k$-mer exact matching to simulated reads drawn directly from reference genomes.  However, Kraken2 commits to only 70\% of reads (the remainder yield no $k$-mer hit or resolve to LCA root), and on a parallel OOD validation set containing 219 GCF/RefSeq species absent from the custom database, Kraken2 accuracy on those reads drops to 0\%.  The neural models continue to produce a (low but non-zero) species posterior for every read under the same OOD condition.  This contrast establishes the complementary positioning of learning-based methods: $k$-mer approaches remain the strongest baseline on in-database simulated reads, while neural models maintain a meaningful signal on novel organisms where reference $k$-mers are unavailable (Section~\ref{sec:sample-species}).
-\end{enumerate}
+\textbf{Kraken\,2 remains the strongest in-database baseline, and abstention is why.}
+On the same 100K test set with a database built from the same reference genomes it
+reaches 66.2\% per-read accuracy and Pearson $r = 0.727$, above every neural model
+here---but it commits to only 70\% of reads, and on reads from species absent from
+its database its accuracy is 0\% where the neural models still produce a usable
+posterior. The two families are complementary rather than ranked.

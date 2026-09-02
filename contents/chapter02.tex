@@ -10,7 +10,7 @@ This chapter provides the necessary background for understanding the methods pro
 
 Metagenomic taxonomic classification aims to assign each sequencing read from an environmental sample to its source organism's position in the phylogenetic tree. We review three major paradigms for this task.
 
-\subsection{Alignment-Based Methods}
+\paragraph{Alignment-Based Methods}
 
 Alignment-based methods classify reads by aligning them to reference genome databases. 
 BLAST~\cite{Altschul1990} performs local sequence alignment using heuristic seed-and-extend strategies, achieving high sensitivity but at significant computational cost (hours to days for typical metagenomic datasets). 
@@ -71,11 +71,27 @@ The model produces contextual embeddings for each token in the input sequence, y
 
 \textbf{DNABERT-2}~\cite{Zhou2024dnabert2} replaces $k$-mer tokenization with Byte Pair Encoding (BPE), eliminating the need to choose a fixed $k$ and enabling more flexible sequence representation. It also adopts a multi-species pre-training strategy.
 
-\textbf{HyenaDNA}~\cite{Nguyen2023hyena} adopts single-nucleotide tokenization combined with sub-quadratic Hyena convolutions, enabling context windows up to 1M tokens at a fraction of the compute cost of attention-based models. Its single-character vocabulary eliminates the $k$ design choice entirely, representing the opposite end of the tokenization design space from $k$-mer models.
+\textbf{HyenaDNA}~\cite{Nguyen2023hyena} goes to the opposite end of the tokenization
+design space: single-nucleotide tokens with sub-quadratic Hyena convolutions, reaching
+context windows of up to 1M tokens and removing the choice of $k$ entirely.
+\textbf{Caduceus}~\cite{Schiff2024caduceus} is the first reverse-complement-equivariant
+bidirectional DNA language model, enforcing strand symmetry in the architecture through
+BiMamba layers with hard-coded RC weight sharing rather than through augmentation. That
+is directly relevant here, because the NT-v2 backbone does \emph{not} enforce RC
+equivariance natively, which is what motivates our RC training augmentation and RC TTA
+(Section~\ref{sec:bg-rc-symmetry}). \textbf{Evo}~\cite{Nguyen2024} and its successor
+\textbf{Evo~2}~\cite{Brixi2025} scale the StripedHyena architecture~\cite{Poli2024} to
+7B and 40B parameters over 9.3~trillion bases at single-nucleotide resolution; we use
+the 7B Evo~2 variant as a frozen-embedding baseline
+(Section~\ref{sec:exp-frozen}), though the size of both models makes them awkward to
+deploy over hundreds of millions of short reads.
 
-\textbf{Caduceus}~\cite{Schiff2024caduceus} is the first RC-equivariant bidirectional DNA language model. By constructing BiMamba layers with hard-coded reverse-complement weight sharing, Caduceus enforces strand symmetry at the architectural level rather than relying on augmentation or post-hoc inference tricks. This is directly relevant to the RC consistency analysis in Section~\ref{sec:bg-rc-symmetry}; unlike Caduceus, the NT-v2 backbone does not natively enforce RC equivariance, motivating our use of RC training augmentation and RC TTA.
-
-\textbf{Evo}~\cite{Nguyen2024} is a 7B-parameter model based on the StripedHyena architecture~\cite{Poli2024}, capable of modeling DNA sequences up to 131K nucleotides. Its successor, \textbf{Evo~2}~\cite{Brixi2025}, scales this approach to 7B and 40B parameters trained on 9.3~trillion bases spanning all domains of life, with a context window of up to 1M tokens at single-nucleotide resolution. We adopt the 7B Evo~2 variant as a frozen-embedding baseline (Section~\ref{sec:exp-frozen}). While powerful for long-range genomic modeling, the large size of both models makes them challenging to deploy for metagenomic classification tasks involving hundreds of millions of short reads.
+Finally, two models pre-trained on \emph{metagenomic} sequence appeared during this
+work and are not evaluated here: METAGENE-1~\cite{Liu2025metagene}, trained on
+${\sim}1.5$~Tbp of metagenomic sequence, and GenomeOcean~\cite{Zhou2025genomeocean}, a
+4B-parameter model trained on ${\sim}600$~Gbp of metagenomic assemblies. Both use
+byte-pair tokenization, so they would vary the tokenizer alongside the pre-training
+corpus; they are the natural next test rather than a control, and Section~\ref{sec:conclusion-limitations} scopes our claims accordingly.
 
 Across these models, a consistent theme emerges: tokenization strategy is a critical design axis. \textcite{Lindsey2025tokenizer} systematically evaluate character, BPE, $k$-mer, Unigram, and WordPiece tokenizers across 44 genomic classification tasks and find accuracy differences of up to 5 percentage points depending on tokenizer choice, corroborating our own ablation results in Chapter~\ref{ch:experiments}.
 
@@ -116,7 +132,7 @@ Key advantages of LoRA include:
     \item \textbf{Modular}: Different LoRA adapters can be trained for different tasks and swapped at deployment time.
 \end{itemize}
 
-\subsection{Other PEFT Methods}
+\paragraph{Other PEFT Methods}
 
 \textbf{Adapter layers}~\cite{Houlsby2019} insert small trainable bottleneck modules between Transformer layers. While effective, they introduce additional inference latency due to the extra forward-pass computation.
 
@@ -129,7 +145,7 @@ We choose LoRA for this thesis due to its combination of strong performance, par
 
 Given a sequence of token embeddings $\{h_1, h_2, \ldots, h_T\} \in \mathbb{R}^{T \times d}$, a classification task requires aggregating these into a fixed-dimensional representation. The choice of aggregation mechanism directly impacts what information is preserved.
 
-\subsection{Mean Pooling}
+\paragraph{Mean Pooling}
 
 The simplest approach averages all token embeddings:
 \begin{equation}
@@ -137,7 +153,7 @@ The simplest approach averages all token embeddings:
 \end{equation}
 Mean pooling is computationally trivial but weights all tokens equally, potentially diluting the contribution of discriminative tokens with non-informative ones.
 
-\subsection{Attention Pooling}
+\paragraph{Attention Pooling}
 
 Attention pooling uses learnable query vectors to compute a weighted combination of token embeddings. Given $M$ learnable query vectors $\{q_1, \ldots, q_M\} \in \mathbb{R}^{M \times d_k}$ and linear projections $W_K, W_V \in \mathbb{R}^{d \times d_k}$:
 \begin{align}
@@ -148,7 +164,7 @@ Attention pooling uses learnable query vectors to compute a weighted combination
 \end{align}
 This mechanism enables the model to learn which positions in the DNA sequence are most informative for classification, automatically focusing on discriminative $k$-mers while down-weighting uninformative regions.
 
-\subsection{Multi-Head Attention Pooling}
+\paragraph{Multi-Head Attention Pooling}
 
 Extending attention pooling with multiple heads allows the model to attend to different aspects of the sequence simultaneously. Each head learns a different query, capturing diverse patterns (e.g., one head may focus on conserved marker genes while another attends to variable regions). The concatenated outputs from all heads provide a rich, multi-faceted representation for downstream classification.
 
@@ -175,10 +191,7 @@ Three complementary strategies have been proposed to address the strand symmetry
     \item \textbf{Random RC training augmentation}: During training, each read is replaced with its reverse complement with probability $p=0.5$, exposing the model to both strand orientations. While this encourages---but does not guarantee---strand-invariant representations, it effectively doubles the training data diversity at zero storage cost.
 
     \item \textbf{RC test-time augmentation (RC TTA)}: At inference, both the forward read $s$ and its reverse complement $\bar{s}$ are processed independently, and their output logits are averaged before taking the argmax prediction:
-    \begin{equation}
-        \hat{y} = \arg\max_k \tfrac{1}{2}\bigl[ f_\theta(s) + f_\theta(\bar{s}) \bigr]
-        \label{eq:rc-tta-bg}
-    \end{equation}
+        the two logit vectors are averaged before the argmax (the operation is written out in Equation~\ref{eq:rc-tta}).
     This ``post-hoc conjoined'' approach~\cite{Zhou2022rc} enforces strand symmetry at inference time without modifying the trained model. It can be understood as a two-view ensemble where both views observe the same biological entity from different strand orientations. By the standard ensemble argument, averaging two correlated but noisy estimates of the same ground-truth label reduces prediction variance and cancels orientation-dependent errors. Zhou et al.~\cite{Zhou2022rc} find that this approach consistently performs well across diverse genomic tasks.
 
     \item \textbf{RC consistency training}: A regularization loss (e.g., KL divergence) explicitly penalizes divergence between $f_\theta(s)$ and $f_\theta(\bar{s})$ during training, producing a single model that is intrinsically more strand-invariant without requiring double inference at test time~\cite{Ma2025rc}. An alternative is to design \emph{RC-equivariant architectures} that hard-code strand symmetry into the network structure~\cite{Brown2021rc}, though this requires custom layers incompatible with pre-trained foundation model backbones.
@@ -191,7 +204,7 @@ In this thesis, we adopt strategies (1) and (2): RC augmentation during training
 
 Metagenomic samples exhibit severe class imbalance: a few dominant taxa may constitute the majority of reads while rare taxa contribute only a handful. This imbalance can bias classifiers toward frequent classes, resulting in high micro accuracy but poor macro F1 due to frequent misclassification of rare taxa.
 
-\subsection{Loss-Level Approaches}
+\paragraph{Loss-Level Approaches}
 
 \textbf{Class-weighted cross-entropy} scales the loss for each class inversely proportional to its frequency:
 \begin{equation}
@@ -206,7 +219,7 @@ However, this approach can be unstable with mixed-precision training and large c
 \end{equation}
 where $\pi_k$ is the prior probability of class $k$ and $\tau$ is a temperature parameter controlling the strength of adjustment. This approach is theoretically motivated as producing Fisher-consistent estimators under class imbalance.
 
-\subsection{Sampling-Level Approaches}
+\paragraph{Sampling-Level Approaches}
 
 \textbf{Balanced sampling} constructs each training batch by sampling classes uniformly and then sampling instances within each class. This ensures that rare classes are seen as frequently as common ones during training.
 

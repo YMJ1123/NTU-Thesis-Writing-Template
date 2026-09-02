@@ -144,7 +144,7 @@ Table~\ref{tab:tokenization-counts} summarises the resulting token counts for a 
 \paragraph{NT-v2 tokenization.}
 The NT-v2 tokenizer uses non-overlapping 6-mers ($k{=}6$, $s{=}6$), the setting used during its pre-training. For a 150~bp read this produces 25 tokens (plus \texttt{[CLS]} and \texttt{[EOS]} special tokens). The maximum sequence length is set to 128 tokens, accommodating reads up to $\sim$768~bp with padding. Section~\ref{sec:exp-tokenization} presents a controlled ablation that quantifies the effect of different tokenization settings on classification accuracy.
 
-\subsection{Encoder Architecture}
+\paragraph{Encoder Architecture}
 
 The backbone consists of 29 Transformer encoder layers, each with:
 \begin{itemize}
@@ -184,40 +184,62 @@ We apply LoRA~\cite{Hu2022} to the query ($W_Q$), key ($W_K$), and value ($W_V$)
 
 Gradient checkpointing is enabled for the backbone to reduce peak GPU memory usage at the cost of recomputing activations during the backward pass.
 
-\subsection{Ablation: Shallow Transformer Backbone}
+\section{KmerFormer: A From-Scratch $k$-mer Transformer}
 \label{sec:method-shallow}
 
-To isolate the contribution of the pre-trained 29-layer NT-v2 backbone, we design an ablation variant that replaces it with a shallow Transformer encoder trained entirely from scratch. This ablation mirrors the architecture of MetaTransformer~\cite{Wichmann2023} while keeping the tokenization fixed to 6-mers (the NT-v2 tokenizer), enabling a controlled comparison.
+The comparisons in this thesis require a model in which the factors under study are free to move. NT-v2's tokenizer is fixed by its pre-training and MetaTransformer is fixed at one encoder block over one vocabulary, so neither can be used to ask what depth is worth, what a longer $k$-mer is worth, or what an approximate vocabulary costs. We therefore build \textbf{KmerFormer}, a $k$-mer transformer trained from scratch in which the tokenizer, the stride, the vocabulary and the encoder depth are all configuration parameters under one training recipe. Arms that differ in one of them remain comparable, which is what makes the ablations of Chapter~\ref{ch:experiments} controlled.
 
-The shallow Transformer backbone consists of:
+\subsection{Architecture}
+
+A read is tokenized into $k$-mers at a chosen stride, embedded, given a learned positional encoding, encoded by a pre-norm transformer stack, and pooled by the same attention-pooling head used with NT-v2 before a linear classifier:
+
 \begin{itemize}
-    \item \textbf{Learned token embeddings}: A randomly initialized embedding matrix $E \in \mathbb{R}^{V \times d_{\text{model}}}$, where $V = 4{,}107$ is the NT-v2 6-mer vocabulary size and $d_{\text{model}} = 128$.
-    \item \textbf{Learned positional embeddings}: A position embedding matrix $P \in \mathbb{R}^{L_{\max} \times d_{\text{model}}}$, added to the token embeddings.
-    \item \textbf{Single-layer Transformer encoder}: One pre-norm Transformer encoder layer with 2 attention heads, feed-forward dimension $d_{\text{ff}} = 512$, GELU activation, and dropout $p = 0.1$.
+    \item \textbf{Token embeddings}: a randomly initialized matrix $E \in \mathbb{R}^{V \times d_{\text{model}}}$, where $V$ is the realized vocabulary of the chosen tokenizer ($V = 4{,}107$ for the NT-v2 6-mer scheme) and $d_{\text{model}} \in \{64, 128\}$.
+    \item \textbf{Learned positional embeddings}: $P \in \mathbb{R}^{L_{\max} \times d_{\text{model}}}$, added to the token embeddings. Learned rather than sinusoidal encodings cannot extrapolate beyond trained positions, but every read here is 150~bp and yields a fixed token count, so the extrapolation is not needed and the additional freedom is obtained at no cost.
+    \item \textbf{Pre-norm transformer encoder}: $N \in \{1, 8, 16, 29\}$ layers, 2 attention heads, $d_{\text{ff}} = 512$, GELU activation, dropout $p = 0.1$. Pre-norm placement leaves the residual path uninterrupted, which is what allows the deeper arms to train stably; MetaTransformer's post-norm arrangement normalises on the residual path itself and is a plausible reason its design does not extend past one layer.
+    \item \textbf{Classification head}: the same 4-head attention-pooling head as the NT-v2 pipeline, with the input dimension matched to the encoder output. A masked mean-pooling variant is available as an ablation.
 \end{itemize}
+
+Holding the head fixed across backbones ensures that a performance difference is attributable to the encoder and the tokenizer rather than to the read-out.
 
 \begin{table}[htbp]
     \centering
-    \caption{Comparison of backbone configurations.}
+    \caption{Backbone configurations compared in this thesis. KmerFormer's shaded quantities---tokenizer, vocabulary and depth---are the ones the experiments vary; the other two models fix them.}
     \label{tab:backbone-comparison}
-    \begin{tabular}{lcc}
+    \resizebox{\linewidth}{!}{%
+    \begin{tabular}{lccc}
         \toprule
-        \textbf{Aspect} & \textbf{NT-v2 + LoRA} & \textbf{Shallow (ablation)} \\
+        \textbf{Aspect} & \textbf{NT-v2 $+$ LoRA} & \textbf{KmerFormer} & \textbf{MetaTransformer} \\
         \midrule
-        Tokenizer & 6-mer (shared) & 6-mer (shared) \\
-        Encoder layers & 29 & 1 \\
-        Hidden dimension & 1,024 & 128 \\
-        Attention heads & 16 & 2 \\
-        Feed-forward dim & 4,096 & 512 \\
-        Pre-training & MLM on 850 genomes & None (from scratch) \\
-        Backbone params & 498M (5.5M trainable) & $\sim$200K (all trainable) \\
+        Tokenizer & 6-mer, fixed & $k \in \{6, 13\}$, free & $k \in \{6,12,13\}$ \\
+        Stride & $k$ & $1$ or $k$, free & 1 \\
+        Vocabulary & 4,107, fixed & exact or hashed & exact \\
+        Encoder layers & 29, fixed & 1--29, free & 1 \\
+        Hidden dimension & 1,024 & 64 or 128 & 64 \\
+        Attention heads & 16 & 2 & 2 \\
+        Feed-forward dim & 4,096 & 512 & 512 \\
+        Norm placement & pre-norm & pre-norm & post-norm \\
+        Positional encoding & rotary (RoPE) & learned & sinusoidal \\
+        Pre-training & MLM, 850 genomes & none & none \\
+        Trainable params & 5.5M of 498M & all & all \\
         \bottomrule
-    \end{tabular}
+    \end{tabular}%
+    }
 \end{table}
 
-The same attention pooling classification head is used for both variants, with the input dimension adjusted to match the backbone output ($d = 1{,}024$ for NT-v2, $d = 128$ for the shallow variant). This design ensures that any performance difference is attributable solely to the backbone encoder, not the classification head or tokenization.
+\subsection{Hashed Long-$k$ Vocabularies}
+\label{sec:method-hashing}
 
-The shallow variant trains all parameters from scratch, analogous to MetaTransformer's training paradigm but constrained to the NT-v2 tokenizer. This answers a key question: \emph{does the pre-trained 29-layer backbone provide an advantage over a simple shallow encoder when the tokenization is held constant?}
+At $k = 6$ the vocabulary is small and the encoder dominates the parameter budget. At $k = 13$ the relationship inverts: the training pool realises 33{,}545{,}099 distinct canonical 13-mers, which at $d = 64$ is an 8~GiB embedding table and 24~GiB once a sparse Adam variant materialises its two dense moment buffers. Two practical consequences follow---the table exceeds a 24~GiB card, and because an enumerated table requires sparse gradients, which torch's DDP reducer rejects, it cannot be trained under data parallelism at all.
+
+KmerFormer therefore supports an approximate vocabulary. Each $k$-mer is mapped through a MurmurHash3 64-bit finalizer with seed $s = 42$ into one of $B = 2^{22} = 4{,}194{,}304$ buckets:
+\begin{equation}
+    e(w) \;=\; E\!\left[\, h_s(w) \bmod B \,\right], \qquad E \in \mathbb{R}^{B \times d_{\text{model}}},
+    \label{eq:hashed-vocab}
+\end{equation}
+where $w$ is a $k$-mer over $\{\mathrm{A,C,G,T}\}$. Collisions are accepted rather than resolved: two unrelated 13-mers sharing a bucket share an embedding, and the model must recover the distinction from context. At $d = 128$ the table is 2~GiB in place of 8~GiB, it trains under DDP, and its cost in accuracy is measured directly in Section~\ref{sec:exp-thirteenmer}.
+
+One property of the hashed scheme matters for evaluation. The exact vocabulary is \emph{canonical}---a $k$-mer and its reverse complement share an entry---so reverse-complement test-time augmentation is arithmetically a no-op on that arm. The hashed scheme is not canonical, since the two strands hash to unrelated buckets, so RC TTA has something to correct. The two arms therefore make a controlled pair for interpreting RC-TTA gains (Section~\ref{sec:method-rc-tta}).
 
 \section{Classification Head: Attention Pooling}
 \label{sec:method-head}
@@ -250,7 +272,7 @@ With $d = 1024$, $h = 4$, and $K = 120$ genera, the head comprises the query ($1
 
 The attention pooling mechanism enables the model to selectively focus on the most taxonomically informative tokens in the sequence, analogous to how a biologist might focus on specific conserved marker regions within a read to determine its taxonomic origin.
 
-\subsection{Alternative Heads}
+\paragraph{Alternative Heads}
 \label{sec:method-alt-heads}
 
 We also implemented two alternative classification heads for comparison:
@@ -318,6 +340,11 @@ Read headers therefore encode the full label hierarchy as
 which is parsed at load time to produce both 120-class genus and 1{,}535-class species labels.
 The same database underlies MetaTransformer~\cite{Wichmann2023}, which simplifies cross-method comparison.
 
+\subsection{A Second Catalogue: Soil}
+\label{sec:method-soil}
+
+A result obtained on one reference set may be a property of that set rather than of the task. We therefore build a second, independent catalogue from RefSoil~\cite{Choi2017refsoil}, a curated collection of soil isolate genomes, spanning \textbf{309 genera}---$2.6\times$ the gut label space, with a different taxonomic composition and no overlap in provenance. Reads are simulated with the identical ART protocol and balanced pools are built at the same 5M and 50M budgets, so the only thing that changes between the two environments is the catalogue itself. This supports the cross-environment check of Section~\ref{sec:exp-lowdata}: an interaction that reproduces on a catalogue with twice the genera and a different origin is a property of the data budget rather than of one reference set.
+
 \subsection{ART Read Simulation}
 
 Training data consists of simulated metagenomic short reads generated from these reference genomes using the ART Illumina simulator~\cite{Huang2012}, following the same simulation protocol as MetaTransformer~\cite{Wichmann2023}.
@@ -351,7 +378,7 @@ The training script likewise does not set \texttt{torch.manual\_seed}, \texttt{n
 Resume from a checkpoint restores model weights, optimiser state, and learning-rate scheduler state, but does not restore the PyTorch / CUDA / NumPy / Python RNG states, so a run resumed after a SLURM 48-hour timeout is not bit-for-bit identical to a hypothetical uninterrupted run.
 
 \emph{Empirical impact.}
-We did not perform repeated multi-seed runs of the full 50M-scale experiments due to compute constraints, but the residual non-determinism above is expected to produce run-to-run variation on the order of $\pm 0.1$--$0.3$~pp in genus Top-1 accuracy, which is small relative to the effects discussed in this thesis ($+13.19$~pp pre-training, $+20.35$~pp tokenization).
+We did not perform repeated multi-seed runs of the full 50M-scale experiments due to compute constraints, but the residual non-determinism above is expected to produce run-to-run variation on the order of $\pm 0.1$--$0.3$~pp in genus Top-1 accuracy, which is small relative to the effects discussed in this thesis ($+15.60$~pp depth, $+40.42$~pp tokenization) and comparable to the ones we report as null (RC augmentation 0.13~pp, pooling 0.18~pp).
 We acknowledge this as a methodological limitation and a candidate target for tightening in any follow-up study.
 
 \subsection{Balanced Subsampling}
@@ -368,7 +395,7 @@ The full training dataset contains 258M reads with a highly skewed distribution 
 
 This procedure produces near-perfectly balanced subsamples. For a 50M subsample from 1,535 species, each species contributes $32{,}573 \pm 445$ reads.
 
-\subsection{Reverse-Complement Augmentation}
+\paragraph{Reverse-Complement Augmentation}
 
 During training, each read is replaced with its reverse complement with probability $p = 0.5$. This augmentation is applied on-the-fly during data loading, doubling the effective diversity of the training set without requiring additional storage.
 
@@ -407,6 +434,17 @@ At inference, we employ RC TTA: each read is classified twice (forward and rever
 \end{equation}
 where $f_\theta(r)$ and $f_\theta(\bar{r})$ are the logit vectors for the forward and reverse-complement reads, respectively. This ensembling exploits the biological strand symmetry of DNA and consistently improves accuracy.
 
+\subsection{Off-Catalogue Evaluation: Track~A and the ANI Ladder}
+\label{sec:method-offcat}
+
+Held-out reads simulated from the reference genomes measure performance under complete reference coverage. Because real communities contain organisms the catalogue does not, we add two pools whose source genomes are absent from the training reference.
+
+\textbf{Track~A (out-of-genome)} simulates one assembly per genus from RefSeq genomes not in the training catalogue: 595{,}000 reads reduced to 580{,}000 over 116 genera after removing three accessions found to overlap the training set. It guarantees unseen \emph{assemblies}, but mixes different strains of catalogued species with genuinely novel species under a single number.
+
+\textbf{Track~B (ANI ladder)} separates the distances Track~A averages. Candidate genomes are stratified by skani average nucleotide identity to the closest reference genome, at the 95\% species boundary used for ANI-based species delineation in GTDB~\cite{Parks2022}, into three rungs: \textsc{strain} (a different strain of a species the reference holds), \textsc{species} (a different species of a represented genus), and \textsc{far} (no reference genome within reach). The same fourteen genera are held present at every rung, so a line drawn through the rungs measures distance rather than class count, and chance accuracy is 7.1\% at all three.
+
+In both pools the label space is unchanged: every read comes from a genome whose genus is one of the 120 trained on, so the task remains a 120-way decision with a correct answer available and ``far'' names a distance rather than a missing label. Alongside accuracy we report \emph{retention}, the ratio of far-rung to strain-rung accuracy, which summarises how much of a model's closed-set performance survives the move away from the reference.
+
 \subsection{Species-Level Evaluation Modes}
 \label{sec:method-species-eval}
 
@@ -419,11 +457,11 @@ For species-level classification (1,535 classes), we introduce two additional ev
 \section{Computational Considerations}
 \label{sec:method-compute}
 
-\subsection{Hardware}
+\paragraph{Hardware}
 
 All experiments are conducted on the TWCC (Taiwan Computing Cloud) SLURM cluster equipped with NVIDIA H100 80~GB HBM3 GPUs. The SLURM partition enforces a 48-hour maximum wall time per job, necessitating checkpoint-resume support for long training runs.
 
-\subsection{Memory Optimization}
+\paragraph{Memory Optimization}
 
 Several techniques are employed to manage GPU memory:
 \begin{itemize}
@@ -432,7 +470,7 @@ Several techniques are employed to manage GPU memory:
     \item \textbf{LoRA}: Keeps the majority of backbone parameters frozen, reducing the optimizer state memory from $\sim$4$\text{GB}$ (full fine-tuning with AdamW) to $\sim$44$\text{MB}$.
 \end{itemize}
 
-\subsection{Resource Monitoring}
+\paragraph{Resource Monitoring}
 
 To assess computational resource adequacy and identify bottlenecks, we implement a dedicated resource monitoring module that tracks:
 \begin{itemize}

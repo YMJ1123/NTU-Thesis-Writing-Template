@@ -1,7 +1,169 @@
 % !TeX root = ../main.tex
 
-\chapter{Introduction}
-\begin{tempsection}
-\section{Introduction}
-\section{Further Introduction}
-\end{tempsection}
+\chapter{Supplementary Tables}
+\label{app:tables}
+
+This appendix collects tables that document the experiments in full but are not
+needed to follow the argument of Chapter~\ref{ch:experiments}: the training
+configurations of the early runs, the complete metric profile of the
+species-level model, and the two large sample-level comparison tables whose
+headline rows are quoted in Section~\ref{sec:exp-sample}.
+
+\section{Training Configurations}
+\label{app:configs}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Hyperparameter configurations for initial architecture experiments (500K dataset). Bold values indicate the setting that changed relative to v1.}
+    \label{tab:v1-v3-configs}
+    \begin{tabular}{lccc}
+        \toprule
+        \textbf{Hyperparameter} & \textbf{v1} & \textbf{v2} & \textbf{v3 (best)} \\
+        \midrule
+        Backbone LR & $5 \times 10^{-5}$ & $2 \times 10^{-5}$ & $3 \times 10^{-5}$ \\
+        Head LR & $5 \times 10^{-4}$ & $3 \times 10^{-4}$ & $5 \times 10^{-4}$ \\
+        RC augmentation & No & \textbf{Yes} & \textbf{Yes} \\
+        Class weights & No & \textbf{Yes (capped@10)} & No \\
+        Label smoothing & 0.0 & \textbf{0.1} & 0.0 \\
+        Weight decay & 0.01 & 0.05 & 0.02 \\
+        Head dropout & 0.1 & 0.2 & 0.15 \\
+        LoRA dropout & 0.05 & 0.1 & 0.05 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Configuration comparison between NT-Genus-5M and NT-Genus.}
+    \label{tab:v9-config}
+    \begin{tabular}{lcc}
+        \toprule
+        \textbf{Parameter} & \textbf{NT-Genus-5M} & \textbf{NT-Genus} \\
+        \midrule
+        Training reads & 4.5M & 45M \\
+        Reads per species & $\sim$3,257 & $\sim$32,573 \\
+        Batch size & 32 & 256 \\
+        Gradient accumulation & 2 & 1 \\
+        Effective batch size & 64 & 256 \\
+        Epochs & 30 & 30 (converged) \\
+        Weight initialization & Random & v8 best.pt \\
+        Est.\ time per epoch & $\sim$3h & $\sim$5--6h \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{Species-Level Model: Full Metrics}
+\label{app:species-metrics}
+
+\begin{table}[htbp]
+    \centering
+    \caption{NT-Species training progress (species classification, 1,535 classes, 50M reads).}
+    \label{tab:spv4-progress}
+    \begin{tabular}{cccc}
+        \toprule
+        \textbf{Epoch} & \textbf{Val Acc (fwd)} & \textbf{Val F1 (macro)} & \textbf{Note} \\
+        \midrule
+        1  & 14.23\% & 12.43\% & Warm-up \\
+        6  & 15.91\% & 14.05\% & End of 1\textsuperscript{st} job \\
+        7  & 15.12\% & 13.36\% & LR reset (−0.79~pp) \\
+        12 & 15.51\% & 13.65\% & End of 2\textsuperscript{nd} job \\
+        13 & 15.85\% & 13.97\% & Resume fix applied \\
+        18 & 16.37\% & 14.46\% & \\
+        26 & 17.31\% & 15.28\% & \\
+        30 & \textbf{17.55\%} & \textbf{15.70\%} & Converged \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+    \centering
+    \caption{NT-Species final forward-only evaluation on the 5M held-out set (epoch~30 checkpoint).}
+    \label{tab:spv4-final-metrics}
+    \begin{tabular}{lr}
+        \toprule
+        \textbf{Metric} & \textbf{Value} \\
+        \midrule
+        Top-1 accuracy              & \textbf{17.55\%} \\
+        Top-3 accuracy              & 31.26\% \\
+        Top-5 accuracy              & 38.19\% \\
+        Top-10 accuracy             & 47.65\% \\
+        Balanced accuracy           & 17.56\% \\
+        F1 (macro)                  & 0.157 \\
+        F1 (weighted)               & 0.157 \\
+        Classes with F1 $=$ 0       & 191 / 1,535 (12.4\%) \\
+        Inference throughput        & 5{,}171 reads/sec \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{Sample-Level Comparisons in Full}
+\label{app:sample-tables}
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \caption{Species-level sample evaluation on the independent 100K test set (1,535 species, 1K reads/sample, 100 partition samples).
+    Genus-level results (120 classes, 5M pool, 50K reads/sample) are included as a reference row.
+    Per-genus (predicted) uses the NT-Genus router (66.1\% Top-1 on this test set) to select per-genus NT-v2 species classifiers; per-genus (oracle) uses the ground-truth genus label and represents the upper bound of the two-stage NT-v2 pipeline.
+    All MT species predictions are run with reads ordered as in the canonical \texttt{reads\_100K.fa}; the MT 13-mer hierarchical species model on Taiwana-2 has a corrupted checkpoint (training halted at batch 10\,000 with val\_loss $= 9.29$) and could not produce usable predictions, so this row is omitted.
+    The bottom block reports Kraken2 ($k$=35) on the same test set, with a custom database built from the same 2{,}505 UMGS+HGR genomes used to train the neural models.
+    For Kraken2, sample-level metrics are computed with unclassified reads (30\%) counted toward the per-sample denominator (1000 reads) but contributing zero to predicted abundance---i.e., they are treated as ``lost signal''.}
+    \label{tab:sample-species-comparison}
+    \resizebox{\linewidth}{!}{%
+    \begin{tabular}{lcccccc}
+        \toprule
+        \textbf{Model} & \textbf{Read Acc} & \textbf{Pearson $r$} & \textbf{Spearman $\rho$} & \textbf{Bray-Curtis} & \textbf{ROC AUC} & \textbf{Sens @ 95\% Spec} \\
+        \midrule
+        \multicolumn{7}{l}{\textit{Genus-level reference (120 classes, 5M pool)}} \\
+        MT 13-mer genus   & 87.4\% & 0.9993 & 0.978 & 0.028 & 0.900 & 47.7\% \\
+        NT-Genus    & 67.1\% & 0.9932 & 0.931 & 0.094 & 0.705 & 17.2\% \\
+        MT  6-mer genus   & 48.8\% & 0.9840 & 0.854 & 0.167 & 0.569 &  9.4\% \\
+        \midrule
+        \multicolumn{7}{l}{\textit{Species-level (1,535 classes, 1K reads/sample)}} \\
+        NT-Species flat   & 17.8\% & 0.135 & 0.144 & 0.589 & 0.794 & 55.2\% \\
+        NT-Species hier.  & 15.8\% & 0.106 & 0.136 & 0.608 & 0.796 & 53.0\% \\
+        NT-v2 per-genus (predicted) & 15.6\% & 0.083 & 0.140 & 0.625 & 0.789 & 52.5\% \\
+        NT-v2 per-genus (oracle)    & 29.5\% & 0.159 & 0.270 & 0.541 & 0.842 & 65.2\% \\
+        MT  6-mer flat    &  9.0\% & 0.066 & 0.060 & 0.652 & 0.692 & 33.2\% \\
+        MT  6-mer hier.   &  6.4\% & 0.041 & 0.041 & 0.682 & 0.639 & 24.7\% \\
+        MT 13-mer flat    & 53.7\% & \textbf{0.503} & \textbf{0.508} & \textbf{0.353} & 0.973 & \textbf{91.8\%} \\
+        MT 13-mer hier.   & \multicolumn{6}{c}{\textit{checkpoint corrupted (val\_loss=9.29 at batch 10K, never converged); not reported}} \\
+        \midrule
+        \multicolumn{7}{l}{\textit{$k$-mer baseline (Kraken2, custom DB built from same 2{,}505 UMGS+HGR genomes, $k$=35)}} \\
+        Kraken2 (in-DB)   & \textbf{66.2\%} & \textbf{0.727} & \textbf{0.711} & \textbf{0.218} & 0.925 & \textbf{85.7\%} \\
+        \bottomrule
+    \end{tabular}%
+    }
+\end{table}
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \caption{Fair-restricted comparison on the in-DB pool (85,819 of 100,000 reads; species covered by the Kraken2 database). Sample-level metrics use 1K reads/sample, 85 partition samples, 200 sparse-community samples. All MT predictions are aligned to the canonical \texttt{reads\_100K.fa} read order. Bold entries are best in column within each panel.}
+    \label{tab:in-db-fair}
+    \resizebox{\linewidth}{!}{%
+    \begin{tabular}{lccccc}
+        \toprule
+        \textbf{Model} & \textbf{Read Acc} & \textbf{Pearson $r$} & \textbf{Bray-Curtis} & \textbf{ROC AUC} & \textbf{Sens @ 95\% Spec} \\
+        \midrule
+        \multicolumn{6}{l}{\textit{Species level (1,535 classes)}} \\
+        NT-Species flat                     & 17.12\% & 0.142 & 0.602 & 0.776 & 52.6\% \\
+        NT-Species hier.                    & 15.20\% & 0.118 & 0.616 & 0.776 & 49.5\% \\
+        NT-v2 per-genus (predicted)         & 14.98\% & 0.088 & 0.641 & 0.767 & 49.8\% \\
+        NT-v2 per-genus (oracle)            & 27.69\% & 0.156 & 0.560 & 0.818 & 61.6\% \\
+        MT 6-mer flat                       &  8.54\% & 0.071 & 0.664 & 0.674 & 31.4\% \\
+        MT 6-mer hier.                      &  6.11\% & 0.042 & 0.696 & 0.629 & 23.6\% \\
+        MT 13-mer flat                      & 52.64\% & 0.514 & 0.358 & 0.968 & 89.2\% \\
+        Kraken2 (in-DB)                     & \textbf{77.18\%} & \textbf{0.847} & \textbf{0.129} & \textbf{0.998} & \textbf{99.6\%} \\
+        \midrule
+        \multicolumn{6}{l}{\textit{Genus level (120 classes)}} \\
+        NT-Genus v9 (dedicated, $\equiv$ NT-Species hier $\to$ genus) & 68.88\% & 0.992 & 0.116 & 0.681 & 17.5\% \\
+        NT-v2 per-genus router (predicted)  & 62.77\% & 0.989 & 0.143 & 0.699 & 22.6\% \\
+        NT-v2 per-genus router (oracle)     & 100.0\% & 1.000 & 0.000 & 0.966 & \textbf{93.6\%} \\
+        MT 6-mer genus                      & 51.49\% & 0.983 & 0.177 & 0.576 &  9.2\% \\
+        MT 13-mer genus                     & \textbf{94.89\%} & \textbf{0.9993} & \textbf{0.029} & 0.905 & 66.5\% \\
+        Kraken2 (genus, in-DB)              & 77.68\% & 0.823 & 0.126 & 0.966 & 93.5\% \\
+        \bottomrule
+    \end{tabular}%
+    }
+\end{table}
