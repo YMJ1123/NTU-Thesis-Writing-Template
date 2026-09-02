@@ -284,13 +284,17 @@ We also implemented two alternative classification heads for comparison:
 \section{Training Strategy}
 \label{sec:method-training}
 
-\subsection{Two-Phase Training}
+\subsection{Two-Phase Training and Transfer Between Experiments}
 
-We employ a two-phase training strategy to stabilize learning:
-
-\textbf{Phase 1 --- Head-only warmup} (5 epochs): The backbone is completely frozen, and only the classification head parameters are trained. This phase initializes the head weights to produce meaningful gradients before the backbone is unfrozen, preventing early gradient noise from corrupting pre-trained representations.
-
-\textbf{Phase 2 --- Joint fine-tuning} (up to 25--30 epochs): LoRA adapters in the backbone are unfrozen, and both the backbone (via LoRA) and the classification head are trained jointly. Differential learning rates are used: the backbone learning rate ($3 \times 10^{-5}$) is set lower than the head learning rate ($5 \times 10^{-4}$) to preserve pre-trained knowledge.
+Training proceeds in two phases: the backbone is frozen while the classification head
+warms up, then LoRA adapters on the query/key/value projections are unfrozen and both
+are trained jointly. Each larger-scale run is initialised from the best checkpoint of
+the scale below it (\texttt{--init\_from}), which loads matching LoRA parameters and
+skips the classification head whenever the label space changes---as it does between the
+120-class genus and 1{,}535-class species models. Warm-starting this way is what makes
+the data-scaling series a series rather than a set of independent runs, and it is also
+why the 250M genus arm is reported both warm-started and from scratch
+(Section~\ref{sec:exp-scaling}).
 
 \subsection{Optimization}
 
@@ -319,14 +323,6 @@ The training procedure uses the following optimization configuration:
 \textbf{Mixed precision training}: We use bfloat16 automatic mixed precision (AMP) on NVIDIA H100 GPUs. The bfloat16 format provides the dynamic range of float32 with reduced precision, avoiding the gradient underflow issues that arise with float16 and class-weighted losses.
 
 \textbf{Early stopping}: Training is halted when validation accuracy does not improve for 7 consecutive epochs, and the model with the highest validation accuracy is saved as the final checkpoint.
-
-\subsection{Transfer Learning Across Experiments}
-
-To facilitate progressive scaling from smaller to larger datasets, we implement a transfer learning mechanism (\texttt{--init\_from}) distinct from the training resumption mechanism (\texttt{--resume}).
-
-\textbf{Resume} (\texttt{--resume}): Loads the full training state (model weights, optimizer state, epoch counter, learning rate scheduler) from a checkpoint, enabling continuation of the \emph{same} experiment after a job interruption (e.g., SLURM time limit).
-
-\textbf{Transfer learning} (\texttt{--init\_from}): Loads only the model weights from a checkpoint for a \emph{new} experiment, resetting the epoch counter and optimizer state. Supports partial loading, automatically skipping parameters with shape mismatches (e.g., when the classification head dimension changes between genus and species models). Phase~1 warmup is skipped when using transfer learning, as the backbone is already adapted.
 
 \section{Data Pipeline}
 \label{sec:method-data}
