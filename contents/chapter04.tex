@@ -109,7 +109,7 @@ The training dynamics reveal severe overfitting (Figure~\ref{fig:training-dynami
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{figures/training_dynamics.pdf}
+    \includegraphics{figures/training_dynamics.pdf}
     \caption{Training dynamics for v3 (500K, left), NT-Genus-5M (5M, centre), and NT-Genus (50M, right). Dashed lines show training accuracy; solid lines show validation accuracy. The shaded region highlights the train-validation gap. Dotted vertical lines mark learning-rate resets caused by SLURM timeout and job resumption; NT-Genus experienced two such resets (epochs 7 and 11) before the resume logic was corrected. Overfitting decreases systematically as data volume increases.}
     \label{fig:training-dynamics}
 \end{figure}
@@ -220,7 +220,7 @@ NT-Genus training completed at epoch~30 (April~2026), reaching a forward validat
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/learning_curves.pdf}
+    \includegraphics{figures/learning_curves.pdf}
     \caption{Full validation accuracy curves for NT-Genus (genus, left) and NT-Species (species, right) over all completed epochs. Red dotted vertical lines mark epochs where a SLURM job restart incorrectly reset the cosine LR scheduler, causing a temporary accuracy dip. The green shaded region indicates epochs trained after the resume bug fix was applied, during which the LR schedule correctly continues its cosine decay.}
     \label{fig:learning-curves}
 \end{figure}
@@ -235,7 +235,7 @@ The comparison with MetaTransformer further reinforces this finding: despite usi
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.80\textwidth]{figures/data_scaling.pdf}
+    \includegraphics{figures/data_scaling.pdf}
     \caption{Genus RC TTA accuracy versus training data volume (log scale). The horizontal axis counts \emph{training reads including duplicates} (the per-epoch sample count); the corresponding \emph{unique}-read counts are smaller (50M$\to$17.8M, 250M$\to$41.9M unique, against a 42.6M source ceiling). Green circles mark our results at three data scales; the red star marks MetaTransformer's reported genus recall. The blue dashed line is a log-linear fit to our three data points. Per-$10\times$ accuracy gains diminish from $+7.76$~pp (500K$\to$5M) to $+4.02$~pp (5M$\to$50M). The fourth green circle (v15, 250M) continues the same warm-started series but is held out of the fit; at 67.29\% it falls well below the $\sim$71\% the log-linear fit would project at that scale---the trajectory flattens off its own projection, directly demonstrating that accuracy saturates beyond 50M rather than continuing along the trend. The MetaTransformer star marks reported genus recall (98.3\%); its x-position is based on training throughput (300K steps $\times$ batch~2,048) and is not directly comparable to our dataset-size axis.}
     \label{fig:data-scaling}
 \end{figure}
@@ -348,7 +348,7 @@ The $2\times$ inference cost is the primary trade-off. For offline evaluation th
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{figures/rc_tta_benefit.pdf}
+    \includegraphics{figures/rc_tta_benefit.pdf}
     \caption{RC TTA benefit across experiments. Top: forward-only vs.\ RC TTA accuracy (blue: NT-v2 backbone; green: DNABERT family; right of second dashed line: random init). Bottom: absolute gain in percentage points. NT-v2-based models gain $+0.77$--$+1.54$~pp consistently. DNABERT gains only $+0.58$~pp, likely because its overlapping 6-mer tokenization is inherently more RC-symmetric than NT-v2's non-overlapping 6-mer. DNABERT-2 (BPE tokenization) gains $+1.53$~pp, similar to early NT-v2 experiments. The from-scratch KmerFormer gains only $+0.08$~pp; Sections~\ref{sec:exp-shallow} and~\ref{sec:exp-thirteenmer} trace that to the tokenization rather than to the absence of pre-training.}
     \label{fig:rc-tta}
 \end{figure}
@@ -499,7 +499,7 @@ A LoRA asymmetry remains and is worth stating. NT-v2 is adapted through 5.54M Lo
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/depth_sweep_6mer.pdf}
+    \includegraphics{figures/depth_sweep_6mer.pdf}
     \caption{Three architectures at a shared 6-mer tokenizer, all trained on the same 50M reads and the same label space. (a)~Genus Top-1 for MetaTransformer's single-layer design, NT-v2 adapted with LoRA, and a 29-layer KmerFormer. (b)~KmerFormer as encoder depth grows from 1 to 29 layers; the from-scratch curve crosses the 500M pre-trained model between 8 and 16 layers and flattens after 16.}
     \label{fig:depth-sweep}
 \end{figure}
@@ -533,7 +533,7 @@ Depth behaves accordingly. At 5M reads, going from 8 to 16 layers is worth $+0.4
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/soil_data_scale.pdf}
+    \includegraphics{figures/soil_data_scale.pdf}
     \caption{Pre-trained against from-scratch training as the labelled budget grows, on the soil catalogue (309 genera, RefSoil). The pre-trained backbone leads at 5M reads and is overtaken by 50M, reproducing the gut crossover on a catalogue with $2.6\times$ the genera and no shared provenance.}
     \label{fig:soil-scale}
 \end{figure}
@@ -776,7 +776,7 @@ Table~\ref{tab:thirteenmer} reports every 13-mer arm trained in our codebase, to
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/thirteenmer_arms.pdf}
+    \includegraphics{figures/thirteenmer_arms.pdf}
     \caption{The 13-mer arms trained in our codebase against MetaTransformer, on the same 50M reads and the same test set. Depth is harmful at this tokenization, in both the exact and the hashed vocabulary, and the hashed table reaches within 1.8 points of the exact one on a quarter of the memory.}
     \label{fig:thirteenmer}
 \end{figure}
@@ -839,7 +839,7 @@ At the strain rung the ordering is the closed set's: 73.0\% for our exact 13-mer
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/embedding_ladder.pdf}
+    \includegraphics[width=\textwidth]{figures/embedding_ladder.pdf}
     \caption{Pooled embeddings along the ANI ladder. Rows are the three rungs with distance from the reference increasing downward; columns are four models. The percentage beneath each panel is genus purity measured in the model's own embedding space. The exact 13-mer arms separate the nearest rung into tight clusters and arrive at the far rung as unstructured cloud; the 6-mer arms start lower and still show family structure at the far rung.}
     \label{fig:embedding-ladder}
 \end{figure}
@@ -1140,7 +1140,7 @@ Even at 0.01\%--0.1\% abundance (5--50 reads per genus per sample), sensitivity 
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.62\textwidth]{figures/detection_by_abundance.pdf}
+    \includegraphics{figures/detection_by_abundance.pdf}
     \caption{Detection sensitivity of NT-Genus against the true relative abundance
     of the genus, at a threshold of one predicted read. Genus-instance counts are
     annotated on each bar. Detection is complete above 1\% abundance and falls only
@@ -1195,7 +1195,7 @@ This comparison serves two purposes: to isolate the contribution of the NT-v2 pr
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{figures/sample_level_models.pdf}
+    \includegraphics{figures/sample_level_models.pdf}
     \caption{Read-level accuracy against sample-level utility, for the three models
     evaluated under one protocol (100 random-partition and 200 sparse-community
     samples, 50K reads each). (a)~Genus Top-1 spans 39 points across the three
