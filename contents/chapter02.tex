@@ -89,7 +89,9 @@ Several recent works have begun to close this gap, though none performs systemat
 \textbf{DNABERT-S}~\cite{Zhou2025dnaberts} adapts DNABERT-2 with contrastive learning to produce species-discriminative embeddings, achieving improvements on metagenomic binning and species clustering tasks; however, it operates at the embedding level rather than performing direct read classification.
 Both works fine-tune pre-existing GFMs and treat metagenomics as a secondary application; neither performs systematic tokenization ablation nor evaluates at the genus-level multi-class classification scale (120 genera, 50M reads) addressed in this thesis.
 
-This thesis addresses that gap by systematically fine-tuning and benchmarking GFMs for 120-class genus and 1,535-class species classification, and by disentangling the roles of data scale, pre-training, and tokenization---providing the first systematic comparison of pre-trained GFM fine-tuning against from-scratch MetaTransformer training across tokenization strategies on the same large-scale dataset.
+Two GFMs pre-trained on metagenomic sequence have since been released and are in-domain relative to this task in a way NT-v2 is not. \textbf{METAGENE-1}~\cite{Liu2025metagene} is a 7B-parameter autoregressive model trained on ${\sim}$1.5~trillion base pairs of wastewater metagenomes with BPE tokenization. \textbf{GenomeOcean}~\cite{Zhou2025genomeocean} is a 4B-parameter model trained on ${\sim}$600~Gbp of metagenomic assemblies, also with BPE. We do not evaluate either model; Chapter~\ref{ch:conclusion} states this as a scope limitation. Their BPE tokenizers would additionally confound a pre-training-only comparison with NT-v2.
+
+This thesis addresses the remaining gap by systematically fine-tuning and benchmarking \emph{general-purpose} GFMs for 120-class genus and 1,535-class species classification, and by separating data scale, encoder depth, pre-training, and tokenization---including a depth-matched from-scratch control that a one-layer versus 29-layer comparison does not provide.
 
 \section{Parameter-Efficient Fine-Tuning}
 \label{sec:bg-peft}
