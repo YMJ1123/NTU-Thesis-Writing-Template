@@ -187,9 +187,9 @@ Gradient checkpointing is enabled for the backbone to reduce peak GPU memory usa
 \subsection{Ablation: Shallow Transformer Backbone}
 \label{sec:method-shallow}
 
-To isolate the contribution of the pre-trained 29-layer NT-v2 backbone, we design an ablation variant that replaces it with a shallow Transformer encoder trained entirely from scratch. This ablation mirrors the architecture of MetaTransformer~\cite{Wichmann2023} while keeping the tokenization fixed to 6-mers (the NT-v2 tokenizer), enabling a controlled comparison.
+To test whether the pre-trained 29-layer NT-v2 backbone is necessary under 6-mer tokenization, we first replace it with a shallow Transformer encoder trained entirely from scratch. This ablation mirrors the encoder depth of MetaTransformer~\cite{Wichmann2023} while keeping the tokenizer fixed to NT-v2 6-mers. It is \emph{not} a depth-matched pre-training control: the comparison confounds pre-training with encoder depth (29 vs.\ 1) and width ($d{=}1024$ vs.\ $d{=}128$). Chapter~\ref{ch:experiments} therefore reports this one-layer variant as a confounded baseline, then a depth sweep that varies only the number of encoder layers.
 
-The shallow Transformer backbone consists of:
+The one-layer Transformer backbone consists of:
 \begin{itemize}
     \item \textbf{Learned token embeddings}: A randomly initialized embedding matrix $E \in \mathbb{R}^{V \times d_{\text{model}}}$, where $V = 4{,}107$ is the NT-v2 6-mer vocabulary size and $d_{\text{model}} = 128$.
     \item \textbf{Learned positional embeddings}: A position embedding matrix $P \in \mathbb{R}^{L_{\max} \times d_{\text{model}}}$, added to the token embeddings.
@@ -198,11 +198,11 @@ The shallow Transformer backbone consists of:
 
 \begin{table}[htbp]
     \centering
-    \caption{Comparison of backbone configurations.}
+    \caption{Comparison of backbone configurations. The one-layer column is the confounded control; the depth-sweep models reuse the same tokenizer, attention-pooling head, and 6-mer vocabulary, and vary only encoder depth.}
     \label{tab:backbone-comparison}
     \begin{tabular}{lcc}
         \toprule
-        \textbf{Aspect} & \textbf{NT-v2 + LoRA} & \textbf{Shallow (ablation)} \\
+        \textbf{Aspect} & \textbf{NT-v2 + LoRA} & \textbf{Shallow (1-layer)} \\
         \midrule
         Tokenizer & 6-mer (shared) & 6-mer (shared) \\
         Encoder layers & 29 & 1 \\
@@ -215,9 +215,14 @@ The shallow Transformer backbone consists of:
     \end{tabular}
 \end{table}
 
-The same attention pooling classification head is used for both variants, with the input dimension adjusted to match the backbone output ($d = 1{,}024$ for NT-v2, $d = 128$ for the shallow variant). This design ensures that any performance difference is attributable solely to the backbone encoder, not the classification head or tokenization.
+The same attention pooling classification head is used for both variants, with the input dimension adjusted to match the backbone output ($d = 1{,}024$ for NT-v2, $d = 128$ for the shallow variant).
 
-The shallow variant trains all parameters from scratch, analogous to MetaTransformer's training paradigm but constrained to the NT-v2 tokenizer. This answers a key question: \emph{does the pre-trained 29-layer backbone provide an advantage over a simple shallow encoder when the tokenization is held constant?}
+The depth-sweep models (1, 8, 16, and 29 encoder layers) keep NT-v2's non-overlapping 6-mer tokenizer, the attention-pooling head, the 50M (or 5M) gut-read pool, 15 training epochs, and RC TTA, and are scored on the same \texttt{clean\_common} 100K file. They train 100\% of parameters from scratch (no LoRA). Parameter counts are 0.90M (1 layer), 2.29M (8 layers), 3.88M (16 layers), and 6.45M (29 layers). Because NT-v2 was pre-trained with a 2{,}048-token context (${\sim}$12{,}288~bp) and is here fed 25 tokens (150~bp), any transfer is also outside its pre-training length regime~\cite{DallaTorre2023}.
+
+\subsection{Same-Architecture Tokenizer Variants}
+\label{sec:method-samearch-tok}
+
+A complementary control holds the 16-layer from-scratch encoder fixed and varies only the tokenizer on the same 50M gut reads: non-overlapping 6-mer (25 tokens/read), overlapping 6-mer (146 tokens/read), hashed overlapping 13-mer (139 tokens/read, 2~GiB embedding), and exact overlapping 13-mer (139 tokens/read, 8.6~GiB embedding). These runs are scored on the same \texttt{clean\_common} 100K file with RC TTA (Section~\ref{sec:exp-tokenization}). The hashed and exact 13-mer arms additionally differ in embedding width and numeric precision, which Chapter~\ref{ch:experiments} discloses rather than treating as a perfectly isolated $k$ ablation.
 
 \section{Classification Head: Attention Pooling}
 \label{sec:method-head}
@@ -351,7 +356,7 @@ The training script likewise does not set \texttt{torch.manual\_seed}, \texttt{n
 Resume from a checkpoint restores model weights, optimiser state, and learning-rate scheduler state, but does not restore the PyTorch / CUDA / NumPy / Python RNG states, so a run resumed after a SLURM 48-hour timeout is not bit-for-bit identical to a hypothetical uninterrupted run.
 
 \emph{Empirical impact.}
-We did not perform repeated multi-seed runs of the full 50M-scale experiments due to compute constraints, but the residual non-determinism above is expected to produce run-to-run variation on the order of $\pm 0.1$--$0.3$~pp in genus Top-1 accuracy, which is small relative to the effects discussed in this thesis ($+13.19$~pp pre-training, $+20.35$~pp tokenization).
+We did not perform repeated multi-seed runs of the full 50M-scale experiments due to compute constraints, but the residual non-determinism above is expected to produce run-to-run variation on the order of $\pm 0.1$--$0.3$~pp in genus Top-1 accuracy, which is small relative to the effects discussed in this thesis (depth $+14.02$~pp from 1 to 16 layers; tokenization $\sim$16--20~pp at matched or best-vs-best 13-mer vs.\ 6-mer).
 We acknowledge this as a methodological limitation and a candidate target for tightening in any follow-up study.
 
 \subsection{Balanced Subsampling}
@@ -443,6 +448,8 @@ To assess computational resource adequacy and identify bottlenecks, we implement
 \end{itemize}
 These metrics are logged to \texttt{training\_history.csv} and a comprehensive \texttt{resource\_report.json} at the end of training.
 
+Training and evaluation code, experiment configs, and the scripts that build the balanced read sets are at \url{https://github.com/m2lab-ntu/gfm-classifier}.
+
 \section{Summary}
 
-This chapter has described the complete methodology for token-level GFM classification of metagenomic reads. The framework combines a pre-trained Nucleotide Transformer v2 backbone with LoRA adaptation, an attention-pooling classification head, two-phase training with transfer learning support, balanced subsampling, and RC augmentation. The evaluation methodology encompasses multiple metrics at both genus and species levels, with specialized evaluation modes for dissecting hierarchical classification performance.
+This chapter has described the complete methodology for token-level GFM classification of metagenomic reads. The framework combines a pre-trained Nucleotide Transformer v2 backbone with LoRA adaptation, an attention-pooling classification head, two-phase training with transfer learning support, balanced subsampling, and RC augmentation. From-scratch depth-sweep and same-architecture tokenizer variants reuse the same head and evaluation file so that Chapter~\ref{ch:experiments} can separate depth, pre-training, and tokenization. The evaluation methodology encompasses multiple metrics at both genus and species levels, with specialized evaluation modes for dissecting hierarchical classification performance.
