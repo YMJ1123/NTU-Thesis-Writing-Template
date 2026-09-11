@@ -42,7 +42,7 @@ GFM 大規模預訓練能否彌補 6-mer tokenization 對長程 $k$-mer 判別�
 \column{0.5\textwidth}
 \begin{block}{Short Answer}
 \textbf{Q1} Yes: $+13.37$~pp at 5M reads\\[2pt]
-\textbf{Q2} No: MT 13-mer \emph{from scratch} beats NT-v2 + LoRA by $\mathbf{+20.35}$~pp
+\textbf{Q2} Tokenization wins ($+20.35$~pp); old +13.19 ``pre-training'' gap was mostly depth
 \end{block}
 \end{columns}
 \end{frame}
@@ -79,7 +79,7 @@ GFM 大規模預訓練能否彌補 6-mer tokenization 對長程 $k$-mer 判別�
 
 % ---- Backbone ablation (50M) ----
 \node[box, below=10mm of v9] (v11) {Rand-init 1-layer\\same 6-mer (50M)\\53.88\%};
-\node[label, below=1mm of v11] {\textbf{Pre-training: +13.19 pp}};
+\node[label, below=1mm of v11] {\textbf{1L control (depth confound)}};
 
 % ---- Tokenization arm (MT) ----
 \node[pivot, right=44mm of v9] (mt13) {MT 13-mer $s{=}1$\\50M scratch\\\textbf{87.42\%} \checkmark};
@@ -141,7 +141,7 @@ GFM 大規模預訓練能否彌補 6-mer tokenization 對長程 $k$-mer 判別�
 \end{frame}
 
 % -----------------------------------------------------------------------
-\begin{frame}{Finding 2 — Pre-Training Advantage (Fixed Tokenization)}
+\begin{frame}{Finding 2 — Depth Explains the Old Pre-training Gap}
 \begin{columns}
 \column{0.55\textwidth}
 \includegraphics[width=\linewidth]{../figures/backbone_ablation.pdf}
@@ -149,16 +149,18 @@ GFM 大規模預訓練能否彌補 6-mer tokenization 對長程 $k$-mer 判別�
 \column{0.45\textwidth}
 \begin{tabular}{lc}
 \toprule
-Model & Acc (RC TTA) \\ \midrule
-NT-v2 pre-trained & \textbf{67.07\%} \\
-Rand-init 1-layer & 53.88\% \\
+Model (6-mer, 50M) & Acc (RC TTA) \\ \midrule
+1-layer scratch & 53.92\% \\
+16-layer scratch & \textbf{67.94\%} \\
+29-layer scratch & 69.52\% \\
+NT-v2 LoRA (29L) & 67.08\% \\
 \midrule
-\textbf{Gap} & \textbf{+13.19 pp} \\
+\textbf{Old 29L vs 1L} & +13.19 (\emph{depth}) \\
 \bottomrule
 \end{tabular}
 
 \vspace{8pt}
-{\small 相同 tokenization、相同 50M 資料 → pre-training 有實質貢獻}
+{\small 舊 +13.19 混到深度；matched depth 時 pre-training ≈ 0（5M 才有 data efficiency）}
 \end{columns}
 \end{frame}
 
@@ -262,7 +264,7 @@ Sens @ 95\% spec & 17.2\% & 47.7\% \\
   step/.style={draw, rounded corners, fill=neutral!10, text width=38mm,
                align=center, font=\small, inner sep=4pt}]
 \node[step] (s1) {資料量是 NT-v2 框架內\\主要因素\\(500K→50M)};
-\node[step, right=of s1] (s2) {Pre-training 有效\\固定tokenization下\\+13.19 pp};
+\node[step, right=of s1] (s2) {Depth explains +13.19;\\50M matched depth\\pre-train $\approx 0$};
 \node[step, right=of s2] (s3) {Tokenization\\跨架構最重要\\+20.35 pp};
 \node[step, right=of s3] (s4) {Hierarchical validated;\\subgenus routing failed\\→ 表示層瓶頸確認};
 
@@ -389,7 +391,7 @@ Oct   & Revision round 1 \\
 \begin{block}{What We Found}
 \begin{enumerate}
   \item Data volume $\gg$ training tricks within NT-v2
-  \item Pre-training $+13.19$~pp (fixed 6-mer tokenization)
+  \item Depth explains old $+13.19$~pp; pre-training = low-data efficiency
   \item Tokenization design $+20.35$~pp (cross-architecture)
   \item Hierarchical decomposition correct direction; subgenus routing fails due to representation bottleneck
   \item 67\% per-read acc $\to$ $r=0.993$ abundance estimation at sample level
