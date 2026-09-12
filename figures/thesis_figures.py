@@ -9,11 +9,11 @@ below, place with the matching \\includegraphics width, and 9pt stays 9pt.
 
   \\textwidth = 425pt = 5.90in   (A4 595pt, 3cm margins both sides)
 
-Data provenance: every number is quoted from a table in Chapter 4 or Appendix B,
-named in the SOURCE comment above each dataset, so figures and tables cannot
-drift apart. The epoch-by-epoch series for the two training figures come from
-tab:v3-dynamics and tab:v8-dynamics (removed from the text in commit 6b80ffd,
-still in its history) and tab:spv4-progress in Appendix B.
+Data provenance: bar/scatter numbers are quoted from a table in Chapter 4 or
+Appendix B, named in the SOURCE comment above each dataset. The epoch series
+for training_dynamics and learning_curves are the Nano4 training_history CSVs
+under figures/data/ (v3 500K, v8 5M, v9 50M); species points remain
+tab:spv4-progress in Appendix B.
 
 Retired: the abundance scatter, the detection ROC curve and the per-genus
 accuracy scatter were drawn from per-sample prediction dumps under
@@ -28,7 +28,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from figstyle import apply_style, audit_text, BLUE, TEAL, ORANGE, GREY, RED
+from figstyle import apply_style, audit_text, BLUE, TEAL, ORANGE, GREY, RED, GREEN
 
 OUT = Path(__file__).parent
 apply_style()
@@ -81,62 +81,79 @@ def fig_data_scaling():
 
 
 # ─── 4.3/4.5 training dynamics ───────────────────────────────────────────────
-# SOURCE: tab:v3-dynamics, tab:v8-dynamics (commit 6b80ffd history)
+# SOURCE: figures/data/v3_500k.csv, v8_5m.csv (Nano4 training_history)
+def _load_history(name):
+    import csv
+    ep, tr, va = [], [], []
+    with (Path(__file__).parent / "data" / name).open(encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            ep.append(int(float(row["epoch"])))
+            tr.append(100.0 * float(row["train_acc"]))
+            va.append(100.0 * float(row["val_acc"]))
+    return ep, tr, va
+
+
 def fig_training_dynamics():
-    v3_ep = [1, 5, 10, 15, 20, 28, 35]
-    v3_tr = [45.25, 51.34, 54.25, 56.25, 58.08, 60.88, 62.69]
-    v3_va = [46.29, 51.27, 52.39, 53.26, 53.88, 53.92, 53.71]
-    v8_ep = [1, 5, 10, 14, 15, 20, 25, 29]
-    v8_tr = [49.96, 55.97, 58.93, 60.60, 58.80, 61.82, 62.89, 63.32]
-    v8_va = [51.80, 57.04, 59.42, 60.56, 59.18, 60.59, 61.77, 62.02]
+    v3_ep, v3_tr, v3_va = _load_history("v3_500k.csv")
+    v8_ep, v8_tr, v8_va = _load_history("v8_5m.csv")
 
     fig, axes = plt.subplots(1, 2, figsize=(WIDE, 2.7), sharey=True)
-    fig.subplots_adjust(wspace=0.24)
-    for ax, ep, tr, va, title, colour, letter in [
-        (axes[0], v3_ep, v3_tr, v3_va, "500K reads (imbalanced)", ORANGE, "a"),
-        (axes[1], v8_ep, v8_tr, v8_va, "5M reads (balanced)", BLUE, "b"),
+    fig.subplots_adjust(wspace=0.18)
+    for ax, ep, tr, va, colour, letter in [
+        (axes[0], v3_ep, v3_tr, v3_va, ORANGE, "a"),
+        (axes[1], v8_ep, v8_tr, v8_va, BLUE, "b"),
     ]:
-        ax.plot(ep, tr, "--", color=colour, lw=1.4, alpha=0.75, label="Train")
+        ax.plot(ep, tr, "--", color=colour, lw=1.4, alpha=0.85, label="Train")
         ax.plot(ep, va, "-", color=colour, lw=1.8, label="Validation")
         ax.fill_between(ep, va, tr, color=colour, alpha=0.12, lw=0)
-        ax.set_title(title)
         ax.set_xlabel("Epoch")
         ax.set_xlim(0, 37)
-        _tag(ax, letter)
+        ax.text(0.0, 1.02, f"({letter})", transform=ax.transAxes,
+                fontsize=9, fontweight="bold", va="bottom", ha="left")
 
     axes[0].set_ylabel("Accuracy (%)")
     axes[0].set_ylim(43, 67)
-    axes[0].annotate("train–val gap\n9.0 pp at epoch 35", xy=(35, 58.2),
-                     xytext=(11, 44.2), fontsize=7.5, color="#444444",
-                     arrowprops=dict(arrowstyle="->", color="#888888", lw=0.8))
     axes[0].legend(loc="upper left", frameon=False, fontsize=8)
     axes[1].axvline(15, color=RED, lw=0.9, ls=":", zorder=2)
-    axes[1].text(16.0, 44.2, "LR reset on resume", fontsize=7, color=RED)
-    axes[1].annotate("gap ≤ 1.3 pp throughout", xy=(29, 62.7), xytext=(6.5, 65.4),
-                     fontsize=7.5, color="#444444",
-                     arrowprops=dict(arrowstyle="->", color="#888888", lw=0.8))
     _save(fig, "training_dynamics")
 
 
-# ─── 4.14 species-level learning curve ───────────────────────────────────────
-# SOURCE: tab:spv4-progress (Appendix B)
+# ─── 4.14 genus 50M + species learning curves ────────────────────────────────
+# SOURCE: figures/data/v9_50m.csv; tab:spv4-progress (Appendix B)
 def fig_learning_curves():
-    ep = [1, 6, 7, 12, 13, 18, 26, 30]
-    acc = [14.23, 15.91, 15.12, 15.51, 15.85, 16.37, 17.31, 17.55]
-    f1 = [12.43, 14.05, 13.36, 13.65, 13.97, 14.46, 15.28, 15.70]
+    g_ep, _, g_va = _load_history("v9_50m.csv")
+    s_ep = [1, 6, 7, 12, 13, 18, 26, 30]
+    s_acc = [14.23, 15.91, 15.12, 15.51, 15.85, 16.37, 17.31, 17.55]
+    s_f1 = [12.43, 14.05, 13.36, 13.65, 13.97, 14.46, 15.28, 15.70]
 
-    fig, ax = plt.subplots(figsize=(NARROW, 2.75))
+    fig, axes = plt.subplots(1, 2, figsize=(WIDE, 2.7))
+    fig.subplots_adjust(wspace=0.28)
+
+    ax = axes[0]
+    ax.axvspan(17, 30.8, color=GREEN, alpha=0.10, lw=0, zorder=0)
+    for x in (7, 11):
+        ax.axvline(x, color=RED, lw=0.8, ls=":", zorder=2)
+    ax.plot(g_ep, g_va, "-", color=BLUE, lw=1.8, zorder=3)
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Genus Top-1 (%)")
+    ax.set_xlim(0, 32)
+    ax.set_ylim(61.0, 67.2)
+    ax.text(0.0, 1.02, "(a)", transform=ax.transAxes,
+            fontsize=9, fontweight="bold", va="bottom", ha="left")
+
+    ax = axes[1]
+    ax.axvspan(13, 30.8, color=GREEN, alpha=0.10, lw=0, zorder=0)
     for x in (7, 13):
         ax.axvline(x, color=RED, lw=0.8, ls=":", zorder=2)
-    ax.plot(ep, acc, "o-", color=BLUE, zorder=3, label="Validation Top-1")
-    ax.plot(ep, f1, "s--", color=GREY, lw=1.4, zorder=3, label="Macro F1")
-    ax.text(7.5, 11.9, "LR reset", fontsize=7, color=RED)
-    ax.text(13.5, 17.9, "resume fixed", fontsize=7, color=RED)
+    ax.plot(s_ep, s_acc, "o-", color=BLUE, zorder=3, label="Validation Top-1")
+    ax.plot(s_ep, s_f1, "s--", color=GREY, lw=1.4, zorder=3, label="Macro F1")
     ax.set_xlabel("Epoch")
-    ax.set_ylabel("NT-Species, 1,535 classes (%)")
+    ax.set_ylabel("Species, 1,535 classes (%)")
     ax.set_xlim(0, 32)
     ax.set_ylim(11.3, 18.9)
     ax.legend(loc="lower right", frameon=False, fontsize=8)
+    ax.text(0.0, 1.02, "(b)", transform=ax.transAxes,
+            fontsize=9, fontweight="bold", va="bottom", ha="left")
     _save(fig, "learning_curves")
 
 

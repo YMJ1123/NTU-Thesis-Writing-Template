@@ -101,7 +101,7 @@ The training dynamics reveal severe overfitting (Figure~\ref{fig:training-dynami
 \begin{figure}[htbp]
     \centering
     \includegraphics{figures/training_dynamics.pdf}
-    \caption{Training dynamics at two data scales: v3 on 500K reads (a) and NT-Genus-5M on 5M (b). Dashed lines are training accuracy, solid lines validation, and the shaded band between them is the train--validation gap---9.0~pp by epoch 35 at 500K against at most 1.3~pp at 5M. The dotted line at epoch~15 marks a learning-rate reset caused by a SLURM timeout and job resumption. The 50M run is not shown: its per-epoch history did not survive, and only its endpoints are recorded (Section~\ref{sec:exp-v9}).}
+    \caption{Training dynamics at two data scales: v3 on 500K reads (a) and NT-Genus-5M on 5M (b). Dashed lines are training accuracy, solid lines validation, and the shaded band between them is the train--validation gap---9.0~pp by epoch 35 at 500K against at most 1.3~pp at 5M. The dotted line at epoch~15 marks a learning-rate reset caused by a SLURM timeout and job resumption. The 50M per-epoch history is in Figure~\ref{fig:learning-curves}.}
     \label{fig:training-dynamics}
 \end{figure}
 
@@ -212,7 +212,7 @@ NT-Genus training completed at epoch~30 (April~2026), reaching a forward validat
 \begin{figure}[htbp]
     \centering
     \includegraphics{figures/learning_curves.pdf}
-    \caption{Full validation accuracy curves for NT-Genus (genus, left) and NT-Species (species, right) over all completed epochs. Red dotted vertical lines mark epochs where a SLURM job restart incorrectly reset the cosine LR scheduler, causing a temporary accuracy dip. The green shaded region indicates epochs trained after the resume bug fix was applied, during which the LR schedule correctly continues its cosine decay.}
+    \caption{Full validation accuracy curves for NT-Genus at 50M reads (a) and NT-Species (b) over all completed epochs. Red dotted vertical lines mark epochs where a SLURM job restart incorrectly reset the cosine LR scheduler (epochs 7 and 11 in (a); 7 and 13 in (b)), causing a temporary accuracy dip. The green shaded region indicates epochs trained after the resume bug fix was applied, during which the LR schedule correctly continues its cosine decay.}
     \label{fig:learning-curves}
 \end{figure}
 
